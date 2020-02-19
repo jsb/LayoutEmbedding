@@ -17,4 +17,3 @@ int main()
     
     gv::view(pos, gv::no_grid, gv::no_outline);
 }
-
