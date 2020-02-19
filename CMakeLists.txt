@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Dependencies
 # Warning: The order of these add_subdirectories matters, there are interdependencies.
-set(GLOW_BIN_DIR bin) # Viewer fonts will be placed here
+set(GLOW_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}) # Viewer fonts will be placed here
 add_subdirectory(extern/glfw)
 add_subdirectory(extern/typed-geometry)
 add_subdirectory(extern/polymesh)
