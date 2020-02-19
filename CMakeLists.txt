@@ -17,4 +17,3 @@ add_subdirectory(extern/glow-extras)
 file(GLOB_RECURSE SOURCES "src/*.cc" "src/*.hh")
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} PUBLIC imgui typed-geometry polymesh glow-extras)
-
