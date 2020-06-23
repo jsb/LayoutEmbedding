@@ -24,7 +24,7 @@ struct RefinableMesh
 
 RefinableMesh make_refinable_mesh(pm::Mesh& _m, pm::vertex_attribute<tg::pos3>& _pos);
 
-void split_edge(RefinableMesh& _rm, const pm::edge_handle& _e);
+pm::vertex_handle split_edge(RefinableMesh& _rm, const pm::edge_handle& _e);
 
 bool is_on_original_mesh(const RefinableMesh& _rm, const pm::vertex_handle& _v);
 bool is_on_original_mesh(const RefinableMesh& _rm, const pm::edge_handle& _e);

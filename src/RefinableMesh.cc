@@ -7,19 +7,19 @@
 RefinableMesh make_refinable_mesh(pm::Mesh& _m, pm::vertex_attribute<tg::pos3>& _pos)
 {
     RefinableMesh result{&_m, _m.copy(), &_pos, _m, _m, _m};
-    for (const auto v : result.m_orig->vertices()) {
-        result.vertex_ancestor[v] = v;
+    for (const auto v : result.m->vertices()) {
+        result.vertex_ancestor[v] = result.m_orig->vertices()[v.idx];
     }
-    for (const auto e : result.m_orig->edges()) {
-        result.edge_ancestor[e] = e;
+    for (const auto e : result.m->edges()) {
+        result.edge_ancestor[e] = result.m_orig->edges()[e.idx];
     }
-    for (const auto f : result.m_orig->faces()) {
-        result.face_ancestor[f] = f;
+    for (const auto f : result.m->faces()) {
+        result.face_ancestor[f] = result.m_orig->faces()[f.idx];
     }
     return result;
 }
 
-void split_edge(RefinableMesh& _rm, const pm::edge_handle& _e)
+pm::vertex_handle split_edge(RefinableMesh& _rm, const pm::edge_handle& _e)
 {
     auto& m = *_rm.m;
     auto& pos = *_rm.pos;
@@ -71,6 +71,8 @@ void split_edge(RefinableMesh& _rm, const pm::edge_handle& _e)
     _rm.face_ancestor[new_f_from_right] = old_f_right_ancestor;
     _rm.face_ancestor[new_f_to_left] = old_f_left_ancestor;
     _rm.face_ancestor[new_f_to_right] = old_f_right_ancestor;
+
+    return new_v;
 }
 
 bool is_on_original_mesh(const RefinableMesh& _rm, const pm::vertex_handle& _v)

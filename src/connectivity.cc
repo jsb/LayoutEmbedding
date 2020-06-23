@@ -15,7 +15,17 @@ bool incident(const pm::vertex_handle& _v, const pm::edge_handle& _e)
     return (_e.vertexA() == _v) || (_e.vertexB() == _v);
 }
 
-bool incident(const polymesh::edge_handle& _e, const polymesh::vertex_handle& _v)
+bool incident(const pm::edge_handle& _e, const pm::vertex_handle& _v)
 {
     return incident(_v, _e);
+}
+
+pm::vertex_handle opposite_vertex(const pm::halfedge_handle& _he)
+{
+    if (_he.is_boundary()) {
+        return pm::vertex_handle::invalid;
+    }
+    else {
+        return _he.next().vertex_to();
+    }
 }
