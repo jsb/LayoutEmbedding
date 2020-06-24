@@ -16,3 +16,9 @@
 [submodule "extern/glfw"]
 	path = extern/glfw
 	url = https://github.com/glfw/glfw
+[submodule "extern/eigen-lean"]
+	path = extern/eigen-lean
+	url = https://www.graphics.rwth-aachen.de:9000/ptrettner/eigen-lean.git
+[submodule "extern/libigl"]
+	path = extern/libigl
+	url = https://github.com/libigl/libigl

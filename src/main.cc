@@ -11,6 +11,8 @@
 #include "Embedding.hh"
 #include "RefinableMesh.hh"
 
+#include "praun2001.hh"
+
 int main()
 {
     std::srand(std::time(nullptr));
@@ -45,6 +47,8 @@ int main()
     }
 
     set_matching_vertices(em, matching_vertices);
+    praun2001(em);
+    return 0;
 
     std::vector<tg::segment3> path_segments;
     auto l_edges_shuffled = l_m.edges().to_vector();

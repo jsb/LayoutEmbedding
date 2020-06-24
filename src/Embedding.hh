@@ -39,7 +39,13 @@ VertexEdgePath find_shortest_path(
 );
 VertexEdgePath find_shortest_path(
     Embedding& _e,
-    const pm::halfedge_handle& _l_h // Layout halfedge
+    const pm::halfedge_handle& _l_he // Layout halfedge
+);
+VertexEdgePath find_shortest_path(
+    Embedding& _e,
+    const pm::edge_handle& _l_e // Layout edge
 );
 
 void insert_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdgePath& _path);
+
+double path_length(Embedding& _e, const VertexEdgePath& _path);

@@ -290,13 +290,20 @@ VertexEdgePath find_shortest_path(
     }
 }
 
-VertexEdgePath find_shortest_path(Embedding& _e, const polymesh::halfedge_handle& _l_h)
+VertexEdgePath find_shortest_path(Embedding& _e, const pm::halfedge_handle& _l_he)
 {
-    assert(_l_h.mesh == _e.l_m);
-    const auto l_h_end = _l_h.opposite();
-    const auto t_h_sector_start = get_embeddable_sector(_e, _l_h);
-    const auto t_h_sector_end = get_embeddable_sector(_e, l_h_end);
-    return find_shortest_path(_e, t_h_sector_start, t_h_sector_end);
+    assert(_l_he.mesh == _e.l_m);
+    const auto l_he_end = _l_he.opposite();
+    const auto t_he_sector_start = get_embeddable_sector(_e, _l_he);
+    const auto t_he_sector_end = get_embeddable_sector(_e, l_he_end);
+    return find_shortest_path(_e, t_he_sector_start, t_he_sector_end);
+}
+
+VertexEdgePath find_shortest_path(Embedding& _e, const pm::edge_handle& _l_e)
+{
+    assert(_l_e.mesh == _e.l_m);
+    const auto l_he = _l_e.halfedgeA();
+    return find_shortest_path(_e, l_he);
 }
 
 bool is_blocked(Embedding& _e, const pm::edge_handle& _t_e)
@@ -381,4 +388,17 @@ void insert_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdg
         _e.t_matching_halfedge[t_he] = _l_h;
         _e.t_matching_halfedge[t_he.opposite()] = _l_h.opposite();
     }
+}
+
+double path_length(Embedding& _e, const VertexEdgePath& _path)
+{
+    double length = 0.0;
+    for (int i = 0; i < _path.size() - 1; ++i) {
+        const auto& el_i = _path[i];
+        const auto& el_j = _path[i+1];
+        const auto p_i = element_pos(_e, el_i);
+        const auto p_j = element_pos(_e, el_j);
+        length += tg::distance(p_i, p_j);
+    }
+    return length;
 }
