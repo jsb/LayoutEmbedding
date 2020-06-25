@@ -270,7 +270,7 @@ void praun2001(Embedding& _em)
 
         std::cout << "Best path cost: " << best_path_cost << std::endl;
 
-        insert_path(_em, best_l_e.halfedgeA(), best_path);
+        embed_path(_em, best_l_e.halfedgeA(), best_path);
         l_v_components.merge(best_l_e.vertexA().idx.value, best_l_e.vertexB().idx.value);
         l_is_embedded[best_l_e] = true;
         ++l_num_embedded_edges;

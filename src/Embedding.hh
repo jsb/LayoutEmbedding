@@ -18,34 +18,39 @@ void set_matching_vertices(Embedding& _e, std::vector<std::pair<pm::vertex_handl
 
 /// If the layout halfedge _l_h has an embedding, returns the target halfedge at the start of the corresponding embedded path.
 /// Otherwise, returns an invalid halfedge.
-pm::halfedge_handle get_embedded_target_halfedge(Embedding& _e, const pm::halfedge_handle& _l_he);
+pm::halfedge_handle get_embedded_target_halfedge(const Embedding& _e, const pm::halfedge_handle& _l_he);
+
+bool is_embedded(const Embedding& _e, const pm::halfedge_handle& _l_he);
+bool is_embedded(const Embedding& _e, const pm::edge_handle& _l_e);
 
 /// Returns the target halfedge representing the sector in which the layout halfedge _l_h can be currently embedded.
 /// Returns an invalid halfedge if the layout halfedge is already embedded.
-pm::halfedge_handle get_embeddable_sector(Embedding& _e, const pm::halfedge_handle& _l_he);
+pm::halfedge_handle get_embeddable_sector(const Embedding& _e, const pm::halfedge_handle& _l_he);
 
-bool is_blocked(Embedding& _e, const pm::edge_handle& _t_e);
-bool is_blocked(Embedding& _e, const pm::vertex_handle& _t_v);
-bool is_blocked(Embedding& _e, const VertexEdgeElement& _t_el);
+bool is_blocked(const Embedding& _e, const pm::edge_handle& _t_e);
+bool is_blocked(const Embedding& _e, const pm::vertex_handle& _t_v);
+bool is_blocked(const Embedding& _e, const VertexEdgeElement& _t_el);
 
-tg::pos3 element_pos(Embedding& _e, const pm::edge_handle& _t_e);
-tg::pos3 element_pos(Embedding& _e, const pm::vertex_handle& _t_v);
-tg::pos3 element_pos(Embedding& _e, const VertexEdgeElement& _t_el);
+tg::pos3 element_pos(const Embedding& _e, const pm::edge_handle& _t_e);
+tg::pos3 element_pos(const Embedding& _e, const pm::vertex_handle& _t_v);
+tg::pos3 element_pos(const Embedding& _e, const VertexEdgeElement& _t_el);
 
 VertexEdgePath find_shortest_path(
-    Embedding& _e,
+    const Embedding& _e,
     const pm::halfedge_handle& _t_h_sector_start, // Target halfedge, at the beginning of a sector
     const pm::halfedge_handle& _t_h_sector_end    // Target halfedge, at the beginning of a sector
 );
 VertexEdgePath find_shortest_path(
-    Embedding& _e,
+    const Embedding& _e,
     const pm::halfedge_handle& _l_he // Layout halfedge
 );
 VertexEdgePath find_shortest_path(
-    Embedding& _e,
+    const Embedding& _e,
     const pm::edge_handle& _l_e // Layout edge
 );
 
-void insert_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdgePath& _path);
+void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdgePath& _path);
 
-double path_length(Embedding& _e, const VertexEdgePath& _path);
+std::vector<pm::vertex_handle> get_embedded_path(const Embedding& _e, const pm::halfedge_handle& _l_he);
+
+double path_length(const Embedding& _e, const VertexEdgePath& _path);

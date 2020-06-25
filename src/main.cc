@@ -12,6 +12,7 @@
 #include "RefinableMesh.hh"
 
 #include "praun2001.hh"
+#include "visualization.hh"
 
 int main()
 {
@@ -48,6 +49,7 @@ int main()
 
     set_matching_vertices(em, matching_vertices);
     praun2001(em);
+    view_embedding(em);
     return 0;
 
     std::vector<tg::segment3> path_segments;
@@ -70,7 +72,7 @@ int main()
                 const auto p_j = element_pos(em, path[j]);
                 path_segments.push_back({p_i, p_j});
             }
-            insert_path(em, l_he, path);
+            embed_path(em, l_he, path);
         }
     };
 
