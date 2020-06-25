@@ -29,7 +29,7 @@ int main()
 
     pm::Mesh l_m;
     auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-    make_layout_by_decimation(t_pos, 18, l_m, l_pos);
+    make_layout_by_decimation(t_pos, 26, l_m, l_pos);
 
     RefinableMesh rm = make_refinable_mesh(t_m, t_pos);
     Embedding em = make_embedding(l_m, rm);
