@@ -1,5 +1,5 @@
 #include "visualization.hh"
-#include "RWTHColorGenerator.hh"
+#include "HaltonColorGenerator.hh"
 
 #include <glow-extras/viewer/view.hh>
 
@@ -9,7 +9,7 @@ void view_embedding(const Embedding& _em)
     const pm::Mesh& t_m = *_em.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
 
-    RWTHColorGenerator color_generator;
+    HaltonColorGenerator color_generator;
     pm::vertex_attribute<tg::color3> l_v_color(l_m);
     pm::edge_attribute<tg::color3> l_e_color(l_m);
     for (const auto& l_v : l_m.vertices()) {
