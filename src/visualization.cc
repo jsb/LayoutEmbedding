@@ -1,5 +1,6 @@
 #include "visualization.hh"
 #include "HaltonColorGenerator.hh"
+#include "RWTHColors.hh"
 
 #include <glow-extras/viewer/view.hh>
 
@@ -8,6 +9,9 @@ void view_embedding(const Embedding& _em)
     const pm::Mesh& l_m = *_em.l_m;
     const pm::Mesh& t_m = *_em.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+
+    const float node_size = 5.0f;
+    const float arc_width = 2.0f;
 
     HaltonColorGenerator color_generator;
     pm::vertex_attribute<tg::color3> l_v_color(l_m);
@@ -29,7 +33,7 @@ void view_embedding(const Embedding& _em)
         }
 
         // Mesh
-        auto v = gv::view(l_pos, gv::no_grid, gv::no_outline);
+        auto v = gv::view(l_pos, gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
 
         // Wireframe
         //gv::view(gv::lines(l_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
@@ -40,7 +44,7 @@ void view_embedding(const Embedding& _em)
                 const auto& p_i = l_pos[l_e.vertexA()];
                 const auto& p_j = l_pos[l_e.vertexB()];
                 const auto& color = l_e_color[l_e];
-                gv::view(lines(tg::segment3{p_i, p_j}).line_width_px(1.5f), color);
+                gv::view(lines(tg::segment3{p_i, p_j}).line_width_px(arc_width), color);
             }
         }
 
@@ -48,14 +52,14 @@ void view_embedding(const Embedding& _em)
         for (const auto& l_v : l_m.vertices()) {
             const auto& p = l_pos[l_v];
             const auto& color = l_v_color[l_v];
-            gv::view(points(p).point_size_px(4.0f), color);
+            gv::view(points(p).point_size_px(node_size), color);
         }
     }
 
     // Target mesh view
     {
         // Mesh
-        auto v = gv::view(t_pos, gv::no_grid, gv::no_outline);
+        auto v = gv::view(t_pos, gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
 
         // Wireframe
         //gv::view(gv::lines(t_pos).line_width_px(1.0f), tg::color3{0.9f, 0.9f, 0.9f});
@@ -71,7 +75,7 @@ void view_embedding(const Embedding& _em)
                     path_segments.push_back({p_i, p_j});
                 }
                 const auto& color = l_e_color[l_e];
-                gv::view(lines(path_segments).line_width_px(1.5f), color);
+                gv::view(lines(path_segments).line_width_px(arc_width), color);
             }
         }
 
@@ -79,7 +83,7 @@ void view_embedding(const Embedding& _em)
         for (const auto& l_v : l_m.vertices()) {
             const auto& p = t_pos[_em.l_matching_vertex[l_v]];
             const auto& color = l_v_color[l_v];
-            gv::view(points(p).point_size_px(4.0f), color);
+            gv::view(points(p).point_size_px(node_size), color);
         }
     }
 }
