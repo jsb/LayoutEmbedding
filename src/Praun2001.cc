@@ -189,7 +189,7 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
     return false;
 }
 
-void praun2001(Embedding& _em)
+void praun2001(Embedding& _em, const Praun2001Settings& _settings)
 {
     const pm::Mesh& l_m = *_em.l_m;
     const pm::Mesh& t_m = *_em.t_m->m;
@@ -254,10 +254,12 @@ void praun2001(Embedding& _em)
             VertexEdgePath path = find_shortest_path(_em, l_e.halfedgeA());
             double path_cost = path_length(_em, path);
 
-            // Only do the swirl test if the current path is already a contender.
-            if (path_cost < best_path_cost) {
-                if (swirl_detection(_em, l_e.halfedgeA(), path)) {
-                    path_cost *= penalty_factor;
+            if (_settings.use_swirl_detection) {
+                // Only do the swirl test if the current path is already a contender.
+                if (path_cost < best_path_cost) {
+                    if (swirl_detection(_em, l_e.halfedgeA(), path)) {
+                        path_cost *= penalty_factor;
+                    }
                 }
             }
 

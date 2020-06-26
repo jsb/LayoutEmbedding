@@ -33,6 +33,9 @@ int main()
     auto matching_vertices = find_matching_vertices(l_pos, t_pos);
     jitter_matching_vertices(l_m, t_m, matching_vertices, 1);
     set_matching_vertices(em, matching_vertices);
-    praun2001(em);
+
+    Praun2001Settings settings;
+    settings.use_swirl_detection = false;
+    praun2001(em, settings);
     view_embedding(em);
 }
