@@ -13,6 +13,9 @@
 #include <RefinableMesh.hh>
 #include <Visualization/Visualization.hh>
 
+#include <algorithm>
+#include <numeric>
+
 int main()
 {
     glow::glfw::GlfwContext ctx;
@@ -28,6 +31,15 @@ int main()
     pm::Mesh l_m;
     auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
     load(data_path + "/models/layouts/horse_layout.obj", l_m, l_pos);
+
+    // Edge permutation
+    /*
+    std::vector<int> p(l_m.edges().size());
+    std::iota(p.begin(), p.end(), 0);
+    std::srand(5);
+    std::random_shuffle(p.begin(), p.end());
+    l_m.edges().permute(p);
+    */
 
     // Generate Layout from the Target Mesh by incremental decimation
     /*
