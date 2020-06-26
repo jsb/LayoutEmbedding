@@ -22,14 +22,14 @@ void make_layout_by_decimation(const pm::vertex_attribute<tg::pos3>& _t_pos, int
     _l_m.compactify();
 }
 
-std::vector<std::pair<pm::vertex_handle, pm::vertex_handle>> find_matching_vertices(const pm::vertex_attribute<tg::pos3>& _l_pos, const pm::vertex_attribute<tg::pos3>& _t_pos)
+MatchingVertices find_matching_vertices(const pm::vertex_attribute<tg::pos3>& _l_pos, const pm::vertex_attribute<tg::pos3>& _t_pos)
 {
     const pm::Mesh& l_m = _l_pos.mesh();
     const pm::Mesh& t_m = _t_pos.mesh();
 
     std::set<pm::vertex_index> t_matched_v_ids;
 
-    std::vector<std::pair<pm::vertex_handle, pm::vertex_handle>> result;
+    MatchingVertices result;
     for (const auto& l_v : l_m.vertices()) {
         auto best_distance_sqr = tg::inf<double>;
         auto best_t_v = pm::vertex_handle::invalid;
@@ -48,4 +48,25 @@ std::vector<std::pair<pm::vertex_handle, pm::vertex_handle>> find_matching_verti
         t_matched_v_ids.insert(best_t_v.idx);
     }
     return result;
+}
+
+void jitter_matching_vertices(const pm::Mesh& _l_m, const pm::Mesh& _t_m, MatchingVertices& _mv, int _steps)
+{
+    tg::rng rng;
+
+    pm::vertex_attribute<bool> t_v_occupied(_t_m);
+    for (const auto& [l_v, t_v] : _mv) {
+        t_v_occupied[t_v] = true;
+    }
+
+    for (int i = 0; i < _steps; ++i) {
+        for (auto& [l_v, t_v] : _mv) {
+            auto t_v_new = t_v.adjacent_vertices().random(rng);
+            if (!t_v_occupied[t_v_new]) {
+                t_v_occupied[t_v] = false;
+                t_v_occupied[t_v_new] = true;
+                t_v = t_v_new;
+            }
+        }
+    }
 }

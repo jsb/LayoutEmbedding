@@ -10,7 +10,16 @@ void make_layout_by_decimation(
     pm::vertex_attribute<tg::pos3>& _l_pos
 );
 
-std::vector<std::pair<pm::vertex_handle, pm::vertex_handle>> find_matching_vertices(
+using MatchingVertices = std::vector<std::pair<pm::vertex_handle, pm::vertex_handle>>;
+
+MatchingVertices find_matching_vertices(
     const pm::vertex_attribute<tg::pos3>& _l_pos,
     const pm::vertex_attribute<tg::pos3>& _t_pos
+);
+
+void jitter_matching_vertices(
+    const pm::Mesh& _l_m,
+    const pm::Mesh& _t_m,
+    MatchingVertices& _mv,
+    int _steps = 1
 );

@@ -10,7 +10,7 @@ Embedding make_embedding(pm::Mesh& _l_m, RefinableMesh& _rm)
     return {&_l_m, &_rm, _l_m, *_rm.m, *_rm.m};
 }
 
-void set_matching_vertices(Embedding& _e, std::vector<std::pair<pm::vertex_handle, pm::vertex_handle>> _mvs)
+void set_matching_vertices(Embedding& _e, const MatchingVertices& _mvs)
 {
     _e.l_matching_vertex.clear();
     _e.t_matching_vertex.clear();

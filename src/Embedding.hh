@@ -1,7 +1,8 @@
 #pragma once
 
-#include "VertexEdgePath.hh"
-#include "RefinableMesh.hh"
+#include <LayoutGeneration.hh>
+#include <VertexEdgePath.hh>
+#include <RefinableMesh.hh>
 
 struct Embedding
 {
@@ -14,7 +15,7 @@ struct Embedding
 
 Embedding make_embedding(pm::Mesh& _l_m, RefinableMesh& _rm);
 
-void set_matching_vertices(Embedding& _e, std::vector<std::pair<pm::vertex_handle, pm::vertex_handle>> _mvs);
+void set_matching_vertices(Embedding& _e, const MatchingVertices& _mvs);
 
 /// If the layout halfedge _l_h has an embedding, returns the target halfedge at the start of the corresponding embedded path.
 /// Otherwise, returns an invalid halfedge.
