@@ -1,6 +1,6 @@
 #include "Embedding.hh"
 
-#include "Connectivity.hh"
+#include <Connectivity.hh>
 
 #include <cassert>
 #include <queue>

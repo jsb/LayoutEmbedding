@@ -1,7 +1,7 @@
 #include "Praun2001.hh"
 
-#include "IGLMesh.hh"
-#include "UnionFind.hh"
+#include <IGLMesh.hh>
+#include <UnionFind.hh>
 
 #include <igl/harmonic.h>
 #include <Eigen/Dense>
