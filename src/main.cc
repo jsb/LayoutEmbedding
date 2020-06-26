@@ -21,7 +21,7 @@ int main()
     
     pm::Mesh t_m;
     auto t_pos = t_m.vertices().make_attribute<tg::pos3>();
-    load(data_path + "/models/target-meshes/cow_6938.obj", t_m, t_pos);
+    load(data_path + "/models/target-meshes/elephant_success.obj", t_m, t_pos);
 
     pm::Mesh l_m;
     auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
@@ -35,7 +35,8 @@ int main()
     set_matching_vertices(em, matching_vertices);
 
     Praun2001Settings settings;
-    settings.use_swirl_detection = false;
+    settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
+    settings.use_swirl_detection = true;
     praun2001(em, settings);
     view_embedding(em);
 }

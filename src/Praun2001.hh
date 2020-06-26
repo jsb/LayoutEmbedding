@@ -4,6 +4,13 @@
 
 struct Praun2001Settings
 {
+    enum class InsertionOrder
+    {
+        BestFirst,
+        Arbitrary,
+    };
+
+    InsertionOrder insertion_order = InsertionOrder::BestFirst;
     bool use_swirl_detection = true;
 };
 

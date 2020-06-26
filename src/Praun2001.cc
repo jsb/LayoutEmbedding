@@ -254,6 +254,14 @@ void praun2001(Embedding& _em, const Praun2001Settings& _settings)
             VertexEdgePath path = find_shortest_path(_em, l_e.halfedgeA());
             double path_cost = path_length(_em, path);
 
+            // If we use an arbitrary insertion order, we can early-out after the first path is found
+            if (_settings.insertion_order == Praun2001Settings::InsertionOrder::Arbitrary) {
+                best_path_cost = path_cost;
+                best_path = std::move(path);
+                best_l_e = l_e;
+                break;
+            }
+
             if (_settings.use_swirl_detection) {
                 // Only do the swirl test if the current path is already a contender.
                 if (path_cost < best_path_cost) {
