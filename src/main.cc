@@ -16,10 +16,12 @@
 int main()
 {
     glow::glfw::GlfwContext ctx;
+
+    const std::string data_path = LAYOUT_EMBEDDING_DATA_PATH;
     
     pm::Mesh t_m;
     auto t_pos = t_m.vertices().make_attribute<tg::pos3>();
-    load("/home/jsb/projects/research/topology/layout-embedding-models/horse_8078.obj", t_m, t_pos);
+    load(data_path + "/models/target-meshes/cow_6938.obj", t_m, t_pos);
 
     pm::Mesh l_m;
     auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
@@ -29,7 +31,7 @@ int main()
     Embedding em = make_embedding(l_m, rm);
 
     auto matching_vertices = find_matching_vertices(l_pos, t_pos);
-    jitter_matching_vertices(l_m, t_m, matching_vertices, 10);
+    jitter_matching_vertices(l_m, t_m, matching_vertices, 1);
     set_matching_vertices(em, matching_vertices);
     praun2001(em);
     view_embedding(em);
