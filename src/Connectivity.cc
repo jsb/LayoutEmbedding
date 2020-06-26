@@ -1,4 +1,4 @@
-#include "connectivity.hh"
+#include "Connectivity.hh"
 
 #include <cassert>
 

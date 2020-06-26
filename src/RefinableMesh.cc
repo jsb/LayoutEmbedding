@@ -1,6 +1,6 @@
 #include "RefinableMesh.hh"
 
-#include "connectivity.hh"
+#include "Connectivity.hh"
 
 #include <iostream>
 

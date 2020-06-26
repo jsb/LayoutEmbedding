@@ -1,13 +1,13 @@
-#include "igl_mesh.hh"
+#include "IGLMesh.hh"
 
-igl_mesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
+IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
 {
     const pm::Mesh& m = _pos.mesh();
 
     const int num_v = m.vertices().count();
     const int num_f = m.faces().count();
 
-    igl_mesh result;
+    IGLMesh result;
     result.V.resize(num_v, 3);
     result.F.resize(num_f, 3);
 

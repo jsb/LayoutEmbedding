@@ -1,4 +1,5 @@
-#include "visualization.hh"
+#include "Visualization.hh"
+
 #include "HaltonColorGenerator.hh"
 #include "RWTHColors.hh"
 

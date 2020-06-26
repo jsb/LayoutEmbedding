@@ -1,6 +1,6 @@
-#include "praun2001.hh"
+#include "Praun2001.hh"
 
-#include "igl_mesh.hh"
+#include "IGLMesh.hh"
 #include "UnionFind.hh"
 
 #include <igl/harmonic.h>
@@ -197,7 +197,7 @@ void praun2001(Embedding& _em)
 
     const int l_num_v = l_m.vertices().count();
 
-    igl_mesh t_igl = to_igl_mesh(t_pos);
+    IGLMesh t_igl = to_igl_mesh(t_pos);
     Eigen::VectorXi b(l_num_v); // Boundary indices into t_igl.V
     {
         int b_row = 0;

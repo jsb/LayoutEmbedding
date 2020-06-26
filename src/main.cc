@@ -7,13 +7,11 @@
 
 #include <typed-geometry/tg.hh>
 
-#include "UnionFind.hh"
 #include "Embedding.hh"
+#include "LayoutGeneration.hh"
+#include "Praun2001.hh"
 #include "RefinableMesh.hh"
-
-#include "praun2001.hh"
-#include "layout_generation.hh"
-#include "visualization.hh"
+#include "Visualization.hh"
 
 int main()
 {

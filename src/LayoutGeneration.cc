@@ -1,4 +1,4 @@
-#include "layout_generation.hh"
+#include "LayoutGeneration.hh"
 
 #include <polymesh/algorithms/decimate.hh>
 

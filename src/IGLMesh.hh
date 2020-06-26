@@ -5,10 +5,10 @@
 
 #include <Eigen/Dense>
 
-struct igl_mesh
+struct IGLMesh
 {
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
 };
 
-igl_mesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos);
+IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos);
