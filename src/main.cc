@@ -30,7 +30,7 @@ int main()
     // Load Layout Mesh from file
     pm::Mesh l_m;
     auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-    load(data_path + "/models/layouts/horse_layout.obj", l_m, l_pos);
+    load(data_path + "/models/layouts/horse_layout_praun_challenge.obj", l_m, l_pos);
 
     // Edge permutation
     /*
@@ -65,8 +65,8 @@ int main()
 
     // Run the algorithm in "Consistent Mesh Parameterizations" (Praun et al. 2001) to find embeddings for the layout edges
     Praun2001Settings settings;
-    settings.insertion_order = Praun2001Settings::InsertionOrder::Arbitrary;
-    settings.use_swirl_detection = false;
+    settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
+    settings.use_swirl_detection = true;
     praun2001(em, settings);
 
     // Visualize the result
