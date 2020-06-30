@@ -22,7 +22,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     const pm::Mesh& t_m = *_em.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
 
-    double global_upper_bound = 30.0;//std::numeric_limits<double>::infinity();
+    double global_upper_bound = std::numeric_limits<double>::infinity();
     // TODO: Run heuristic algorithm to find a tighter initial upper bound
 
     Candidate best_solution; // initially empty
@@ -31,7 +31,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
     {
         Candidate c;
-        c.lower_bound = global_upper_bound;
+        c.lower_bound = 0.0;
         c.insertions = {};
         q.push(c);
     }
