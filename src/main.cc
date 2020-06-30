@@ -7,6 +7,7 @@
 
 #include <typed-geometry/tg.hh>
 
+#include <BranchAndBound.hh>
 #include <Embedding.hh>
 #include <LayoutGeneration.hh>
 #include <Praun2001.hh>
@@ -58,17 +59,22 @@ int main()
     auto matching_vertices = find_matching_vertices(l_pos, t_pos);
 
     // Optional: Perturb the target positions on the surface of the Target Mesh a bit
-    // jitter_matching_vertices(l_m, t_m, matching_vertices, 1);
+    jitter_matching_vertices(l_m, t_m, matching_vertices, 10);
 
     // Store the vertex embedding positions
     set_matching_vertices(em, matching_vertices);
 
+    branch_and_bound(em);
+
     // Run the algorithm in "Consistent Mesh Parameterizations" (Praun et al. 2001) to find embeddings for the layout edges
+    /*
     Praun2001Settings settings;
     settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
     settings.use_swirl_detection = true;
     praun2001(em, settings);
+    */
 
     // Visualize the result
+    std::cout << "Total embedding length: " << total_embedded_path_length(em) << std::endl;
     view_embedding(em);
 }

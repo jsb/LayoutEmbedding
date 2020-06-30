@@ -159,7 +159,6 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
         distance[t_v] = 0.0;
         q.push({0.0, t_v});
     }
-    std::cout << "Starting swirl test from " << t_seed_vertices.size() << " vertices." << std::endl;
 
     while (!q.empty()) {
         const auto c = q.top();
@@ -167,12 +166,10 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
 
         if (t_indicator[c.v] == -1) {
             // We arrived on the correct (left) side of the path. Probably no spiral.
-            std::cout << "No Swirl" << std::endl;
             return false;
         }
         else if (t_indicator[c.v] == 1) {
             // We arrived on the wrong (right) side of the path. Spiral detected.
-            std::cout << "Swirl!!!" << std::endl;
             return true;
         }
 

@@ -5,7 +5,7 @@
 #include <cassert>
 #include <queue>
 
-Embedding make_embedding(pm::Mesh& _l_m, RefinableMesh& _rm)
+Embedding make_embedding(const pm::Mesh& _l_m, RefinableMesh& _rm)
 {
     return {&_l_m, &_rm, _l_m, *_rm.m, *_rm.m};
 }
@@ -84,8 +84,8 @@ VertexEdgePath find_shortest_path(
 
         bool operator<(const Distance& rhs) const
         {
-            return std::tie(edges_crossed, geodesic) < std::tie(rhs.edges_crossed, rhs.geodesic);
-            //return geodesic < rhs.geodesic;
+            //return std::tie(edges_crossed, geodesic) < std::tie(rhs.edges_crossed, rhs.geodesic);
+            return geodesic < rhs.geodesic;
         }
     };
 
@@ -431,4 +431,56 @@ std::vector<pm::vertex_handle> get_embedded_path(const Embedding& _e, const pm::
     }
     result.push_back(t_v_end);
     return result;
+}
+
+void unembed_path(Embedding& _e, const polymesh::halfedge_handle& _l_h)
+{
+    auto path = get_embedded_path(_e, _l_h);
+    for (int i = 0; i < path.size() - 1; ++i) {
+        const auto& t_v_i = path[i];
+        const auto& t_v_j = path[i+1];
+        const auto& t_he = pm::halfedge_from_to(t_v_i, t_v_j);
+        assert(_e.t_matching_halfedge[t_he] == _l_h);
+        assert(_e.t_matching_halfedge[t_he.opposite()] == _l_h.opposite());
+        _e.t_matching_halfedge[t_he] = pm::halfedge_handle::invalid;
+        _e.t_matching_halfedge[t_he.opposite()] = pm::halfedge_handle::invalid;
+    }
+}
+
+void unembed_path(Embedding& _e, const polymesh::edge_handle& _l_e)
+{
+    unembed_path(_e, _l_e.halfedgeA());
+}
+
+double embedded_path_length(const Embedding& _e, const polymesh::halfedge_handle& _l_he)
+{
+    assert(is_embedded(_e, _l_he));
+    const auto& path = get_embedded_path(_e, _l_he);
+    assert(path.size() >= 2);
+    double length = 0.0;
+    const auto& t_pos = *_e.t_m->pos;
+    for (int i = 0; i < path.size() - 1; ++i) {
+        const auto& v_i = path[i];
+        const auto& v_j = path[i + 1];
+        const auto& p_i = t_pos[v_i];
+        const auto& p_j = t_pos[v_j];
+        length += tg::distance(p_i, p_j);
+    }
+    return length;
+}
+
+double embedded_path_length(const Embedding& _e, const polymesh::edge_handle& _l_e)
+{
+    return embedded_path_length(_e, _l_e.halfedgeA());
+}
+
+double total_embedded_path_length(const Embedding& _e)
+{
+    double total_length = 0.0;
+    for (const auto& l_e : _e.l_m->edges()) {
+        if (is_embedded(_e, l_e)) {
+            total_length += embedded_path_length(_e, l_e);
+        }
+    }
+    return total_length;
 }
