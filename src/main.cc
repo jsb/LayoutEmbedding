@@ -49,6 +49,18 @@ int main()
     make_layout_by_decimation(t_pos, 28, l_m, l_pos);
     */
 
+    std::cout << "Layout Mesh: ";
+    std::cout << l_m.vertices().count() << " vertices, ";
+    std::cout << l_m.edges().count() << " edges, ";
+    std::cout << l_m.faces().count() << " faces. ";
+    std::cout << "χ = " << pm::euler_characteristic(l_m) << std::endl;
+
+    std::cout << "Target Mesh: ";
+    std::cout << t_m.vertices().count() << " vertices, ";
+    std::cout << t_m.edges().count() << " edges, ";
+    std::cout << t_m.faces().count() << " faces. ";
+    std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
+
     // Wrap the Target Mesh into a RefinableMesh to enable adaptive refinement
     RefinableMesh rm = make_refinable_mesh(t_m, t_pos);
 
