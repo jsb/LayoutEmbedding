@@ -8,11 +8,12 @@
 struct Candidate
 {
     double lower_bound;
+    double priority;
     std::vector<pm::edge_handle> insertions;
 
     bool operator<(const Candidate& _rhs) const
     {
-        return lower_bound > _rhs.lower_bound;
+        return priority > _rhs.priority;
     }
 };
 
@@ -48,9 +49,6 @@ double calc_cost_lower_bound(const Embedding& _em, const std::vector<pm::edge_ha
 
         embed_path(em, l_he, path);
         embedded_l_e.insert(l_e);
-
-        int l_v_a_i = l_e.vertexA().idx.value;
-        int l_v_b_i = l_e.vertexB().idx.value;
     }
 
     // Measure length of "unembedded" edges
@@ -85,6 +83,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     {
         Candidate c;
         c.lower_bound = 0.0;
+        c.priority = 0.0;
         c.insertions = {};
         q.push(c);
     }
@@ -96,8 +95,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         const double gap = 1.0 - c.lower_bound / global_upper_bound;
 
         if (gap <= max_gap) {
-            // Done. All following candidates will only have higher lower bounds.
-            break;
+            continue;
         }
 
         // Reconstruct the embedding associated with this embedding sequence
@@ -205,6 +203,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                     Candidate new_c = c;
                     new_c.insertions.push_back(l_m.edges()[l_e]);
                     new_c.lower_bound = calc_cost_lower_bound(em, new_c.insertions);
+                    new_c.priority = new_c.lower_bound / new_c.insertions.size();
 
                     const double new_gap = 1.0 - new_c.lower_bound / global_upper_bound;
                     if (new_gap > max_gap) {
