@@ -16,11 +16,64 @@ struct Candidate
     }
 };
 
+double calc_cost_lower_bound(const Embedding& _em, const std::vector<pm::edge_handle>& _insertions)
+{
+    // Copy embedding
+    const pm::Mesh& l_m = *_em.l_m;
+    const pm::Mesh& t_m = *_em.t_m->m;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+
+    pm::unique_ptr<pm::Mesh> t_m_copy = t_m.copy();
+    auto t_pos_copy = t_m_copy->vertices().make_attribute<tg::pos3>();
+    t_pos_copy.copy_from(t_pos);
+
+    RefinableMesh rm = make_refinable_mesh(*t_m_copy, t_pos_copy);
+    Embedding em = make_embedding(l_m, rm);
+
+    for (const auto& l_v : l_m.vertices()) {
+        em.l_matching_vertex[l_v.idx] = (*t_m_copy)[_em.l_matching_vertex[l_v.idx].idx];
+    }
+    for (const auto& t_v : t_m_copy->vertices()) {
+        em.t_matching_vertex[t_v.idx] = l_m[_em.t_matching_vertex[t_v.idx].idx];
+    }
+
+    // Measure length of "embedded" edges
+    std::set<pm::edge_index> embedded_l_e;
+    double embedded_cost = 0.0;
+    for (const auto& l_e : _insertions) {
+        auto l_he = l_e.halfedgeA();
+        auto path = find_shortest_path(em, l_he);
+
+        embedded_cost += path_length(em, path);
+
+        embed_path(em, l_he, path);
+        embedded_l_e.insert(l_e);
+
+        int l_v_a_i = l_e.vertexA().idx.value;
+        int l_v_b_i = l_e.vertexB().idx.value;
+    }
+
+    // Measure length of "unembedded" edges
+    double unembedded_cost = 0.0;
+    for (const auto& l_e : l_m.edges()) {
+        if (embedded_l_e.count(l_e)) {
+            continue;
+        }
+
+        const auto& path = find_shortest_path(em, l_e);
+        unembedded_cost += path_length(em, path);
+    }
+
+    return embedded_cost + unembedded_cost;
+}
+
 void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 {
     const pm::Mesh& l_m = *_em.l_m;
     const pm::Mesh& t_m = *_em.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+
+    const double max_gap = 0.03;
 
     double global_upper_bound = std::numeric_limits<double>::infinity();
     // TODO: Run heuristic algorithm to find a tighter initial upper bound
@@ -37,11 +90,12 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     }
 
     while (!q.empty()) {
-        std::cout << q.size() << " items in q" << std::endl;
         auto c = q.top();
         q.pop();
 
-        if (c.lower_bound >= global_upper_bound) {
+        const double gap = 1.0 - c.lower_bound / global_upper_bound;
+
+        if (gap <= max_gap) {
             // Done. All following candidates will only have higher lower bounds.
             break;
         }
@@ -93,6 +147,9 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 continue;
             }
 
+            const auto& path = find_shortest_path(em, l_e);
+            unembedded_cost += path_length(em, path);
+
             const int l_v_a_id = l_e.vertexA().idx.value;
             const int l_v_b_id = l_e.vertexB().idx.value;
             if (l_v_components.equivalent(l_v_a_id, l_v_b_id)) {
@@ -100,7 +157,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 continue;
             }
 
-            const auto& path = find_shortest_path(em, l_e);
             for (int i = 1; i < path.size() - 1; ++i) {
                 const auto& el = path[i];
                 for (const auto& l_e_other : covered[el]) {
@@ -109,7 +165,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 }
                 covered[el].insert(l_e);
             }
-            unembedded_cost += path_length(em, path);
         }
 
         std::set<pm::edge_index> non_conflicting_l_e;
@@ -121,25 +176,40 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         const double cost_lower_bound = embedded_cost + unembedded_cost;
 
+        std::cout << "|Embd|: " << c.insertions.size();
+        std::cout << "    ";
+        std::cout << "|Conf|: " << conflicting_l_e.size();
+        std::cout << "    ";
+        std::cout << "|Ncnf|: " << non_conflicting_l_e.size();
+        std::cout << "    ";
+        std::cout << "LB: " << cost_lower_bound;
+        std::cout << "    ";
+        std::cout << "UB: " << global_upper_bound;
+        std::cout << "    ";
+        std::cout << "gap: " << gap;
+        std::cout << "    ";
+        std::cout << "|Q|: " << q.size();
+        std::cout << std::endl;
+
         // Completed layout?
         if (conflicting_l_e.empty()) {
-            std::cout << "Completed layout" << std::endl;
-
             if (cost_lower_bound < global_upper_bound) {
                 global_upper_bound = cost_lower_bound;
-                std::cout << "New upper bound: " << global_upper_bound << std::endl;
                 best_solution = c;
             }
         }
         else {
-            std::cout << "LB: " << cost_lower_bound << ",   UB: " << global_upper_bound << std::endl;
             // Add children to the queue
             if (cost_lower_bound < global_upper_bound) {
                 for (const auto& l_e : conflicting_l_e) {
                     Candidate new_c = c;
                     new_c.insertions.push_back(l_m.edges()[l_e]);
-                    new_c.lower_bound = cost_lower_bound; // TODO: this could be made tighter
-                    q.push(new_c);
+                    new_c.lower_bound = calc_cost_lower_bound(em, new_c.insertions);
+
+                    const double new_gap = 1.0 - new_c.lower_bound / global_upper_bound;
+                    if (new_gap > max_gap) {
+                        q.push(new_c);
+                    }
                 }
             }
         }
