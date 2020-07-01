@@ -1,5 +1,6 @@
 #include <glow-extras/glfw/GlfwContext.hh>
 #include <glow-extras/viewer/view.hh>
+#include <glow-extras/timing/CpuTimer.hh>
 
 #include <imgui/imgui.h>
 
@@ -76,6 +77,8 @@ int main()
     // Store the vertex embedding positions
     set_matching_vertices(em, matching_vertices);
 
+    glow::timing::CpuTimer timer;
+
     branch_and_bound(em);
 
     // Run the algorithm in "Consistent Mesh Parameterizations" (Praun et al. 2001) to find embeddings for the layout edges
@@ -87,6 +90,7 @@ int main()
     */
 
     // Visualize the result
+    std::cout << "Optimization took " << timer.elapsedSeconds() << " s" << std::endl;
     std::cout << "Total embedding length: " << total_embedded_path_length(em) << std::endl;
     view_embedding(em);
 }
