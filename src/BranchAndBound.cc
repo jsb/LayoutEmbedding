@@ -18,7 +18,16 @@ struct Candidate
     }
 };
 
-double calc_cost_lower_bound(const Embedding& _em, const std::vector<pm::edge_handle>& _insertions)
+struct EmbeddingStats
+{
+    double embedded_cost;
+    double unembedded_cost;
+    int num_embedded;
+    int num_conflicting;
+    int num_non_conflicting;
+};
+
+EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm::edge_handle>& _insertions)
 {
     // Copy embedding
     const pm::Mesh& l_m = *_em.l_m;
@@ -52,6 +61,9 @@ double calc_cost_lower_bound(const Embedding& _em, const std::vector<pm::edge_ha
         embedded_l_e.insert(l_e);
     }
 
+    std::set<pm::edge_index> conflicting_l_e;
+    VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
+
     // Measure length of "unembedded" edges
     double unembedded_cost = 0.0;
     for (const auto& l_e : l_m.edges()) {
@@ -66,9 +78,28 @@ double calc_cost_lower_bound(const Embedding& _em, const std::vector<pm::edge_ha
         else {
             unembedded_cost += path_length(em, path);
         }
+
+        // Mark conflicting edges
+        for (int i = 1; i < path.size() - 1; ++i) {
+            const auto& el = path[i];
+            for (const auto& l_e_other : covered[el]) {
+                conflicting_l_e.insert(l_e);
+                conflicting_l_e.insert(l_e_other);
+            }
+            covered[el].insert(l_e);
+        }
     }
 
-    return embedded_cost + unembedded_cost;
+    EmbeddingStats result;
+
+    result.num_embedded = _insertions.size();
+    result.num_conflicting = conflicting_l_e.size();
+    result.num_non_conflicting = l_m.edges().size() - result.num_embedded - result.num_conflicting;
+
+    result.embedded_cost = embedded_cost;
+    result.unembedded_cost = unembedded_cost;
+
+    return result;
 }
 
 void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
@@ -77,7 +108,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     const pm::Mesh& t_m = *_em.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
 
-    const double max_gap = 0.03;
+    const double max_gap = 0.10;
 
     double global_upper_bound = std::numeric_limits<double>::infinity();
     // TODO: Run heuristic algorithm to find a tighter initial upper bound
@@ -98,10 +129,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         auto c = q.top();
         q.pop();
 
-        // TODO: It's not correct to use the lower_bound of the current element as a termination criterion here.
-        // We should look at the lowest lower_bound of all elements in the queue.
         const double gap = 1.0 - c.lower_bound / global_upper_bound;
-
         if (gap <= max_gap) {
             continue;
         }
@@ -192,7 +220,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         std::cout << "    ";
         std::cout << "UB: " << global_upper_bound;
         std::cout << "    ";
-        std::cout << "gap: " << gap;
+        std::cout << "gap: " << (gap * 100.0) << " %";
         std::cout << "    ";
         std::cout << "|Q|: " << q.size();
         std::cout << std::endl;
@@ -210,8 +238,12 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 for (const auto& l_e : conflicting_l_e) {
                     Candidate new_c = c;
                     new_c.insertions.push_back(l_m.edges()[l_e]);
-                    new_c.lower_bound = calc_cost_lower_bound(em, new_c.insertions);
-                    new_c.priority = new_c.lower_bound / new_c.insertions.size();
+
+                    EmbeddingStats stats = calc_cost_lower_bound(em, new_c.insertions);
+                    new_c.lower_bound = stats.embedded_cost + stats.unembedded_cost;
+
+                    //new_c.priority = new_c.lower_bound / new_c.insertions.size();
+                    new_c.priority = new_c.lower_bound * stats.num_conflicting;
 
                     const double new_gap = 1.0 - new_c.lower_bound / global_upper_bound;
                     if (new_gap > max_gap) {
