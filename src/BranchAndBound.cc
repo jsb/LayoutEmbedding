@@ -98,6 +98,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         auto c = q.top();
         q.pop();
 
+        // TODO: It's not correct to use the lower_bound of the current element as a termination criterion here.
+        // We should look at the lowest lower_bound of all elements in the queue.
         const double gap = 1.0 - c.lower_bound / global_upper_bound;
 
         if (gap <= max_gap) {
@@ -239,90 +241,4 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             l_e_embedded.insert(l_e);
         }
     }
-}
-
-void branch_and_bound2(Embedding& _em, const BranchAndBoundSettings& _settings)
-{
-    const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m->m;
-
-    std::set<pm::edge_index> embedded_l_e;
-
-    UnionFind l_v_components(l_m.vertices().size());
-
-    int num_decisions = 0;
-    double num_potential_leaves = 1;
-
-    std::srand(time(nullptr));
-
-    while (true) {
-        // Indices of layout edges that run over a certain element
-        VertexEdgeAttribute<std::set<pm::edge_index>> covered(t_m);
-
-        std::set<pm::edge_index> conflicting_l_e;
-
-        std::set<pm::edge_index> blocked_l_e;
-
-        for (const auto& l_e : l_m.edges()) {
-            if (embedded_l_e.count(l_e)) {
-                continue;
-            }
-
-            const int l_v_a_id = l_e.vertexA().idx.value;
-            const int l_v_b_id = l_e.vertexB().idx.value;
-            if (l_v_components.equivalent(l_v_a_id, l_v_b_id)) {
-                blocked_l_e.insert(l_e);
-                continue;
-            }
-
-            const auto& path = find_shortest_path(_em, l_e);
-            for (int i = 1; i < path.size() - 1; ++i) {
-                const auto& el = path[i];
-                for (const auto& l_e_other : covered[el]) {
-                    conflicting_l_e.insert(l_e);
-                    conflicting_l_e.insert(l_e_other);
-                }
-                covered[el].insert(l_e);
-            }
-        }
-
-        std::set<pm::edge_index> non_conflicting_l_e;
-        for (const auto& l_e : l_m.edges()) {
-            if (!embedded_l_e.count(l_e) &&!blocked_l_e.count(l_e) && !conflicting_l_e.count(l_e)) {
-                non_conflicting_l_e.insert(l_e);
-            }
-        }
-
-        std::cout << "Embedded:        " << embedded_l_e.size() << std::endl;
-        std::cout << "Blocked:         " << blocked_l_e.size() << std::endl;
-        std::cout << "Conflicting:     " << conflicting_l_e.size() << std::endl;
-        std::cout << "Non-conflicting: " << non_conflicting_l_e.size() << std::endl;
-
-        if (conflicting_l_e.empty()) {
-            break;
-        }
-
-        num_potential_leaves *= conflicting_l_e.size();
-
-        const int i = std::rand() % conflicting_l_e.size();
-        const auto l_e_new_idx = *std::next(conflicting_l_e.cbegin(), i);
-        const auto l_e_new = l_m.edges()[l_e_new_idx];
-        std::cout << "--------------------------------------------------" << std::endl;
-        std::cout << "Inserting edge " << l_e_new.idx.value << std::endl;
-        std::cout << "--------------------------------------------------" << std::endl;
-        const auto l_he_new = l_e_new.halfedgeA();
-        const auto path = find_shortest_path(_em, l_he_new);
-        embed_path(_em, l_he_new, path);
-        embedded_l_e.insert(l_e_new);
-
-        const int l_v_a_id = l_e_new.vertexA().idx.value;
-        const int l_v_b_id = l_e_new.vertexB().idx.value;
-        l_v_components.merge(l_v_a_id, l_v_b_id);
-
-        ++num_decisions;
-    }
-
-    std::cout << "--------------------------------------------------" << std::endl;
-    std::cout << num_potential_leaves << " potential leaves" << std::endl;
-    std::cout << num_decisions << " decisions" << std::endl;
 }
