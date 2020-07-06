@@ -1,5 +1,6 @@
 #include "Praun2001.hh"
 
+#include <Assert.hh>
 #include <IGLMesh.hh>
 #include <UnionFind.hh>
 
@@ -26,8 +27,8 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
     // 0 otherwise.
     pm::vertex_attribute<int> t_indicator(t_m);
 
-    assert(std::holds_alternative<pm::vertex_handle>(_path.front()));
-    assert(std::holds_alternative<pm::vertex_handle>(_path.back()));
+    LE_ASSERT(std::holds_alternative<pm::vertex_handle>(_path.front()));
+    LE_ASSERT(std::holds_alternative<pm::vertex_handle>(_path.back()));
 
     struct VirtualHalfedge
     {
@@ -60,11 +61,11 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
                 else if (e.halfedgeB().next().vertex_to() == from) {
                     he = e.halfedgeB();
                 }
-                assert(he.is_valid());
+                LE_ASSERT(he.is_valid());
                 const auto v_new = he.vertex_from();
                 return {from, v_new};
             }
-            assert(false);
+            LE_ASSERT(false);
             return {};
         }
     };
@@ -100,8 +101,8 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
             }
         }
         else if (std::holds_alternative<pm::edge_handle>(el)) {
-            assert(i > 0);
-            assert(i < _path.size() - 1);
+            LE_ASSERT(i > 0);
+            LE_ASSERT(i < _path.size() - 1);
 
             const auto& e = std::get<pm::edge_handle>(el);
             auto he = pm::halfedge_handle::invalid;
@@ -127,7 +128,7 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
                 }
             }
 
-            assert(he.is_valid());
+            LE_ASSERT(he.is_valid());
             t_indicator[he.vertex_from()] = -1; // "Left"
             t_indicator[he.vertex_to()] = 1; // "Right"
         }

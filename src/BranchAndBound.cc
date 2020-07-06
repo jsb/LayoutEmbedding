@@ -1,5 +1,6 @@
 #include "BranchAndBound.hh"
 
+#include <Assert.hh>
 #include <UnionFind.hh>
 
 #include <iostream> // DEBUG
@@ -59,7 +60,12 @@ double calc_cost_lower_bound(const Embedding& _em, const std::vector<pm::edge_ha
         }
 
         const auto& path = find_shortest_path(em, l_e);
-        unembedded_cost += path_length(em, path);
+        if (path.empty()) {
+            unembedded_cost = std::numeric_limits<double>::infinity();
+        }
+        else {
+            unembedded_cost += path_length(em, path);
+        }
     }
 
     return embedded_cost + unembedded_cost;
@@ -129,7 +135,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
             int l_v_a_i = l_e.vertexA().idx.value;
             int l_v_b_i = l_e.vertexB().idx.value;
-            assert(!l_v_components.equivalent(l_v_a_i, l_v_b_i));
+            LE_ASSERT(!l_v_components.equivalent(l_v_a_i, l_v_b_i));
             l_v_components.merge(l_v_a_i, l_v_b_i);
         }
 

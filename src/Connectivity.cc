@@ -1,17 +1,17 @@
 #include "Connectivity.hh"
 
-#include <cassert>
+#include <Assert.hh>
 
 bool adjacent(const pm::vertex_handle& _v0, const pm::vertex_handle& _v1)
 {
-    assert(_v0.mesh == _v1.mesh);
+    LE_ASSERT(_v0.mesh == _v1.mesh);
     const auto he = pm::halfedge_from_to(_v0, _v1);
     return he.is_valid();
 }
 
 bool incident(const pm::vertex_handle& _v, const pm::edge_handle& _e)
 {
-    assert(_v.mesh == _e.mesh);
+    LE_ASSERT(_v.mesh == _e.mesh);
     return (_e.vertexA() == _v) || (_e.vertexB() == _v);
 }
 

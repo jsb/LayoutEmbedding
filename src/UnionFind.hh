@@ -1,6 +1,7 @@
 #pragma once
 
-#include <cassert>
+#include <Assert.hh>
+
 #include <numeric>
 #include <vector>
 
@@ -30,8 +31,8 @@ struct UnionFind
 
     int representative(int x)
     {
-        assert(x >= 0);
-        assert(x < parents.size());
+        LE_ASSERT(x >= 0);
+        LE_ASSERT(x < parents.size());
         if (x != parents[x]) {
             parents[x] = representative(parents[x]);
         }
@@ -40,8 +41,8 @@ struct UnionFind
 
     int representative(int x) const
     {
-        assert(x >= 0);
-        assert(x < parents.size());
+        LE_ASSERT(x >= 0);
+        LE_ASSERT(x < parents.size());
         if (x == parents[x]) {
             return x;
         }

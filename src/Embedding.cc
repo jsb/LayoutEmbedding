@@ -1,8 +1,8 @@
 #include "Embedding.hh"
 
+#include <Assert.hh>
 #include <Connectivity.hh>
 
-#include <cassert>
 #include <queue>
 
 Embedding make_embedding(const pm::Mesh& _l_m, RefinableMesh& _rm)
@@ -22,7 +22,7 @@ void set_matching_vertices(Embedding& _e, const MatchingVertices& _mvs)
 
 pm::halfedge_handle get_embedded_target_halfedge(const Embedding& _e, const pm::halfedge_handle& _l_he)
 {
-    assert(_l_he.mesh == _e.l_m);
+    LE_ASSERT(_l_he.mesh == _e.l_m);
     const auto& l_v = _l_he.vertex_from();
     const auto& t_v = _e.l_matching_vertex[l_v];
     if (t_v.is_valid()) {
@@ -37,7 +37,7 @@ pm::halfedge_handle get_embedded_target_halfedge(const Embedding& _e, const pm::
 
 polymesh::halfedge_handle get_embeddable_sector(const Embedding& _e, const pm::halfedge_handle& _l_he)
 {
-    assert(_l_he.mesh == _e.l_m);
+    LE_ASSERT(_l_he.mesh == _e.l_m);
 
     // TODO: maybe we can skip this check!
     if (get_embedded_target_halfedge(_e, _l_he).is_valid()) {
@@ -65,8 +65,8 @@ polymesh::halfedge_handle get_embeddable_sector(const Embedding& _e, const pm::h
         // No layout halfedge is embedded at this vertex yet.
         const auto& l_v = _l_he.vertex_from();
         const auto& t_v = _e.l_matching_vertex[l_v];
-        assert(t_v.is_valid());
-        assert(t_v.mesh == _e.t_m->m);
+        LE_ASSERT(t_v.is_valid());
+        LE_ASSERT(t_v.mesh == _e.t_m->m);
         return t_v.any_outgoing_halfedge();
     }
 }
@@ -105,8 +105,8 @@ VertexEdgePath find_shortest_path(
     const pm::Mesh& t_m = *_e.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_e.t_m->pos;
 
-    assert(_t_h_sector_start.mesh == &t_m);
-    assert(_t_h_sector_end.mesh == &t_m);
+    LE_ASSERT(_t_h_sector_start.mesh == &t_m);
+    LE_ASSERT(_t_h_sector_end.mesh == &t_m);
 
     VertexEdgeAttribute<VertexEdgeElement> prev(t_m);
     VertexEdgeAttribute<Distance> distance(t_m);
@@ -292,7 +292,7 @@ VertexEdgePath find_shortest_path(
 
 VertexEdgePath find_shortest_path(const Embedding& _e, const pm::halfedge_handle& _l_he)
 {
-    assert(_l_he.mesh == _e.l_m);
+    LE_ASSERT(_l_he.mesh == _e.l_m);
     const auto l_he_end = _l_he.opposite();
     const auto t_he_sector_start = get_embeddable_sector(_e, _l_he);
     const auto t_he_sector_end = get_embeddable_sector(_e, l_he_end);
@@ -301,20 +301,20 @@ VertexEdgePath find_shortest_path(const Embedding& _e, const pm::halfedge_handle
 
 VertexEdgePath find_shortest_path(const Embedding& _e, const pm::edge_handle& _l_e)
 {
-    assert(_l_e.mesh == _e.l_m);
+    LE_ASSERT(_l_e.mesh == _e.l_m);
     const auto l_he = _l_e.halfedgeA();
     return find_shortest_path(_e, l_he);
 }
 
 bool is_blocked(const Embedding& _e, const pm::edge_handle& _t_e)
 {
-    assert(_t_e.mesh == _e.t_m->m);
+    LE_ASSERT(_t_e.mesh == _e.t_m->m);
     return _e.t_matching_halfedge[_t_e.halfedgeA()].is_valid() || _e.t_matching_halfedge[_t_e.halfedgeB()].is_valid();
 }
 
 bool is_blocked(const Embedding& _e, const pm::vertex_handle& _t_v)
 {
-    assert(_t_v.mesh == _e.t_m->m);
+    LE_ASSERT(_t_v.mesh == _e.t_m->m);
     for (const auto& t_e : _t_v.edges()) {
         if (is_blocked(_e, t_e)) {
             return true;
@@ -332,7 +332,7 @@ bool is_blocked(const Embedding& _e, const VertexEdgeElement& _t_el)
         return is_blocked(_e, *e);
     }
     else {
-        assert(false);
+        LE_ASSERT(false);
     }
 }
 
@@ -357,13 +357,13 @@ tg::pos3 element_pos(const Embedding& _e, const VertexEdgeElement& _t_el)
         return element_pos(_e, *e);
     }
     else {
-        assert(false);
+        LE_ASSERT(false);
     }
 }
 
 void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdgePath& _path)
 {
-    assert(!get_embedded_target_halfedge(_e, _l_h).is_valid());
+    LE_ASSERT(!get_embedded_target_halfedge(_e, _l_h).is_valid());
 
     auto& t_m = *_e.t_m->m;
 
@@ -384,7 +384,7 @@ void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdge
     for (int i = 0; i < vertex_path.size() - 1; ++i) {
         int j = i + 1;
         const auto t_he = pm::halfedge_from_to(vertex_path[i], vertex_path[j]);
-        assert(t_he.is_valid());
+        LE_ASSERT(t_he.is_valid());
         _e.t_matching_halfedge[t_he] = _l_h;
         _e.t_matching_halfedge[t_he.opposite()] = _l_h.opposite();
     }
@@ -392,6 +392,7 @@ void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdge
 
 double path_length(const Embedding& _e, const VertexEdgePath& _path)
 {
+    LE_ASSERT(_path.size() >= 2);
     double length = 0.0;
     for (int i = 0; i < _path.size() - 1; ++i) {
         const auto& el_i = _path[i];
@@ -415,7 +416,7 @@ bool is_embedded(const Embedding& _e, const pm::edge_handle& _l_e)
 
 std::vector<pm::vertex_handle> get_embedded_path(const Embedding& _e, const pm::halfedge_handle& _l_he)
 {
-    assert(is_embedded(_e, _l_he));
+    LE_ASSERT(is_embedded(_e, _l_he));
     std::vector<pm::vertex_handle> result;
     const auto t_v_start = get_embedded_target_halfedge(_e, _l_he).vertex_from();
     const auto t_v_end = _e.l_matching_vertex[_l_he.vertex_to()];
@@ -440,8 +441,8 @@ void unembed_path(Embedding& _e, const polymesh::halfedge_handle& _l_h)
         const auto& t_v_i = path[i];
         const auto& t_v_j = path[i+1];
         const auto& t_he = pm::halfedge_from_to(t_v_i, t_v_j);
-        assert(_e.t_matching_halfedge[t_he] == _l_h);
-        assert(_e.t_matching_halfedge[t_he.opposite()] == _l_h.opposite());
+        LE_ASSERT(_e.t_matching_halfedge[t_he] == _l_h);
+        LE_ASSERT(_e.t_matching_halfedge[t_he.opposite()] == _l_h.opposite());
         _e.t_matching_halfedge[t_he] = pm::halfedge_handle::invalid;
         _e.t_matching_halfedge[t_he.opposite()] = pm::halfedge_handle::invalid;
     }
@@ -454,9 +455,9 @@ void unembed_path(Embedding& _e, const polymesh::edge_handle& _l_e)
 
 double embedded_path_length(const Embedding& _e, const polymesh::halfedge_handle& _l_he)
 {
-    assert(is_embedded(_e, _l_he));
+    LE_ASSERT(is_embedded(_e, _l_he));
     const auto& path = get_embedded_path(_e, _l_he);
-    assert(path.size() >= 2);
+    LE_ASSERT(path.size() >= 2);
     double length = 0.0;
     const auto& t_pos = *_e.t_m->pos;
     for (int i = 0; i < path.size() - 1; ++i) {
