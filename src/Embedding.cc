@@ -38,11 +38,7 @@ pm::halfedge_handle get_embedded_target_halfedge(const Embedding& _e, const pm::
 polymesh::halfedge_handle get_embeddable_sector(const Embedding& _e, const pm::halfedge_handle& _l_he)
 {
     LE_ASSERT(_l_he.mesh == _e.l_m);
-
-    // TODO: maybe we can skip this check!
-    if (get_embedded_target_halfedge(_e, _l_he).is_valid()) {
-        return pm::halfedge_handle::invalid;
-    }
+    LE_ASSERT(get_embedded_target_halfedge(_e, _l_he).is_invalid());
 
     // Find the first layout halfedge that
     // - comes after _l_h in a clockwise sense,
@@ -364,6 +360,7 @@ tg::pos3 element_pos(const Embedding& _e, const VertexEdgeElement& _t_el)
 void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdgePath& _path)
 {
     LE_ASSERT(!get_embedded_target_halfedge(_e, _l_h).is_valid());
+    LE_ASSERT(_path.size() >= 2);
 
     auto& t_m = *_e.t_m->m;
 

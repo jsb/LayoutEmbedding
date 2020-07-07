@@ -1,15 +1,14 @@
 #include "BranchAndBound.hh"
 
 #include <Assert.hh>
-#include <UnionFind.hh>
 
 #include <iostream> // DEBUG
 #include <queue>
 
 struct Candidate
 {
-    double lower_bound;
-    double priority;
+    double lower_bound = std::numeric_limits<double>::infinity();
+    double priority = 0.0;
     std::vector<pm::edge_handle> insertions;
 
     bool operator<(const Candidate& _rhs) const
@@ -77,16 +76,17 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
         }
         else {
             unembedded_cost += path_length(em, path);
-        }
 
-        // Mark conflicting edges
-        for (int i = 1; i < path.size() - 1; ++i) {
-            const auto& el = path[i];
-            for (const auto& l_e_other : covered[el]) {
-                conflicting_l_e.insert(l_e);
-                conflicting_l_e.insert(l_e_other);
+            // Mark conflicting edges
+            LE_ASSERT(path.size() >= 2);
+            for (int i = 1; i < path.size() - 1; ++i) {
+                const auto& el = path[i];
+                for (const auto& l_e_other : covered[el]) {
+                    conflicting_l_e.insert(l_e);
+                    conflicting_l_e.insert(l_e_other);
+                }
+                covered[el].insert(l_e);
             }
-            covered[el].insert(l_e);
         }
     }
 
@@ -108,7 +108,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     const pm::Mesh& t_m = *_em.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
 
-    const double max_gap = 0.10;
+    const double max_gap = 0.01;
 
     double global_upper_bound = std::numeric_limits<double>::infinity();
     // TODO: Run heuristic algorithm to find a tighter initial upper bound
@@ -151,29 +151,28 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         // Embed the "already embedded" edges
         std::set<pm::edge_index> embedded_l_e;
-        UnionFind l_v_components(l_m.vertices().size());
 
         double embedded_cost = 0.0;
         for (const auto& l_e : c.insertions) {
             auto l_he = l_e.halfedgeA();
             auto path = find_shortest_path(em, l_he);
+            if (path.empty()) {
+                embedded_cost = std::numeric_limits<double>::infinity();
+                break;
+            }
 
             embedded_cost += path_length(em, path);
 
             embed_path(em, l_he, path);
             embedded_l_e.insert(l_e);
-
-            int l_v_a_i = l_e.vertexA().idx.value;
-            int l_v_b_i = l_e.vertexB().idx.value;
-            LE_ASSERT(!l_v_components.equivalent(l_v_a_i, l_v_b_i));
-            l_v_components.merge(l_v_a_i, l_v_b_i);
+        }
+        if (std::isinf(embedded_cost)) {
+            continue;
         }
 
-        // Classify the candidate paths: conflicting, blocked, nonconflicting
+        // Classify the candidate paths: conflicting and nonconflicting
         VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
-
         std::set<pm::edge_index> conflicting_l_e;
-        std::set<pm::edge_index> blocked_l_e;
 
         double unembedded_cost = 0.0;
         for (const auto& l_e : l_m.edges()) {
@@ -184,13 +183,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             const auto& path = find_shortest_path(em, l_e);
             unembedded_cost += path_length(em, path);
 
-            const int l_v_a_id = l_e.vertexA().idx.value;
-            const int l_v_b_id = l_e.vertexB().idx.value;
-            if (l_v_components.equivalent(l_v_a_id, l_v_b_id)) {
-                blocked_l_e.insert(l_e);
-                continue;
-            }
-
+            LE_ASSERT(path.size() >= 2);
             for (int i = 1; i < path.size() - 1; ++i) {
                 const auto& el = path[i];
                 for (const auto& l_e_other : covered[el]) {
@@ -201,9 +194,12 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             }
         }
 
+        // TODO: Additional conflicts may arise from inconsistent ordering of outgoing edges around vertices.
+        // Detect those here.
+
         std::set<pm::edge_index> non_conflicting_l_e;
         for (const auto& l_e : l_m.edges()) {
-            if (!embedded_l_e.count(l_e) &&!blocked_l_e.count(l_e) && !conflicting_l_e.count(l_e)) {
+            if (!embedded_l_e.count(l_e) && !conflicting_l_e.count(l_e)) {
                 non_conflicting_l_e.insert(l_e);
             }
         }
