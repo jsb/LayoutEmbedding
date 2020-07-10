@@ -7,6 +7,65 @@
 
 void view_embedding(const Embedding& _em)
 {
+    auto g = gv::grid();
+    {
+        view_layout(_em);
+    }
+    {
+        view_target(_em);
+    }
+}
+
+void view_layout(const Embedding& _em)
+{
+    const pm::Mesh& l_m = *_em.l_m;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+
+    const float node_size = 5.0f;
+    const float arc_width = 2.0f;
+
+    HaltonColorGenerator color_generator;
+    pm::vertex_attribute<tg::color3> l_v_color(l_m);
+    pm::edge_attribute<tg::color3> l_e_color(l_m);
+    for (const auto& l_v : l_m.vertices()) {
+        l_v_color[l_v] = color_generator.generate_next_color();
+    }
+    for (const auto& l_e : l_m.edges()) {
+        l_e_color[l_e] = color_generator.generate_next_color();
+    }
+
+    auto v = gv::view();
+
+    // Mesh
+    pm::vertex_attribute<tg::pos3> l_pos(l_m);
+    for (const auto& l_v : l_m.vertices()) {
+        l_pos[l_v] = t_pos[_em.l_matching_vertex[l_v]];
+    }
+    gv::view(l_pos);
+
+    // Wireframe
+    //gv::view(gv::lines(l_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
+
+    // Embedded layout edges
+    for (const auto& l_e : l_m.edges()) {
+        if (is_embedded(_em, l_e)) {
+            const auto& p_i = l_pos[l_e.vertexA()];
+            const auto& p_j = l_pos[l_e.vertexB()];
+            const auto& color = l_e_color[l_e];
+            gv::view(glow::viewer::lines(tg::segment3{p_i, p_j}).line_width_px(arc_width), color);
+        }
+    }
+
+    // Layout nodes
+    for (const auto& l_v : l_m.vertices()) {
+        const auto& p = l_pos[l_v];
+        const auto& color = l_v_color[l_v];
+        gv::view(glow::viewer::points(p).point_size_px(node_size), color);
+    }
+}
+
+void view_target(const Embedding& _em)
+{
     const pm::Mesh& l_m = *_em.l_m;
     const pm::Mesh& t_m = *_em.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
@@ -24,67 +83,33 @@ void view_embedding(const Embedding& _em)
         l_e_color[l_e] = color_generator.generate_next_color();
     }
 
-    auto g = gv::grid();
+    auto v = gv::view();
 
-    // Layout mesh view
-    {
-        pm::vertex_attribute<tg::pos3> l_pos(l_m);
-        for (const auto& l_v : l_m.vertices()) {
-            l_pos[l_v] = t_pos[_em.l_matching_vertex[l_v]];
-        }
+    // Mesh
+    gv::view(t_pos);
 
-        // Mesh
-        auto v = gv::view(l_pos, gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
+    // Wireframe
+    //gv::view(gv::lines(t_pos).line_width_px(1.0f), tg::color3{0.9f, 0.9f, 0.9f});
 
-        // Wireframe
-        //gv::view(gv::lines(l_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
-
-        // Embedded layout edges
-        for (const auto& l_e : l_m.edges()) {
-            if (is_embedded(_em, l_e)) {
-                const auto& p_i = l_pos[l_e.vertexA()];
-                const auto& p_j = l_pos[l_e.vertexB()];
-                const auto& color = l_e_color[l_e];
-                gv::view(glow::viewer::lines(tg::segment3{p_i, p_j}).line_width_px(arc_width), color);
+    // Embedded layout edges
+    for (const auto& l_e : l_m.edges()) {
+        if (is_embedded(_em, l_e)) {
+            std::vector<pm::vertex_handle> t_v_path = get_embedded_path(_em, l_e.halfedgeA());
+            std::vector<tg::segment3> path_segments;
+            for (int i = 0; i < t_v_path.size() - 1; ++i) {
+                const auto& p_i = t_pos[t_v_path[i]];
+                const auto& p_j = t_pos[t_v_path[i+1]];
+                path_segments.push_back({p_i, p_j});
             }
-        }
-
-        // Layout nodes
-        for (const auto& l_v : l_m.vertices()) {
-            const auto& p = l_pos[l_v];
-            const auto& color = l_v_color[l_v];
-            gv::view(glow::viewer::points(p).point_size_px(node_size), color);
+            const auto& color = l_e_color[l_e];
+            gv::view(glow::viewer::lines(path_segments).line_width_px(arc_width), color);
         }
     }
 
-    // Target mesh view
-    {
-        // Mesh
-        auto v = gv::view(t_pos, gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
-
-        // Wireframe
-        //gv::view(gv::lines(t_pos).line_width_px(1.0f), tg::color3{0.9f, 0.9f, 0.9f});
-
-        // Embedded layout edges
-        for (const auto& l_e : l_m.edges()) {
-            if (is_embedded(_em, l_e)) {
-                std::vector<pm::vertex_handle> t_v_path = get_embedded_path(_em, l_e.halfedgeA());
-                std::vector<tg::segment3> path_segments;
-                for (int i = 0; i < t_v_path.size() - 1; ++i) {
-                    const auto& p_i = t_pos[t_v_path[i]];
-                    const auto& p_j = t_pos[t_v_path[i+1]];
-                    path_segments.push_back({p_i, p_j});
-                }
-                const auto& color = l_e_color[l_e];
-                gv::view(glow::viewer::lines(path_segments).line_width_px(arc_width), color);
-            }
-        }
-
-        // Layout nodes
-        for (const auto& l_v : l_m.vertices()) {
-            const auto& p = t_pos[_em.l_matching_vertex[l_v]];
-            const auto& color = l_v_color[l_v];
-            gv::view(glow::viewer::points(p).point_size_px(node_size), color);
-        }
+    // Layout nodes
+    for (const auto& l_v : l_m.vertices()) {
+        const auto& p = t_pos[_em.l_matching_vertex[l_v]];
+        const auto& color = l_v_color[l_v];
+        gv::view(glow::viewer::points(p).point_size_px(node_size), color);
     }
 }

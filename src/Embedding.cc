@@ -25,11 +25,10 @@ pm::halfedge_handle get_embedded_target_halfedge(const Embedding& _e, const pm::
     LE_ASSERT(_l_he.mesh == _e.l_m);
     const auto& l_v = _l_he.vertex_from();
     const auto& t_v = _e.l_matching_vertex[l_v];
-    if (t_v.is_valid()) {
-        for (const auto t_h : t_v.outgoing_halfedges()) {
-            if (_e.t_matching_halfedge[t_h] == _l_he) {
-                return t_h;
-            }
+    LE_ASSERT(t_v.is_valid());
+    for (const auto t_h : t_v.outgoing_halfedges()) {
+        if (_e.t_matching_halfedge[t_h] == _l_he) {
+            return t_h;
         }
     }
     return pm::halfedge_handle::invalid;
@@ -289,6 +288,7 @@ VertexEdgePath find_shortest_path(
 VertexEdgePath find_shortest_path(const Embedding& _e, const pm::halfedge_handle& _l_he)
 {
     LE_ASSERT(_l_he.mesh == _e.l_m);
+    LE_ASSERT(!is_embedded(_e, _l_he));
     const auto l_he_end = _l_he.opposite();
     const auto t_he_sector_start = get_embeddable_sector(_e, _l_he);
     const auto t_he_sector_end = get_embeddable_sector(_e, l_he_end);

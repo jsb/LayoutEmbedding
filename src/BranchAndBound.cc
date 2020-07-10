@@ -171,8 +171,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         }
 
         // Classify the candidate paths: conflicting and nonconflicting
-        VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
         std::set<pm::edge_index> conflicting_l_e;
+        VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
 
         double unembedded_cost = 0.0;
         for (const auto& l_e : l_m.edges()) {
@@ -194,8 +194,19 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             }
         }
 
-        // TODO: Additional conflicts may arise from inconsistent ordering of outgoing edges around vertices.
-        // Detect those here.
+        // Additional conflicts may arise from inconsistent ordering of outgoing edges around vertices.
+        for (const auto& l_he : l_m.halfedges()) {
+            const auto& l_e = l_he.edge();
+            if (embedded_l_e.count(l_e) || conflicting_l_e.count(l_e)) {
+                continue;
+            }
+
+            // Halfedges coming before and after the current halfedge l_he (in CCW order)
+            const auto& l_he_before = l_he.opposite().next();
+            const auto& l_he_after = l_he.prev().opposite();
+
+            // TODO: use values from covered[el] to find out the embeddings of the surrounding edges.
+        }
 
         std::set<pm::edge_index> non_conflicting_l_e;
         for (const auto& l_e : l_m.edges()) {
