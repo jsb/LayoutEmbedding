@@ -18,7 +18,12 @@
 #include <Visualization/RWTHColors.hh>
 
 #include <algorithm>
+#include <fstream>
 #include <numeric>
+
+bool screenshots_only = true;
+auto screenshot_size = tg::ivec2(1920, 1080);
+int screenshot_samples = 64;
 
 namespace  {
 
@@ -31,14 +36,125 @@ struct TestCase
     int jitter_vertices = 0;
 };
 
+void run_test_case(const TestCase& tc)
+{
+    const std::vector<std::string> algorithms = {"greedy", "bnb"};
+
+    const std::string stats_filename = "stats_" + tc.name + ".csv";
+    {
+        // CSV header
+        std::ofstream f{stats_filename};
+        f << "layout_edges,algorithm,runtime,score" << std::endl;
+    }
+
+    for (const auto& algorithm : algorithms) {
+        // Load Target Mesh from file
+        pm::Mesh t_m;
+        auto t_pos = t_m.vertices().make_attribute<tg::pos3>();
+        load(tc.target_mesh_filename, t_m, t_pos);
+
+        // Load Layout Mesh from file
+        pm::Mesh l_m;
+        auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
+        load(tc.layout_mesh_filename, l_m, l_pos);
+
+        // Generate Layout from the Target Mesh by incremental decimation
+        /*
+        pm::Mesh l_m;
+        auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
+        make_layout_by_decimation(t_pos, 28, l_m, l_pos);
+        */
+
+        std::cout << "Layout Mesh: ";
+        std::cout << l_m.vertices().count() << " vertices, ";
+        std::cout << l_m.edges().count() << " edges, ";
+        std::cout << l_m.faces().count() << " faces. ";
+        std::cout << "χ = " << pm::euler_characteristic(l_m) << std::endl;
+
+        std::cout << "Target Mesh: ";
+        std::cout << t_m.vertices().count() << " vertices, ";
+        std::cout << t_m.edges().count() << " edges, ";
+        std::cout << t_m.faces().count() << " faces. ";
+        std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
+
+        // Wrap the Target Mesh into a RefinableMesh to enable adaptive refinement
+        RefinableMesh rm = make_refinable_mesh(t_m, t_pos);
+
+        // Create the embedding linking the Layout and the (wrapped) Target Mesh
+        Embedding em = make_embedding(l_m, rm);
+
+        // Find embedding positions for the Layout vertices on the Target Mesh (nearest neighbors)
+        auto matching_vertices = find_matching_vertices(l_pos, t_pos);
+
+        // Optional: Perturb the target positions on the surface of the Target Mesh a bit
+        jitter_matching_vertices(l_m, t_m, matching_vertices, tc.jitter_vertices);
+
+        // Store the vertex embedding positions
+        set_matching_vertices(em, matching_vertices);
+
+        glow::timing::CpuTimer timer;
+
+        if (algorithm == "bnb") {
+            branch_and_bound(em);
+        }
+        else if (algorithm == "greedy") {
+            // Run the algorithm in "Consistent Mesh Parameterizations" (Praun et al. 2001) to find embeddings for the layout edges
+            Praun2001Settings settings;
+            settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
+            settings.use_swirl_detection = true;
+            praun2001(em, settings);
+        }
+        else {
+            LE_ASSERT(false);
+        }
+
+        // Stats
+        const double optimization_time = timer.elapsedSeconds();
+        const double score = total_embedded_path_length(em);
+        std::cout << "Optimization took " << optimization_time << " s" << std::endl;
+        std::cout << "Total embedding length: " << score << std::endl;
+        {
+            std::ofstream f{stats_filename, std::ofstream::app};
+            f << l_m.edges().count() << ",";
+            f << algorithm << ",";
+            f << optimization_time << ",";
+            f << score << std::endl;
+        }
+
+        // Visualization
+        auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
+
+        // Optional config: Camera position
+        auto cfg_view = tc.view ? gv::config(tc.view.value()) : gv::config();
+
+        if (screenshots_only) {
+            {
+                const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_layout.png";
+                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename));
+                view_layout(em);
+            }
+            {
+                const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_target.png";
+                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename));
+                view_target(em);
+            }
+        }
+        else {
+            auto g = gv::grid();
+            {
+                view_layout(em);
+            }
+            {
+                view_target(em);
+            }
+        }
+    }
+}
+
 }
 
 int main()
 {
-    bool screenshots_only = true;
-    auto screenshot_size = tg::ivec2(1920, 1080);
-    int screenshot_samples = 64;
-
     glow::glfw::GlfwContext ctx;
     const std::string data_path = LAYOUT_EMBEDDING_DATA_PATH;
 
@@ -95,100 +211,6 @@ int main()
     }
 
     for (const auto& tc : test_cases) {
-        const std::vector<std::string> algorithms = {"greedy", "bnb"};
-
-        for (const auto& algorithm : algorithms) {
-            // Load Target Mesh from file
-            pm::Mesh t_m;
-            auto t_pos = t_m.vertices().make_attribute<tg::pos3>();
-            load(tc.target_mesh_filename, t_m, t_pos);
-
-            // Load Layout Mesh from file
-            pm::Mesh l_m;
-            auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-            load(tc.layout_mesh_filename, l_m, l_pos);
-
-            // Generate Layout from the Target Mesh by incremental decimation
-            /*
-            pm::Mesh l_m;
-            auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-            make_layout_by_decimation(t_pos, 28, l_m, l_pos);
-            */
-
-            std::cout << "Layout Mesh: ";
-            std::cout << l_m.vertices().count() << " vertices, ";
-            std::cout << l_m.edges().count() << " edges, ";
-            std::cout << l_m.faces().count() << " faces. ";
-            std::cout << "χ = " << pm::euler_characteristic(l_m) << std::endl;
-
-            std::cout << "Target Mesh: ";
-            std::cout << t_m.vertices().count() << " vertices, ";
-            std::cout << t_m.edges().count() << " edges, ";
-            std::cout << t_m.faces().count() << " faces. ";
-            std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
-
-            // Wrap the Target Mesh into a RefinableMesh to enable adaptive refinement
-            RefinableMesh rm = make_refinable_mesh(t_m, t_pos);
-
-            // Create the embedding linking the Layout and the (wrapped) Target Mesh
-            Embedding em = make_embedding(l_m, rm);
-
-            // Find embedding positions for the Layout vertices on the Target Mesh (nearest neighbors)
-            auto matching_vertices = find_matching_vertices(l_pos, t_pos);
-
-            // Optional: Perturb the target positions on the surface of the Target Mesh a bit
-            jitter_matching_vertices(l_m, t_m, matching_vertices, tc.jitter_vertices);
-
-            // Store the vertex embedding positions
-            set_matching_vertices(em, matching_vertices);
-
-            glow::timing::CpuTimer timer;
-
-            if (algorithm == "bnb") {
-                branch_and_bound(em);
-            }
-            else if (algorithm == "greedy") {
-                // Run the algorithm in "Consistent Mesh Parameterizations" (Praun et al. 2001) to find embeddings for the layout edges
-                Praun2001Settings settings;
-                settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
-                settings.use_swirl_detection = true;
-                praun2001(em, settings);
-            }
-            else {
-                LE_ASSERT(false);
-            }
-
-            // Print stats
-            std::cout << "Optimization took " << timer.elapsedSeconds() << " s" << std::endl;
-            std::cout << "Total embedding length: " << total_embedded_path_length(em) << std::endl;
-
-            // Visualization
-            auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
-
-            // Optional config: Camera position
-            auto cfg_view = tc.view ? gv::config(tc.view.value()) : gv::config();
-
-            if (screenshots_only) {
-                {
-                    const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_layout.png";
-                    auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename));
-                    view_layout(em);
-                }
-                {
-                    const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_target.png";
-                    auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename));
-                    view_target(em);
-                }
-            }
-            else {
-                auto g = gv::grid();
-                {
-                    view_layout(em);
-                }
-                {
-                    view_target(em);
-                }
-            }
-        }
+        run_test_case(tc);
     }
 }
