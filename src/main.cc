@@ -21,9 +21,9 @@
 #include <fstream>
 #include <numeric>
 
-bool screenshots_only = true;
-auto screenshot_size = tg::ivec2(1920, 1080);
-int screenshot_samples = 64;
+static bool screenshots_only = true;
+static auto screenshot_size = tg::ivec2(1920, 1080);
+static int screenshot_samples = 64;
 
 namespace  {
 
@@ -160,7 +160,7 @@ int main()
 
     std::vector<TestCase> test_cases;
 
-    if (true) {
+    {
         TestCase tc;
         tc.name = "horse_easy";
         tc.target_mesh_filename = data_path + "/models/target-meshes/horse_8078.obj";
@@ -168,7 +168,7 @@ int main()
         tc.view = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
         test_cases.push_back(tc);
     }
-    if (false) {
+    {
         TestCase tc;
         tc.name = "horse_challenge";
         tc.target_mesh_filename = data_path + "/models/target-meshes/horse_8078.obj";
@@ -177,7 +177,7 @@ int main()
         tc.view = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
         test_cases.push_back(tc);
     }
-    if (false) {
+    {
         TestCase tc;
         tc.name = "cuboid_twisted_inset";
         tc.target_mesh_filename = data_path + "/models/target-meshes/cuboid_16998.obj";
@@ -185,7 +185,7 @@ int main()
         tc.view = glow::viewer::camera_transform(tg::pos3(1.370662f, 0.989902f, -3.568955f), tg::pos3(0.976111f, 0.692004f, -2.699711f));
         test_cases.push_back(tc);
     }
-    if (false) {
+    {
         TestCase tc;
         tc.name = "hand_plain_easy";
         tc.target_mesh_filename = data_path + "/models/target-meshes/hand_plain.obj";
@@ -193,7 +193,7 @@ int main()
         tc.view = glow::viewer::camera_transform(tg::pos3(-0.703929f, 0.441189f, 0.791465f), tg::pos3(-0.449164f, 0.256721f, 0.506854f));
         test_cases.push_back(tc);
     }
-    if (false) {
+    {
         TestCase tc;
         tc.name = "hand_plain_challenge";
         tc.target_mesh_filename = data_path + "/models/target-meshes/hand_plain.obj";
@@ -201,7 +201,7 @@ int main()
         tc.view = glow::viewer::camera_transform(tg::pos3(-0.703929f, 0.441189f, 0.791465f), tg::pos3(-0.449164f, 0.256721f, 0.506854f));
         test_cases.push_back(tc);
     }
-    if (false) {
+    {
         TestCase tc;
         tc.name = "spot";
         tc.target_mesh_filename = data_path + "/models/target-meshes/spot_triangulated.obj";
