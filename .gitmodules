@@ -22,6 +22,4 @@
 [submodule "extern/libigl"]
 	path = extern/libigl
 	url = https://github.com/libigl/libigl
-[submodule "data/models"]
-	path = data/models
-	url = https://www.graphics.rwth-aachen.de:9000/born/layout-embedding-models.git
+
