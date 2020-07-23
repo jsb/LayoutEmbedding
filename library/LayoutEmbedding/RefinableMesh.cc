@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+namespace LayoutEmbedding {
+
 RefinableMesh make_refinable_mesh(pm::Mesh& _m, pm::vertex_attribute<tg::pos3>& _pos)
 {
     RefinableMesh result{&_m, _m.copy(), &_pos, _m, _m, _m};
@@ -205,4 +207,6 @@ void cleanup(RefinableMesh& _rm)
     while (retry);
 
     std::cout << passes << " passes, " << collapses << " collapses." << std::endl;
+}
+
 }

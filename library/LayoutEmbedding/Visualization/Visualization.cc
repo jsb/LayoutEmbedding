@@ -5,6 +5,8 @@
 
 #include <glow-extras/viewer/view.hh>
 
+namespace LayoutEmbedding {
+
 void view_embedding(const Embedding& _em)
 {
     auto g = gv::grid();
@@ -112,4 +114,6 @@ void view_target(const Embedding& _em)
         const auto& color = l_v_color[l_v];
         gv::view(glow::viewer::points(p).point_size_px(node_size), color, gv::no_shading);
     }
+}
+
 }

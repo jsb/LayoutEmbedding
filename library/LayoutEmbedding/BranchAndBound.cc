@@ -6,6 +6,8 @@
 #include <iostream> // DEBUG
 #include <queue>
 
+namespace LayoutEmbedding {
+
 struct Candidate
 {
     double lower_bound = std::numeric_limits<double>::infinity();
@@ -309,4 +311,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             l_e_embedded.insert(l_e);
         }
     }
+}
+
 }

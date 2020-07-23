@@ -5,6 +5,8 @@
 #include <numeric>
 #include <vector>
 
+namespace LayoutEmbedding {
+
 struct UnionFind
 {
     explicit UnionFind(int num_items = 0)
@@ -70,3 +72,5 @@ struct UnionFind
 
     std::vector<int> parents;
 };
+
+}

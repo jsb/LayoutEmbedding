@@ -2,6 +2,8 @@
 
 #include <typed-geometry/types/color.hh>
 
+namespace LayoutEmbedding {
+
 // Full-saturation colors
 static constexpr tg::color3 RWTH_BLUE         (  0.0f / 255.0f,  84.0f / 255.0f, 159.0f / 255.0f);
 static constexpr tg::color3 RWTH_BLACK        (  0.0f / 255.0f,   0.0f / 255.0f,   0.0f / 255.0f);
@@ -86,3 +88,5 @@ static constexpr tg::color3 RWTH_LILAC_75     (155.0f / 255.0f, 145.0f / 255.0f,
 static constexpr tg::color3 RWTH_LILAC_50     (188.0f / 255.0f, 181.0f / 255.0f, 215.0f / 255.0f);
 static constexpr tg::color3 RWTH_LILAC_25     (222.0f / 255.0f, 218.0f / 255.0f, 235.0f / 255.0f);
 static constexpr tg::color3 RWTH_LILAC_10     (242.0f / 255.0f, 240.0f / 255.0f, 247.0f / 255.0f);
+
+}

@@ -21,6 +21,8 @@
 #include <fstream>
 #include <numeric>
 
+using namespace LayoutEmbedding;
+
 static bool screenshots_only = true;
 static auto screenshot_size = tg::ivec2(1920, 1080);
 static int screenshot_samples = 64;

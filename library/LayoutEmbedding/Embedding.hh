@@ -4,6 +4,8 @@
 #include <LayoutEmbedding/VertexEdgePath.hh>
 #include <LayoutEmbedding/RefinableMesh.hh>
 
+namespace LayoutEmbedding {
+
 struct Embedding
 {
     const pm::Mesh* l_m;      // Layout mesh
@@ -61,3 +63,5 @@ double path_length(const Embedding& _e, const VertexEdgePath& _path);
 double embedded_path_length(const Embedding& _e, const pm::halfedge_handle& _l_he);
 double embedded_path_length(const Embedding& _e, const pm::edge_handle& _l_e);
 double total_embedded_path_length(const Embedding& _e);
+
+}

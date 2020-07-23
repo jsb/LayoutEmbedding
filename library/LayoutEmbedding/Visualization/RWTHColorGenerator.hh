@@ -3,6 +3,8 @@
 #include <typed-geometry/types/color.hh>
 #include <vector>
 
+namespace LayoutEmbedding {
+
 class RWTHColorGenerator
 {
 public:
@@ -12,3 +14,5 @@ public:
 private:
     int current_index = 0;
 };
+
+}

@@ -2,6 +2,8 @@
 
 #include <glow-extras/colors/color.hh> // For from_hsl
 
+namespace LayoutEmbedding {
+
 HaltonColorGenerator::HaltonColorGenerator(int _skip)
 {
     // skip first 250 sequence elements to lower discrepancy even further.
@@ -57,4 +59,6 @@ std::vector<tg::color3> HaltonColorGenerator::generate_next_colors(int _n)
     for (int i = 0; i < _n; ++i)
         colors[i] = generate_next_color();
     return colors;
+}
+
 }

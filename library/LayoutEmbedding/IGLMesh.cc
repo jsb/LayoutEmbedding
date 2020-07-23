@@ -2,6 +2,8 @@
 
 #include <LayoutEmbedding/Assert.hh>
 
+namespace LayoutEmbedding {
+
 IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
 {
     const pm::Mesh& m = _pos.mesh();
@@ -31,4 +33,6 @@ IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
     }
 
     return result;
+}
+
 }

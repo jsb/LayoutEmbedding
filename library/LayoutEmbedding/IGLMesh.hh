@@ -5,6 +5,8 @@
 
 #include <Eigen/Dense>
 
+namespace LayoutEmbedding {
+
 struct IGLMesh
 {
     Eigen::MatrixXd V;
@@ -12,3 +14,5 @@ struct IGLMesh
 };
 
 IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos);
+
+}

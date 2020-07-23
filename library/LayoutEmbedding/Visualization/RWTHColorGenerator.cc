@@ -4,6 +4,7 @@
 
 namespace
 {
+using namespace LayoutEmbedding;
 
 static tg::color3 rwth_color_cycle[] =
 {
@@ -68,6 +69,8 @@ constexpr int array_size(const T (&array)[N]) noexcept
 
 }
 
+namespace LayoutEmbedding {
+
 tg::color3 RWTHColorGenerator::generate_next_color()
 {
     tg::color3 result = rwth_color_cycle[current_index];
@@ -82,4 +85,6 @@ std::vector<tg::color3> RWTHColorGenerator::generate_next_colors(int _n)
     for (int i = 0; i < _n; ++i)
         colors[i] = generate_next_color();
     return colors;
+}
+
 }

@@ -2,6 +2,8 @@
 
 #include <LayoutEmbedding/Embedding.hh>
 
+namespace LayoutEmbedding {
+
 struct Praun2001Settings
 {
     enum class InsertionOrder
@@ -15,3 +17,5 @@ struct Praun2001Settings
 };
 
 void praun2001(Embedding& _em, const Praun2001Settings& _settings = Praun2001Settings());
+
+}

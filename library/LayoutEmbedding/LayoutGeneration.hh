@@ -3,6 +3,8 @@
 #include <polymesh/pm.hh>
 #include <typed-geometry/tg.hh>
 
+namespace LayoutEmbedding {
+
 void make_layout_by_decimation(
     const pm::vertex_attribute<tg::pos3>& _t_pos,
     int _n_vertices,
@@ -23,3 +25,5 @@ void jitter_matching_vertices(
     MatchingVertices& _mv,
     int _steps = 1
 );
+
+}

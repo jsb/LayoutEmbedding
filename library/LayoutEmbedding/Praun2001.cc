@@ -9,6 +9,8 @@
 #include <set>
 #include <queue>
 
+namespace LayoutEmbedding {
+
 /// Heuristic detection of paths that might introduce swirls after insertion.
 /// For each vertex around the face that is incident to _l_he on the left,
 /// a shortest path towards the given path is traced.
@@ -296,4 +298,6 @@ void praun2001(Embedding& _em, const Praun2001Settings& _settings)
         l_is_embedded[best_l_e] = true;
         ++l_num_embedded_edges;
     }
+}
+
 }

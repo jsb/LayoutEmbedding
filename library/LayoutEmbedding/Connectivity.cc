@@ -2,6 +2,8 @@
 
 #include <LayoutEmbedding/Assert.hh>
 
+namespace LayoutEmbedding {
+
 bool adjacent(const pm::vertex_handle& _v0, const pm::vertex_handle& _v1)
 {
     LE_ASSERT(_v0.mesh == _v1.mesh);
@@ -28,4 +30,6 @@ pm::vertex_handle opposite_vertex(const pm::halfedge_handle& _he)
     else {
         return _he.next().vertex_to();
     }
+}
+
 }

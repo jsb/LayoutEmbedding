@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <initializer_list>
 
+namespace LayoutEmbedding {
+
 // A helper object to detect whether a sequence of occurences is compatible with a certain cyclic order:
 
 template <typename T>
@@ -46,3 +48,5 @@ private:
     std::initializer_list<T> items;
     int current_index = -1;
 };
+
+}

@@ -2,6 +2,8 @@
 
 #include <LayoutEmbedding/CyclicOrderSentinel.hh>
 
+using namespace LayoutEmbedding;
+
 TEST(CyclicOrderSentinelTest, TripletPositive1)
 {
     CyclicOrderSentinel<int> cos({1, 2, 3});

@@ -5,6 +5,8 @@
 
 #include <queue>
 
+namespace LayoutEmbedding {
+
 Embedding make_embedding(const pm::Mesh& _l_m, RefinableMesh& _rm)
 {
     return {&_l_m, &_rm, _l_m, *_rm.m, *_rm.m};
@@ -481,4 +483,6 @@ double total_embedded_path_length(const Embedding& _e)
         }
     }
     return total_length;
+}
+
 }

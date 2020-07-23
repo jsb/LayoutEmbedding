@@ -5,6 +5,8 @@
 #include <typed-geometry/types/color.hh>
 #include <vector>
 
+namespace LayoutEmbedding {
+
 class HaltonColorGenerator
 {
 public:
@@ -22,3 +24,5 @@ private:
     int bases[3]; // Halton prime bases
     double inverse_bases[3];
 };
+
+}

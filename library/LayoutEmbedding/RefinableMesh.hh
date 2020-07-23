@@ -6,6 +6,8 @@
 
 #include <variant>
 
+namespace LayoutEmbedding {
+
 using Ancestor = std::variant<
     pm::vertex_handle,
     pm::edge_handle,
@@ -32,3 +34,5 @@ bool is_original_vertex(const RefinableMesh& _rm, const pm::vertex_handle& _v);
 bool on_common_ancestor_edge(const RefinableMesh& _rm, const pm::vertex_handle& _v0, const pm::vertex_handle& _v1);
 
 void cleanup(RefinableMesh& _rm);
+
+}

@@ -5,6 +5,8 @@
 #include <variant>
 #include <vector>
 
+namespace LayoutEmbedding {
+
 using VertexEdgeElement = std::variant<
     pm::vertex_handle,
     pm::edge_handle
@@ -34,3 +36,5 @@ struct VertexEdgeAttribute
         }
     }
 };
+
+}
