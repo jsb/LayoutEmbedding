@@ -1,6 +1,7 @@
 #include "BranchAndBound.hh"
 
 #include <Assert.hh>
+#include <CyclicOrderSentinel.hh>
 
 #include <iostream> // DEBUG
 #include <queue>
@@ -108,8 +109,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     const pm::Mesh& t_m = *_em.t_m->m;
     const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
 
-    const double max_gap = 0.01;
-
     double global_upper_bound = std::numeric_limits<double>::infinity();
     // TODO: Run heuristic algorithm to find a tighter initial upper bound
 
@@ -130,7 +129,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         q.pop();
 
         const double gap = 1.0 - c.lower_bound / global_upper_bound;
-        if (gap <= max_gap) {
+        if (gap <= _settings.optimality_gap) {
             continue;
         }
 
@@ -151,6 +150,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         // Embed the "already embedded" edges
         std::set<pm::edge_index> embedded_l_e;
+        VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
 
         double embedded_cost = 0.0;
         for (const auto& l_e : c.insertions) {
@@ -165,6 +165,15 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
             embed_path(em, l_he, path);
             embedded_l_e.insert(l_e);
+
+            // Mark the outgoing target mesh edge as "covered"
+            // (this will later be used to detect conflicting paths based on cyclic order around vertices)
+            const auto& t_he = get_embedded_target_halfedge(em, l_he);
+            const auto& t_he_opp = get_embedded_target_halfedge(em, l_he.opposite());
+            LE_ASSERT(t_he.is_valid());
+            LE_ASSERT(t_he_opp.is_valid());
+            covered[t_he.edge()].insert(l_e);
+            covered[t_he_opp.edge()].insert(l_e);
         }
         if (std::isinf(embedded_cost)) {
             continue;
@@ -172,7 +181,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         // Classify the candidate paths: conflicting and nonconflicting
         std::set<pm::edge_index> conflicting_l_e;
-        VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
 
         double unembedded_cost = 0.0;
         for (const auto& l_e : l_m.edges()) {
@@ -201,11 +209,30 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 continue;
             }
 
-            // Halfedges coming before and after the current halfedge l_he (in CCW order)
+            // Layout edges at the same vertex coming before and after the current edge l_e (in CCW order)
             const auto& l_he_before = l_he.opposite().next();
             const auto& l_he_after = l_he.prev().opposite();
+            const auto& l_e_before = l_he_before.edge();
+            const auto& l_e_after = l_he_after.edge();
+
+            CyclicOrderSentinel<pm::edge_index> sentinel({l_e_before, l_e, l_e_after});
 
             // TODO: use values from covered[el] to find out the embeddings of the surrounding edges.
+            const auto& l_v = l_he.vertex_from();
+            const auto& t_v = em.l_matching_vertex[l_v];
+            for (const auto& t_he : t_v.outgoing_halfedges()) {
+                const auto& covering_l_es = covered[t_he.edge()];
+                for (const auto& c_l_e : covering_l_es) {
+                    sentinel.encounter(c_l_e);
+                }
+                if (!sentinel.valid()) {
+                    break;
+                }
+            }
+            if (!sentinel.valid()) {
+                conflicting_l_e.insert(l_e);
+                break;
+            }
         }
 
         std::set<pm::edge_index> non_conflicting_l_e;
@@ -214,6 +241,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 non_conflicting_l_e.insert(l_e);
             }
         }
+
+        LE_ASSERT(embedded_l_e.size() + conflicting_l_e.size() + non_conflicting_l_e.size() == l_m.edges().size());
 
         const double cost_lower_bound = embedded_cost + unembedded_cost;
 
@@ -253,7 +282,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                     new_c.priority = new_c.lower_bound * stats.num_conflicting;
 
                     const double new_gap = 1.0 - new_c.lower_bound / global_upper_bound;
-                    if (new_gap > max_gap) {
+                    if (new_gap > _settings.optimality_gap) {
                         q.push(new_c);
                     }
                 }
