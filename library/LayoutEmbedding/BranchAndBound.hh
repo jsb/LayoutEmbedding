@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Embedding.hh>
+#include <LayoutEmbedding/Embedding.hh>
 
 struct BranchAndBoundSettings
 {

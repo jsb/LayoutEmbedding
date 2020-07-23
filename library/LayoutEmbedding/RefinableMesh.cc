@@ -1,6 +1,6 @@
 #include "RefinableMesh.hh"
 
-#include <Connectivity.hh>
+#include <LayoutEmbedding/Connectivity.hh>
 
 #include <iostream>
 

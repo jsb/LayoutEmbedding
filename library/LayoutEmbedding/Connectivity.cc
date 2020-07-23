@@ -1,6 +1,6 @@
 #include "Connectivity.hh"
 
-#include <Assert.hh>
+#include <LayoutEmbedding/Assert.hh>
 
 bool adjacent(const pm::vertex_handle& _v0, const pm::vertex_handle& _v1)
 {

@@ -1,8 +1,8 @@
 #include "Praun2001.hh"
 
-#include <Assert.hh>
-#include <IGLMesh.hh>
-#include <UnionFind.hh>
+#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/IGLMesh.hh>
+#include <LayoutEmbedding/UnionFind.hh>
 
 #include <igl/harmonic.h>
 #include <Eigen/Dense>

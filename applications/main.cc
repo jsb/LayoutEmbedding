@@ -8,14 +8,14 @@
 
 #include <typed-geometry/tg.hh>
 
-#include <Assert.hh>
-#include <BranchAndBound.hh>
-#include <Embedding.hh>
-#include <LayoutGeneration.hh>
-#include <Praun2001.hh>
-#include <RefinableMesh.hh>
-#include <Visualization/Visualization.hh>
-#include <Visualization/RWTHColors.hh>
+#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/BranchAndBound.hh>
+#include <LayoutEmbedding/Embedding.hh>
+#include <LayoutEmbedding/LayoutGeneration.hh>
+#include <LayoutEmbedding/Praun2001.hh>
+#include <LayoutEmbedding/RefinableMesh.hh>
+#include <LayoutEmbedding/Visualization/Visualization.hh>
+#include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
 #include <algorithm>
 #include <fstream>
@@ -156,7 +156,7 @@ void run_test_case(const TestCase& tc)
 int main()
 {
     glow::glfw::GlfwContext ctx;
-    const std::string data_path = LAYOUT_EMBEDDING_DATA_PATH;
+    const std::string data_path = LE_DATA_PATH;
 
     std::vector<TestCase> test_cases;
 

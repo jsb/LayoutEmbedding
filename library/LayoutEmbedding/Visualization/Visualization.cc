@@ -1,7 +1,7 @@
 #include "Visualization.hh"
 
-#include "HaltonColorGenerator.hh"
-#include "RWTHColors.hh"
+#include <LayoutEmbedding/Visualization/HaltonColorGenerator.hh>
+#include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
 #include <glow-extras/viewer/view.hh>
 

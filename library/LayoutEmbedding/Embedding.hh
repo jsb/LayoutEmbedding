@@ -1,8 +1,8 @@
 #pragma once
 
-#include <LayoutGeneration.hh>
-#include <VertexEdgePath.hh>
-#include <RefinableMesh.hh>
+#include <LayoutEmbedding/LayoutGeneration.hh>
+#include <LayoutEmbedding/VertexEdgePath.hh>
+#include <LayoutEmbedding/RefinableMesh.hh>
 
 struct Embedding
 {

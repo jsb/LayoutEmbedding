@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Assert.hh>
+#include <LayoutEmbedding/Assert.hh>
 
 #include <numeric>
 #include <vector>

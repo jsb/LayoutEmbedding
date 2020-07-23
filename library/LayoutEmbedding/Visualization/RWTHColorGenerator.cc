@@ -1,6 +1,6 @@
 #include "RWTHColorGenerator.hh"
 
-#include "RWTHColors.hh"
+#include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
 namespace
 {

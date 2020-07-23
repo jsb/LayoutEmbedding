@@ -1,7 +1,7 @@
 #include "Embedding.hh"
 
-#include <Assert.hh>
-#include <Connectivity.hh>
+#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/Connectivity.hh>
 
 #include <queue>
 

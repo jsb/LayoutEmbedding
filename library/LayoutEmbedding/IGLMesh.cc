@@ -1,6 +1,6 @@
 #include "IGLMesh.hh"
 
-#include <Assert.hh>
+#include <LayoutEmbedding/Assert.hh>
 
 IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
 {

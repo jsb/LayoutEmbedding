@@ -1,7 +1,7 @@
 #include "BranchAndBound.hh"
 
-#include <Assert.hh>
-#include <CyclicOrderSentinel.hh>
+#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/CyclicOrderSentinel.hh>
 
 #include <iostream> // DEBUG
 #include <queue>
