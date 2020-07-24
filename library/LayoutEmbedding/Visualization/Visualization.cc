@@ -54,7 +54,7 @@ void view_layout(const Embedding& _em)
             const auto& p_i = l_pos[l_e.vertexA()];
             const auto& p_j = l_pos[l_e.vertexB()];
             const auto& color = l_e_color[l_e];
-            gv::view(glow::viewer::lines(tg::segment3{p_i, p_j}).line_width_px(arc_width), color, gv::no_shading);
+            gv::view(gv::lines(tg::segment3{p_i, p_j}).line_width_px(arc_width), color, gv::no_shading);
         }
     }
 
@@ -62,7 +62,7 @@ void view_layout(const Embedding& _em)
     for (const auto& l_v : l_m.vertices()) {
         const auto& p = l_pos[l_v];
         const auto& color = l_v_color[l_v];
-        gv::view(glow::viewer::points(p).point_size_px(node_size), color, gv::no_shading);
+        gv::view(gv::points(p).point_size_px(node_size), color, gv::no_shading);
     }
 }
 
