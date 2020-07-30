@@ -195,7 +195,7 @@ VertexEdgePath find_shortest_path(
             const auto& p = element_pos(_e, el);
             Distance new_dist = c.dist;
             new_dist.geodesic += tg::distance(p, c.p);
-            if (std::holds_alternative<pm::edge_handle>(el)) {
+            if (is_edge(el)) {
                 new_dist.edges_crossed += 1;
             }
 
@@ -220,8 +220,8 @@ VertexEdgePath find_shortest_path(
         const auto& el = u.el;
 
         // Expand vertex neighborhood
-        if (std::holds_alternative<pm::vertex_handle>(el)) {
-            const auto& t_v = std::get<pm::vertex_handle>(u.el);
+        if (is_vertex(el)) {
+            const auto& t_v = vertex(u.el);
 
             if (t_v == t_v_end) {
                 break;
@@ -242,8 +242,8 @@ VertexEdgePath find_shortest_path(
             }
         }
         // Expand edge midpoint neighborhood
-        else if (std::holds_alternative<pm::edge_handle>(el)) {
-            const auto& t_e = std::get<pm::edge_handle>(el);
+        else if (is_edge(el)) {
+            const auto& t_e = edge(el);
 
             const auto& t_he = t_e.halfedgeA();
             const auto& t_he_opp = t_e.halfedgeB();
@@ -369,8 +369,8 @@ void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdge
     // Turn the VertexEdgePath into a pure vertex path by splitting edges
     std::vector<pm::vertex_handle> vertex_path;
     for (const auto& el : _path) {
-        if (std::holds_alternative<pm::edge_handle>(el)) {
-            const auto& t_e = std::get<pm::edge_handle>(el);
+        if (is_edge(el)) {
+            const auto& t_e = edge(el);
             const auto t_v_new = split_edge(*_e.t_m, t_e);
             vertex_path.push_back(t_v_new);
         }
