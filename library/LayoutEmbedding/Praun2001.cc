@@ -16,7 +16,7 @@ namespace LayoutEmbedding {
 /// a shortest path towards the given path is traced.
 /// If the path is hit from the right side (instead of the left), this is considered a potential swirl.
 /// Returns true if a potential swirl is detected, false otherwise.
-bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const VertexEdgePath& _path)
+bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const VirtualPath& _path)
 {
     const pm::Mesh& l_m = *_em.l_m;
     const pm::Mesh& t_m = *_em.t_m->m;
@@ -29,13 +29,13 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
     // 0 otherwise.
     pm::vertex_attribute<int> t_indicator(t_m);
 
-    LE_ASSERT(std::holds_alternative<pm::vertex_handle>(_path.front()));
-    LE_ASSERT(std::holds_alternative<pm::vertex_handle>(_path.back()));
+    LE_ASSERT(is_real_vertex(_path.front()));
+    LE_ASSERT(is_real_vertex(_path.back()));
 
     struct VirtualHalfedge
     {
         pm::vertex_handle from;
-        VertexEdgeElement to;
+        VirtualVertex to;
 
         bool operator==(const VirtualHalfedge& _rhs) const
         {
@@ -49,13 +49,13 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
 
         VirtualHalfedge rotated_cw() const
         {
-            if (std::holds_alternative<pm::vertex_handle>(to)) {
-                const auto he = pm::halfedge_from_to(from, std::get<pm::vertex_handle>(to));
+            if (is_real_vertex(to)) {
+                const auto he = pm::halfedge_from_to(from, real_vertex(to));
                 const auto e_new = he.opposite().prev().edge();
                 return {from, e_new};
             }
-            else if (std::holds_alternative<pm::edge_handle>(to)) {
-                const auto e = std::get<pm::edge_handle>(to);
+            else if (is_real_edge(to)) {
+                const auto e = real_edge(to);
                 auto he = pm::halfedge_handle::invalid;
                 if (e.halfedgeA().next().vertex_to() == from) {
                     he = e.halfedgeA();
@@ -73,45 +73,45 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
     };
 
     for (int i = 0; i < _path.size(); ++i) {
-        const auto& el = _path[i];
+        const auto& vv = _path[i];
 
-        if (std::holds_alternative<pm::vertex_handle>(el)) {
+        if (is_real_vertex(vv)) {
             if (i > 0 && i < _path.size() - 1) {
                 const auto& el_prev = _path[i - 1];
                 const auto& el_next = _path[i + 1];
-                const auto& v = std::get<pm::vertex_handle>(el);
+                const auto& v = real_vertex(vv);
 
                 VirtualHalfedge vh_start{v, el_prev};
                 VirtualHalfedge vh_end{v, el_next};
 
                 auto vh_current = vh_start.rotated_cw();
                 while (vh_current != vh_end) {
-                    if (std::holds_alternative<pm::vertex_handle>(vh_current.to)) {
-                        const auto& v_to = std::get<pm::vertex_handle>(vh_current.to);
+                    if (is_real_vertex(vh_current.to)) {
+                        const auto& v_to = real_vertex(vh_current.to);
                         t_indicator[v_to] = -1; // "Left"
                     }
                     vh_current = vh_current.rotated_cw();
                 }
 
                 while (vh_current != vh_start) {
-                    if (std::holds_alternative<pm::vertex_handle>(vh_current.to)) {
-                        const auto& v_to = std::get<pm::vertex_handle>(vh_current.to);
+                    if (is_real_vertex(vh_current.to)) {
+                        const auto& v_to = real_vertex(vh_current.to);
                         t_indicator[v_to] = 1; // "Right"
                     }
                     vh_current = vh_current.rotated_cw();
                 }
             }
         }
-        else if (std::holds_alternative<pm::edge_handle>(el)) {
+        else if (is_real_edge(vv)) {
             LE_ASSERT(i > 0);
             LE_ASSERT(i < _path.size() - 1);
 
-            const auto& e = std::get<pm::edge_handle>(el);
+            const auto& e = real_edge(vv);
             auto he = pm::halfedge_handle::invalid;
 
-            const auto& el_next = _path[i + 1];
-            if (std::holds_alternative<pm::vertex_handle>(el_next)) {
-                const auto& v_next = std::get<pm::vertex_handle>(el_next);
+            const auto& vv_next = _path[i + 1];
+            if (is_real_vertex(vv_next)) {
+                const auto& v_next = real_vertex(vv_next);
                 if (e.halfedgeA().next().vertex_to() == v_next) {
                     he = e.halfedgeA();
                 }
@@ -119,8 +119,8 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
                     he = e.halfedgeB();
                 }
             }
-            else if (std::holds_alternative<pm::edge_handle>(el_next)) {
-                const auto& e_next = std::get<pm::edge_handle>(el_next);
+            else if (is_real_edge(vv_next)) {
+                const auto& e_next = real_edge(vv_next);
 
                 if ((e.halfedgeA().face() == e_next.halfedgeA().face()) || (e.halfedgeA().face() == e_next.halfedgeB().face())) {
                     he = e.halfedgeA();
@@ -189,7 +189,7 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Ver
     return false;
 }
 
-bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l_he, const VertexEdgePath& _path)
+bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l_he, const VirtualPath& _path)
 {
     if (swirl_detection(_em, _l_he, _path)) {
         return true;
@@ -244,7 +244,7 @@ void praun2001(Embedding& _em, const Praun2001Settings& _settings)
     while (l_num_embedded_edges < l_num_edges) {
         std::cout << "Embedding edge " << (l_num_embedded_edges + 1) << " / " << l_num_edges << std::endl;
 
-        VertexEdgePath best_path;
+        VirtualPath best_path;
         double best_path_cost = std::numeric_limits<double>::infinity();
         pm::edge_handle best_l_e = pm::edge_handle::invalid;
 
@@ -264,7 +264,7 @@ void praun2001(Embedding& _em, const Praun2001Settings& _settings)
                 }
             }
 
-            VertexEdgePath path = find_shortest_path(_em, l_e.halfedgeA());
+            VirtualPath path = find_shortest_path(_em, l_e.halfedgeA());
             double path_cost = path_length(_em, path);
 
             // If we use an arbitrary insertion order, we can early-out after the first path is found

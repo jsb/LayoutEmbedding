@@ -1,14 +1,14 @@
 #pragma once
 
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/VertexEdgePath.hh>
 #include <LayoutEmbedding/RefinableMesh.hh>
+#include <LayoutEmbedding/VirtualVertex.hh>
 
 namespace LayoutEmbedding {
 
 struct Embedding
 {
-    const pm::Mesh* l_m;      // Layout mesh
+    const pm::Mesh* l_m; // Layout mesh
     RefinableMesh* t_m; // Target mesh
     pm::vertex_attribute<pm::vertex_handle> l_matching_vertex;
     pm::vertex_attribute<pm::vertex_handle> t_matching_vertex;
@@ -32,33 +32,33 @@ pm::halfedge_handle get_embeddable_sector(const Embedding& _e, const pm::halfedg
 
 bool is_blocked(const Embedding& _e, const pm::edge_handle& _t_e);
 bool is_blocked(const Embedding& _e, const pm::vertex_handle& _t_v);
-bool is_blocked(const Embedding& _e, const VertexEdgeElement& _t_el);
+bool is_blocked(const Embedding& _e, const VirtualVertex& _t_vv);
 
 tg::pos3 element_pos(const Embedding& _e, const pm::edge_handle& _t_e);
 tg::pos3 element_pos(const Embedding& _e, const pm::vertex_handle& _t_v);
-tg::pos3 element_pos(const Embedding& _e, const VertexEdgeElement& _t_el);
+tg::pos3 element_pos(const Embedding& _e, const VirtualVertex& _t_vv);
 
-VertexEdgePath find_shortest_path(
+VirtualPath find_shortest_path(
     const Embedding& _e,
     const pm::halfedge_handle& _t_h_sector_start, // Target halfedge, at the beginning of a sector
     const pm::halfedge_handle& _t_h_sector_end    // Target halfedge, at the beginning of a sector
 );
-VertexEdgePath find_shortest_path(
+VirtualPath find_shortest_path(
     const Embedding& _e,
     const pm::halfedge_handle& _l_he // Layout halfedge
 );
-VertexEdgePath find_shortest_path(
+VirtualPath find_shortest_path(
     const Embedding& _e,
     const pm::edge_handle& _l_e // Layout edge
 );
 
-void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdgePath& _path);
+void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VirtualPath& _path);
 void unembed_path(Embedding& _e, const pm::halfedge_handle& _l_h);
 void unembed_path(Embedding& _e, const pm::edge_handle& _l_e);
 
 std::vector<pm::vertex_handle> get_embedded_path(const Embedding& _e, const pm::halfedge_handle& _l_he);
 
-double path_length(const Embedding& _e, const VertexEdgePath& _path);
+double path_length(const Embedding& _e, const VirtualPath& _path);
 
 double embedded_path_length(const Embedding& _e, const pm::halfedge_handle& _l_he);
 double embedded_path_length(const Embedding& _e, const pm::edge_handle& _l_e);

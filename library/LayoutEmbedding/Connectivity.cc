@@ -32,4 +32,54 @@ pm::vertex_handle opposite_vertex(const pm::halfedge_handle& _he)
     }
 }
 
+pm::vertex_handle common_vertex(const pm::edge_handle& _e0, const pm::edge_handle& _e1)
+{
+    LE_ASSERT(_e0 != _e1);
+    if (_e0.vertexA() == _e1.vertexA()) {
+        return _e0.vertexA();
+    }
+    else if (_e0.vertexA() == _e1.vertexB()) {
+        return _e0.vertexA();
+    }
+    else if (_e0.vertexB() == _e1.vertexA()) {
+        return _e0.vertexB();
+    }
+    else if (_e0.vertexB() == _e1.vertexB()) {
+        return _e0.vertexB();
+    }
+    else {
+        return pm::vertex_handle::invalid;
+    }
+}
+
+pm::face_handle common_face(const pm::edge_handle& _e0, const pm::edge_handle& _e1)
+{
+    LE_ASSERT(_e0 != _e1);
+    if (_e0.faceA() == _e1.faceA()) {
+        return _e0.faceA();
+    }
+    else if (_e0.faceA() == _e1.faceB()) {
+        return _e0.faceA();
+    }
+    else if (_e0.faceB() == _e1.faceA()) {
+        return _e0.faceB();
+    }
+    else if (_e0.faceB() == _e1.faceB()) {
+        return _e0.faceB();
+    }
+    else {
+        return pm::face_handle::invalid;
+    }
+}
+
+pm::face_handle triangle_with_edge_and_opposite_vertex(const pm::edge_handle& _e, const pm::vertex_handle& _v)
+{
+    for (const auto& he : {_e.halfedgeA(), _e.halfedgeB()}) {
+        if (opposite_vertex(he) == _v) {
+            return he.face();
+        }
+    }
+    return pm::face_handle::invalid;
+}
+
 }

@@ -1,12 +1,163 @@
 #include "BranchAndBound.hh"
 
 #include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/Connectivity.hh>
 #include <LayoutEmbedding/CyclicOrderSentinel.hh>
 
-#include <iostream> // DEBUG
+// DEBUG
+#include <glow-extras/viewer/view.hh>
+#include <LayoutEmbedding/Visualization/Visualization.hh>
+#include <LayoutEmbedding/Visualization/RWTHColors.hh>
+#include <iostream>
+
 #include <queue>
 
 namespace LayoutEmbedding {
+
+// TODO: Hide this nasty code in a separate implementation file.
+
+struct VEIntersectionCache
+{
+    const pm::Mesh& m;
+
+    using Segment = std::pair<VirtualVertex, VirtualVertex>;
+    using Label = pm::edge_index;
+    using LabelSet = std::set<Label>;
+
+    pm::vertex_attribute<Label> v_label;
+    pm::edge_attribute<Label> e_label;
+    pm::face_attribute<Label> f_label;
+    LabelSet global_conflicts;
+
+    explicit VEIntersectionCache(const pm::Mesh& _m) :
+        m(_m),
+        v_label(m),
+        e_label(m),
+        f_label(m)
+    {
+    }
+
+    void insert(const pm::vertex_handle& _v, const Label& _l)
+    {
+        if (v_label[_v].is_valid()) {
+            global_conflicts.insert(_l);
+            global_conflicts.insert(v_label[_v]);
+        }
+        v_label[_v] = _l;
+    }
+
+    void insert(const pm::edge_handle& _e, const Label& _l)
+    {
+        if (e_label[_e].is_valid()) {
+            global_conflicts.insert(_l);
+            global_conflicts.insert(e_label[_e]);
+        }
+        e_label[_e] = _l;
+    }
+
+    void insert(const pm::face_handle& _f, const Label& _l)
+    {
+        if (f_label[_f].is_valid()) {
+            global_conflicts.insert(_l);
+            global_conflicts.insert(f_label[_f]);
+        }
+        f_label[_f] = _l;
+    }
+
+    void insert_element(const VirtualVertex& _el, const Label& _l)
+    {
+        if (is_real_vertex(_el)) {
+            insert(real_vertex(_el), _l);
+        }
+        else {
+            insert(real_edge(_el), _l);
+        }
+    }
+
+    void insert_segment(const VirtualVertex& _vv0, const VirtualVertex& _vv1, const Label& _l)
+    {
+        if (is_real_vertex(_vv0)) {
+            if (is_real_vertex(_vv1)) {
+                // (V,V) case
+                const auto& v0 = real_vertex(_vv0);
+                const auto& v1 = real_vertex(_vv1);
+                const auto& he = pm::halfedge_from_to(v0, v1);
+                LE_ASSERT(he.is_valid());
+                const auto& e = he.edge();
+                insert(e, _l);
+            }
+            else {
+                // (V,E) case
+                const auto& v = real_vertex(_vv0);
+                const auto& e = real_edge(_vv1);
+                const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
+                LE_ASSERT(f.is_valid());
+                insert(f, _l);
+            }
+        }
+        else {
+            if (is_real_vertex(_vv1)) {
+                // (E,V) case
+                const auto& e = real_edge(_vv0);
+                const auto& v = real_vertex(_vv1);
+                const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
+                LE_ASSERT(f.is_valid());
+                insert(f, _l);
+            }
+            else {
+                // (E,E) case
+                const auto& e0 = real_edge(_vv0);
+                const auto& e1 = real_edge(_vv1);
+                const auto& f = common_face(e0, e1);
+                LE_ASSERT(f.is_valid());
+                insert(f, _l);
+            }
+        }
+    }
+
+    void insert_path(const VirtualPath& _path, const Label& _l)
+    {
+        // Path elements ("virtual vertices")
+        LE_ASSERT(_path.size() >= 2);
+        // Note: We deliberately skip the first and last element
+        for (int i = 1; i < _path.size() - 1; ++i) {
+            insert_element(_path[i], _l);
+        }
+
+        // Path segments ("virtual edges")
+        for (int i = 0; i < _path.size() - 1; ++i) {
+            insert_segment(_path[i], _path[i+1], _l);
+        }
+    }
+};
+
+std::set<pm::edge_index> conflicting_paths(const Embedding& _em, const pm::edge_attribute<VirtualPath>& _paths)
+{
+    // Rules:
+    // - Paths must not intersect.
+    // - Paths are allowed to touch other paths at layout vertices (path endpoints).
+    // - Around each layout vertex, the cyclic order of outgoing edges must be consistent with that in the layout.
+
+    const pm::Mesh& l_m = *_em.l_m;
+    const pm::Mesh& t_m = *_em.t_m->m;
+
+    VEIntersectionCache c(t_m);
+
+    for (const auto& l_e : l_m.edges()) {
+        const auto& path = _paths[l_e];
+        if (path.empty()) {
+            // Layout edges that have an already embedded path are not candidates.
+            // Therefore, their candidate path is left empty.
+            continue;
+        }
+        LE_ASSERT(path.size() >= 2);
+        c.insert_path(path, l_e);
+    }
+
+    // TODO: detect additional conflicts due to cyclic order!
+
+    return c.global_conflicts;
+}
 
 struct Candidate
 {
@@ -49,24 +200,22 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
     for (const auto& t_v : t_m_copy->vertices()) {
         em.t_matching_vertex[t_v.idx] = l_m[_em.t_matching_vertex[t_v.idx].idx];
     }
+    for (const auto& t_he : t_m_copy->halfedges()) {
+        em.t_matching_halfedge[t_he.idx] = l_m[_em.t_matching_halfedge[t_he.idx].idx];
+    }
 
     // Measure length of "embedded" edges
     std::set<pm::edge_index> embedded_l_e;
     double embedded_cost = 0.0;
     for (const auto& l_e : _insertions) {
-        auto l_he = l_e.halfedgeA();
-        auto path = find_shortest_path(em, l_he);
-
-        embedded_cost += path_length(em, path);
-
-        embed_path(em, l_he, path);
-        embedded_l_e.insert(l_e);
+        if (is_embedded(em, l_e)) {
+            embedded_l_e.insert(l_e);
+            embedded_cost += embedded_path_length(em, l_e);
+        }
     }
 
-    std::set<pm::edge_index> conflicting_l_e;
-    VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
-
     // Measure length of "unembedded" edges
+    pm::edge_attribute<VirtualPath> candidate_paths(l_m);
     double unembedded_cost = 0.0;
     for (const auto& l_e : l_m.edges()) {
         if (embedded_l_e.count(l_e)) {
@@ -76,22 +225,15 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
         const auto& path = find_shortest_path(em, l_e);
         if (path.empty()) {
             unembedded_cost = std::numeric_limits<double>::infinity();
+            break;
         }
         else {
             unembedded_cost += path_length(em, path);
-
-            // Mark conflicting edges
-            LE_ASSERT(path.size() >= 2);
-            for (int i = 1; i < path.size() - 1; ++i) {
-                const auto& el = path[i];
-                for (const auto& l_e_other : covered[el]) {
-                    conflicting_l_e.insert(l_e);
-                    conflicting_l_e.insert(l_e_other);
-                }
-                covered[el].insert(l_e);
-            }
+            candidate_paths[l_e] = path;
         }
     }
+
+    std::set<pm::edge_index> conflicting_l_e = conflicting_paths(em, candidate_paths);
 
     EmbeddingStats result;
 
@@ -152,7 +294,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         // Embed the "already embedded" edges
         std::set<pm::edge_index> embedded_l_e;
-        VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
 
         double embedded_cost = 0.0;
         for (const auto& l_e : c.insertions) {
@@ -167,22 +308,13 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
             embed_path(em, l_he, path);
             embedded_l_e.insert(l_e);
-
-            // Mark the outgoing target mesh edge as "covered"
-            // (this will later be used to detect conflicting paths based on cyclic order around vertices)
-            const auto& t_he = get_embedded_target_halfedge(em, l_he);
-            const auto& t_he_opp = get_embedded_target_halfedge(em, l_he.opposite());
-            LE_ASSERT(t_he.is_valid());
-            LE_ASSERT(t_he_opp.is_valid());
-            covered[t_he.edge()].insert(l_e);
-            covered[t_he_opp.edge()].insert(l_e);
         }
         if (std::isinf(embedded_cost)) {
             continue;
         }
 
         // Classify the candidate paths: conflicting and nonconflicting
-        std::set<pm::edge_index> conflicting_l_e;
+        pm::edge_attribute<VirtualPath> candidate_paths(l_m);
 
         double unembedded_cost = 0.0;
         for (const auto& l_e : l_m.edges()) {
@@ -191,20 +323,23 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             }
 
             const auto& path = find_shortest_path(em, l_e);
+            if (path.empty()) {
+                unembedded_cost = std::numeric_limits<double>::infinity();
+                break;
+            }
             unembedded_cost += path_length(em, path);
 
             LE_ASSERT(path.size() >= 2);
-            for (int i = 1; i < path.size() - 1; ++i) {
-                const auto& el = path[i];
-                for (const auto& l_e_other : covered[el]) {
-                    conflicting_l_e.insert(l_e);
-                    conflicting_l_e.insert(l_e_other);
-                }
-                covered[el].insert(l_e);
-            }
+            candidate_paths[l_e] = path;
+        }
+        if (std::isinf(unembedded_cost)) {
+            continue;
         }
 
+        std::set<pm::edge_index> conflicting_l_e = conflicting_paths(em, candidate_paths);
+
         // Additional conflicts may arise from inconsistent ordering of outgoing edges around vertices.
+        /*
         for (const auto& l_he : l_m.halfedges()) {
             const auto& l_e = l_he.edge();
             if (embedded_l_e.count(l_e) || conflicting_l_e.count(l_e)) {
@@ -236,6 +371,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 break;
             }
         }
+        */
 
         std::set<pm::edge_index> non_conflicting_l_e;
         for (const auto& l_e : l_m.edges()) {
@@ -268,6 +404,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             if (cost_lower_bound < global_upper_bound) {
                 global_upper_bound = cost_lower_bound;
                 best_solution = c;
+                std::cout << "New upper bound: " << global_upper_bound << std::endl;
             }
         }
         else {
@@ -280,7 +417,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                     EmbeddingStats stats = calc_cost_lower_bound(em, new_c.insertions);
                     new_c.lower_bound = stats.embedded_cost + stats.unembedded_cost;
 
-                    //new_c.priority = new_c.lower_bound / new_c.insertions.size();
                     new_c.priority = new_c.lower_bound * stats.num_conflicting;
 
                     const double new_gap = 1.0 - new_c.lower_bound / global_upper_bound;
@@ -291,6 +427,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             }
         }
     }
+
+    std::cout << "Branch-and-bound optimization completed." << std::endl;
 
     // Apply the victorious embedding sequence to the input embedding
 
