@@ -20,7 +20,7 @@ struct VEIntersectionCache
 {
     const pm::Mesh& m;
 
-    using Segment = std::pair<VertexEdgeElement, VertexEdgeElement>;
+    using Segment = std::pair<VirtualVertex, VirtualVertex>;
     using Label = pm::edge_index;
     using LabelSet = std::set<Label>;
 
@@ -64,23 +64,23 @@ struct VEIntersectionCache
         f_label[_f] = _l;
     }
 
-    void insert_element(const VertexEdgeElement& _el, const Label& _l)
+    void insert_element(const VirtualVertex& _el, const Label& _l)
     {
-        if (is_vertex(_el)) {
-            insert(vertex(_el), _l);
+        if (is_real_vertex(_el)) {
+            insert(real_vertex(_el), _l);
         }
         else {
-            insert(edge(_el), _l);
+            insert(real_edge(_el), _l);
         }
     }
 
-    void insert_segment(const VertexEdgeElement& _el0, const VertexEdgeElement& _el1, const Label& _l)
+    void insert_segment(const VirtualVertex& _el0, const VirtualVertex& _el1, const Label& _l)
     {
-        if (is_vertex(_el0)) {
-            if (is_vertex(_el1)) {
+        if (is_real_vertex(_el0)) {
+            if (is_real_vertex(_el1)) {
                 // (V,V) case
-                const auto& v0 = vertex(_el0);
-                const auto& v1 = vertex(_el1);
+                const auto& v0 = real_vertex(_el0);
+                const auto& v1 = real_vertex(_el1);
                 const auto& he = pm::halfedge_from_to(v0, v1);
                 LE_ASSERT(he.is_valid());
                 const auto& e = he.edge();
@@ -88,26 +88,26 @@ struct VEIntersectionCache
             }
             else {
                 // (V,E) case
-                const auto& v = vertex(_el0);
-                const auto& e = edge(_el1);
+                const auto& v = real_vertex(_el0);
+                const auto& e = real_edge(_el1);
                 const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
                 LE_ASSERT(f.is_valid());
                 insert(f, _l);
             }
         }
         else {
-            if (is_vertex(_el1)) {
+            if (is_real_vertex(_el1)) {
                 // (E,V) case
-                const auto& e = edge(_el0);
-                const auto& v = vertex(_el1);
+                const auto& e = real_edge(_el0);
+                const auto& v = real_vertex(_el1);
                 const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
                 LE_ASSERT(f.is_valid());
                 insert(f, _l);
             }
             else {
                 // (E,E) case
-                const auto& e0 = edge(_el0);
-                const auto& e1 = edge(_el1);
+                const auto& e0 = real_edge(_el0);
+                const auto& e1 = real_edge(_el1);
                 const auto& f = common_face(e0, e1);
                 LE_ASSERT(f.is_valid());
                 insert(f, _l);
@@ -115,7 +115,7 @@ struct VEIntersectionCache
         }
     }
 
-    void insert_path(const VertexEdgePath& _path, const Label& _l)
+    void insert_path(const VirtualPath& _path, const Label& _l)
     {
         // Path elements ("virtual vertices")
         LE_ASSERT(_path.size() >= 2);
@@ -131,7 +131,7 @@ struct VEIntersectionCache
     }
 };
 
-std::set<pm::edge_index> conflicting_paths(const Embedding& _em, const pm::edge_attribute<VertexEdgePath>& _paths)
+std::set<pm::edge_index> conflicting_paths(const Embedding& _em, const pm::edge_attribute<VirtualPath>& _paths)
 {
     // Rules:
     // - Paths must not intersect.
@@ -215,7 +215,7 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
     }
 
     // Measure length of "unembedded" edges
-    pm::edge_attribute<VertexEdgePath> candidate_paths(l_m);
+    pm::edge_attribute<VirtualPath> candidate_paths(l_m);
     double unembedded_cost = 0.0;
     for (const auto& l_e : l_m.edges()) {
         if (embedded_l_e.count(l_e)) {
@@ -314,7 +314,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         }
 
         // Classify the candidate paths: conflicting and nonconflicting
-        pm::edge_attribute<VertexEdgePath> candidate_paths(l_m);
+        pm::edge_attribute<VirtualPath> candidate_paths(l_m);
 
         double unembedded_cost = 0.0;
         for (const auto& l_e : l_m.edges()) {

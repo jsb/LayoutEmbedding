@@ -68,7 +68,7 @@ polymesh::halfedge_handle get_embeddable_sector(const Embedding& _e, const pm::h
     }
 }
 
-VertexEdgePath find_shortest_path(
+VirtualPath find_shortest_path(
     const Embedding& _e,
     const pm::halfedge_handle& _t_h_sector_start,
     const pm::halfedge_handle& _t_h_sector_end
@@ -88,7 +88,7 @@ VertexEdgePath find_shortest_path(
 
     struct Candidate
     {
-        VertexEdgeElement el;
+        VirtualVertex el;
         tg::pos3 p;
         Distance dist;
 
@@ -105,14 +105,14 @@ VertexEdgePath find_shortest_path(
     LE_ASSERT(_t_h_sector_start.mesh == &t_m);
     LE_ASSERT(_t_h_sector_end.mesh == &t_m);
 
-    VertexEdgeAttribute<VertexEdgeElement> prev(t_m);
-    VertexEdgeAttribute<Distance> distance(t_m);
+    VirtualVertexAttribute<VirtualVertex> prev(t_m);
+    VirtualVertexAttribute<Distance> distance(t_m);
 
     const pm::vertex_handle t_v_start = _t_h_sector_start.vertex_from();
     const pm::vertex_handle t_v_end   = _t_h_sector_end.vertex_from();
 
-    const VertexEdgeElement el_start(t_v_start);
-    const VertexEdgeElement el_end(t_v_end);
+    const VirtualVertex el_start(t_v_start);
+    const VirtualVertex el_end(t_v_end);
 
     auto get_elements_in_sector = [&](const pm::halfedge_handle& t_he_sector) {
         auto t_he_sector_start = t_he_sector;
@@ -132,16 +132,16 @@ VertexEdgePath find_shortest_path(
                 break;
             }
         }
-        std::vector<VertexEdgeElement> elements;
+        std::vector<VirtualVertex> elements;
         auto t_he = t_he_sector_start;
         do {
             // Incident edge midpoints
-            VertexEdgeElement el_edge(t_he.next().edge());
+            VirtualVertex el_edge(t_he.next().edge());
             elements.push_back(el_edge);
 
             // Incident vertices
             if (!is_blocked(_e, t_he.edge())) {
-                VertexEdgeElement el_vertex(t_he.vertex_to());
+                VirtualVertex el_vertex(t_he.vertex_to());
                 elements.push_back(el_vertex);
             }
 
@@ -151,8 +151,8 @@ VertexEdgePath find_shortest_path(
         return elements;
     };
 
-    std::vector<VertexEdgeElement> legal_first_elements = get_elements_in_sector(_t_h_sector_start);
-    std::vector<VertexEdgeElement> legal_last_elements = get_elements_in_sector(_t_h_sector_end);
+    std::vector<VirtualVertex> legal_first_elements = get_elements_in_sector(_t_h_sector_start);
+    std::vector<VirtualVertex> legal_last_elements = get_elements_in_sector(_t_h_sector_end);
 
     distance[t_v_start].edges_crossed = 0;
     distance[t_v_start].geodesic = 0.0;
@@ -161,14 +161,14 @@ VertexEdgePath find_shortest_path(
 
     {
         Candidate c;
-        c.el = VertexEdgeElement(t_v_start);
+        c.el = VirtualVertex(t_v_start);
         c.p = t_pos[t_v_start];
         c.dist.edges_crossed = 0;
         c.dist.geodesic = 0.0;
         q.push(c);
     }
 
-    auto legal_step = [&](const VertexEdgeElement& from, const VertexEdgeElement& to) {
+    auto legal_step = [&](const VirtualVertex& from, const VirtualVertex& to) {
         if (from == el_start) {
             if (std::find(legal_first_elements.cbegin(), legal_first_elements.cend(), to) == legal_first_elements.cend()) {
                 return false;
@@ -189,19 +189,19 @@ VertexEdgePath find_shortest_path(
         return true;
     };
 
-    auto visit_elem = [&](const Candidate& c, const VertexEdgeElement& el) {
+    auto visit_elem = [&](const Candidate& c, const VirtualVertex& el) {
         if (legal_step(c.el, el)) {
             const Distance& current_dist = distance[el];
             const auto& p = element_pos(_e, el);
             Distance new_dist = c.dist;
             new_dist.geodesic += tg::distance(p, c.p);
-            if (is_edge(el)) {
+            if (is_real_edge(el)) {
                 new_dist.edges_crossed += 1;
             }
 
             if (new_dist < current_dist) {
                 Candidate new_c;
-                new_c.el = VertexEdgeElement(el);
+                new_c.el = VirtualVertex(el);
                 new_c.p = p;
                 new_c.dist = new_dist;
 
@@ -220,8 +220,8 @@ VertexEdgePath find_shortest_path(
         const auto& el = u.el;
 
         // Expand vertex neighborhood
-        if (is_vertex(el)) {
-            const auto& t_v = vertex(u.el);
+        if (is_real_vertex(el)) {
+            const auto& t_v = real_vertex(u.el);
 
             if (t_v == t_v_end) {
                 break;
@@ -229,7 +229,7 @@ VertexEdgePath find_shortest_path(
 
             // Add incident vertices (if they're not blocked)
             for (const auto t_v_adj : t_v.adjacent_vertices()) {
-                visit_elem(u, VertexEdgeElement(t_v_adj));
+                visit_elem(u, VirtualVertex(t_v_adj));
             }
 
             // Add incident edge midpoints (if they're not blocked)
@@ -238,12 +238,12 @@ VertexEdgePath find_shortest_path(
                     continue;
                 }
                 const auto eh_opp_edge = t_he_out.next().edge();
-                visit_elem(u, VertexEdgeElement(eh_opp_edge));
+                visit_elem(u, VirtualVertex(eh_opp_edge));
             }
         }
         // Expand edge midpoint neighborhood
-        else if (is_edge(el)) {
-            const auto& t_e = edge(el);
+        else if (is_real_edge(el)) {
+            const auto& t_e = real_edge(el);
 
             const auto& t_he = t_e.halfedgeA();
             const auto& t_he_opp = t_e.halfedgeB();
@@ -251,8 +251,8 @@ VertexEdgePath find_shortest_path(
             // Visit opposite vertices
             const auto& t_v_u = opposite_vertex(t_he);
             const auto& t_v_u_opp = opposite_vertex(t_he_opp);
-            visit_elem(u, VertexEdgeElement(t_v_u));
-            visit_elem(u, VertexEdgeElement(t_v_u_opp));
+            visit_elem(u, VirtualVertex(t_v_u));
+            visit_elem(u, VirtualVertex(t_v_u_opp));
 
             // Visit incident edges
             if (!t_he.is_boundary()) {
@@ -274,9 +274,9 @@ VertexEdgePath find_shortest_path(
         return {};
     }
     else {
-        VertexEdgePath path;
-        VertexEdgeElement el_current(t_v_end);
-        VertexEdgeElement el_start(t_v_start);
+        VirtualPath path;
+        VirtualVertex el_current(t_v_end);
+        VirtualVertex el_start(t_v_start);
         while (el_current != el_start) {
             path.push_back(el_current);
             el_current = prev[el_current];
@@ -287,7 +287,7 @@ VertexEdgePath find_shortest_path(
     }
 }
 
-VertexEdgePath find_shortest_path(const Embedding& _e, const pm::halfedge_handle& _l_he)
+VirtualPath find_shortest_path(const Embedding& _e, const pm::halfedge_handle& _l_he)
 {
     LE_ASSERT(_l_he.mesh == _e.l_m);
     LE_ASSERT(!is_embedded(_e, _l_he));
@@ -297,7 +297,7 @@ VertexEdgePath find_shortest_path(const Embedding& _e, const pm::halfedge_handle
     return find_shortest_path(_e, t_he_sector_start, t_he_sector_end);
 }
 
-VertexEdgePath find_shortest_path(const Embedding& _e, const pm::edge_handle& _l_e)
+VirtualPath find_shortest_path(const Embedding& _e, const pm::edge_handle& _l_e)
 {
     LE_ASSERT(_l_e.mesh == _e.l_m);
     const auto l_he = _l_e.halfedgeA();
@@ -321,7 +321,7 @@ bool is_blocked(const Embedding& _e, const pm::vertex_handle& _t_v)
     return false;
 }
 
-bool is_blocked(const Embedding& _e, const VertexEdgeElement& _t_el)
+bool is_blocked(const Embedding& _e, const VirtualVertex& _t_el)
 {
     if (const auto* v = std::get_if<pm::vertex_handle>(&_t_el)) {
         return is_blocked(_e, *v);
@@ -346,7 +346,7 @@ tg::pos3 element_pos(const Embedding& _e, const pm::vertex_handle& _t_v)
     return t_pos[_t_v];
 }
 
-tg::pos3 element_pos(const Embedding& _e, const VertexEdgeElement& _t_el)
+tg::pos3 element_pos(const Embedding& _e, const VirtualVertex& _t_el)
 {
     if (const auto* v = std::get_if<pm::vertex_handle>(&_t_el)) {
         return element_pos(_e, *v);
@@ -359,7 +359,7 @@ tg::pos3 element_pos(const Embedding& _e, const VertexEdgeElement& _t_el)
     }
 }
 
-void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdgePath& _path)
+void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VirtualPath& _path)
 {
     LE_ASSERT(!get_embedded_target_halfedge(_e, _l_h).is_valid());
     LE_ASSERT(_path.size() >= 2);
@@ -369,8 +369,8 @@ void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdge
     // Turn the VertexEdgePath into a pure vertex path by splitting edges
     std::vector<pm::vertex_handle> vertex_path;
     for (const auto& el : _path) {
-        if (is_edge(el)) {
-            const auto& t_e = edge(el);
+        if (is_real_edge(el)) {
+            const auto& t_e = real_edge(el);
             const auto t_v_new = split_edge(*_e.t_m, t_e);
             vertex_path.push_back(t_v_new);
         }
@@ -389,7 +389,7 @@ void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VertexEdge
     }
 }
 
-double path_length(const Embedding& _e, const VertexEdgePath& _path)
+double path_length(const Embedding& _e, const VirtualPath& _path)
 {
     LE_ASSERT(_path.size() >= 2);
     double length = 0.0;
