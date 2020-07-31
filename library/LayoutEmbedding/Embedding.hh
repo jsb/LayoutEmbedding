@@ -8,7 +8,7 @@ namespace LayoutEmbedding {
 
 struct Embedding
 {
-    const pm::Mesh* l_m;      // Layout mesh
+    const pm::Mesh* l_m; // Layout mesh
     RefinableMesh* t_m; // Target mesh
     pm::vertex_attribute<pm::vertex_handle> l_matching_vertex;
     pm::vertex_attribute<pm::vertex_handle> t_matching_vertex;

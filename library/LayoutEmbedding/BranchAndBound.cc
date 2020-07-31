@@ -200,24 +200,22 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
     for (const auto& t_v : t_m_copy->vertices()) {
         em.t_matching_vertex[t_v.idx] = l_m[_em.t_matching_vertex[t_v.idx].idx];
     }
+    for (const auto& t_he : t_m_copy->halfedges()) {
+        em.t_matching_halfedge[t_he.idx] = l_m[_em.t_matching_halfedge[t_he.idx].idx];
+    }
 
     // Measure length of "embedded" edges
     std::set<pm::edge_index> embedded_l_e;
     double embedded_cost = 0.0;
     for (const auto& l_e : _insertions) {
-        auto l_he = l_e.halfedgeA();
-        auto path = find_shortest_path(em, l_he);
-
-        embedded_cost += path_length(em, path);
-
-        embed_path(em, l_he, path);
-        embedded_l_e.insert(l_e);
+        if (is_embedded(em, l_e)) {
+            embedded_l_e.insert(l_e);
+            embedded_cost += embedded_path_length(em, l_e);
+        }
     }
 
-    std::set<pm::edge_index> conflicting_l_e;
-    VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
-
     // Measure length of "unembedded" edges
+    pm::edge_attribute<VertexEdgePath> candidate_paths(l_m);
     double unembedded_cost = 0.0;
     for (const auto& l_e : l_m.edges()) {
         if (embedded_l_e.count(l_e)) {
@@ -227,22 +225,15 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
         const auto& path = find_shortest_path(em, l_e);
         if (path.empty()) {
             unembedded_cost = std::numeric_limits<double>::infinity();
+            break;
         }
         else {
             unembedded_cost += path_length(em, path);
-
-            // Mark conflicting edges
-            LE_ASSERT(path.size() >= 2);
-            for (int i = 1; i < path.size() - 1; ++i) {
-                const auto& el = path[i];
-                for (const auto& l_e_other : covered[el]) {
-                    conflicting_l_e.insert(l_e);
-                    conflicting_l_e.insert(l_e_other);
-                }
-                covered[el].insert(l_e);
-            }
+            candidate_paths[l_e] = path;
         }
     }
+
+    std::set<pm::edge_index> conflicting_l_e = conflicting_paths(em, candidate_paths);
 
     EmbeddingStats result;
 
@@ -303,7 +294,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         // Embed the "already embedded" edges
         std::set<pm::edge_index> embedded_l_e;
-        VertexEdgeAttribute<std::set<pm::edge_index>> covered(*t_m_copy);
 
         double embedded_cost = 0.0;
         for (const auto& l_e : c.insertions) {
@@ -318,15 +308,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
             embed_path(em, l_he, path);
             embedded_l_e.insert(l_e);
-
-            // Mark the outgoing target mesh edge as "covered"
-            // (this will later be used to detect conflicting paths based on cyclic order around vertices)
-            const auto& t_he = get_embedded_target_halfedge(em, l_he);
-            const auto& t_he_opp = get_embedded_target_halfedge(em, l_he.opposite());
-            LE_ASSERT(t_he.is_valid());
-            LE_ASSERT(t_he_opp.is_valid());
-            covered[t_he.edge()].insert(l_e);
-            covered[t_he_opp.edge()].insert(l_e);
         }
         if (std::isinf(embedded_cost)) {
             continue;
