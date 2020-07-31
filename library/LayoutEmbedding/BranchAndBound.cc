@@ -2,134 +2,14 @@
 
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
-#include <LayoutEmbedding/CyclicOrderSentinel.hh>
+#include <LayoutEmbedding/VirtualPathConflictSentinel.hh>
 
 // DEBUG
-#include <glow-extras/viewer/view.hh>
-#include <LayoutEmbedding/Visualization/Visualization.hh>
-#include <LayoutEmbedding/Visualization/RWTHColors.hh>
 #include <iostream>
 
 #include <queue>
 
 namespace LayoutEmbedding {
-
-// TODO: Hide this nasty code in a separate implementation file.
-
-struct VEIntersectionCache
-{
-    const pm::Mesh& m;
-
-    using Segment = std::pair<VirtualVertex, VirtualVertex>;
-    using Label = pm::edge_index;
-    using LabelSet = std::set<Label>;
-
-    pm::vertex_attribute<Label> v_label;
-    pm::edge_attribute<Label> e_label;
-    pm::face_attribute<Label> f_label;
-    LabelSet global_conflicts;
-
-    explicit VEIntersectionCache(const pm::Mesh& _m) :
-        m(_m),
-        v_label(m),
-        e_label(m),
-        f_label(m)
-    {
-    }
-
-    void insert(const pm::vertex_handle& _v, const Label& _l)
-    {
-        if (v_label[_v].is_valid()) {
-            global_conflicts.insert(_l);
-            global_conflicts.insert(v_label[_v]);
-        }
-        v_label[_v] = _l;
-    }
-
-    void insert(const pm::edge_handle& _e, const Label& _l)
-    {
-        if (e_label[_e].is_valid()) {
-            global_conflicts.insert(_l);
-            global_conflicts.insert(e_label[_e]);
-        }
-        e_label[_e] = _l;
-    }
-
-    void insert(const pm::face_handle& _f, const Label& _l)
-    {
-        if (f_label[_f].is_valid()) {
-            global_conflicts.insert(_l);
-            global_conflicts.insert(f_label[_f]);
-        }
-        f_label[_f] = _l;
-    }
-
-    void insert_element(const VirtualVertex& _el, const Label& _l)
-    {
-        if (is_real_vertex(_el)) {
-            insert(real_vertex(_el), _l);
-        }
-        else {
-            insert(real_edge(_el), _l);
-        }
-    }
-
-    void insert_segment(const VirtualVertex& _vv0, const VirtualVertex& _vv1, const Label& _l)
-    {
-        if (is_real_vertex(_vv0)) {
-            if (is_real_vertex(_vv1)) {
-                // (V,V) case
-                const auto& v0 = real_vertex(_vv0);
-                const auto& v1 = real_vertex(_vv1);
-                const auto& he = pm::halfedge_from_to(v0, v1);
-                LE_ASSERT(he.is_valid());
-                const auto& e = he.edge();
-                insert(e, _l);
-            }
-            else {
-                // (V,E) case
-                const auto& v = real_vertex(_vv0);
-                const auto& e = real_edge(_vv1);
-                const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
-                LE_ASSERT(f.is_valid());
-                insert(f, _l);
-            }
-        }
-        else {
-            if (is_real_vertex(_vv1)) {
-                // (E,V) case
-                const auto& e = real_edge(_vv0);
-                const auto& v = real_vertex(_vv1);
-                const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
-                LE_ASSERT(f.is_valid());
-                insert(f, _l);
-            }
-            else {
-                // (E,E) case
-                const auto& e0 = real_edge(_vv0);
-                const auto& e1 = real_edge(_vv1);
-                const auto& f = common_face(e0, e1);
-                LE_ASSERT(f.is_valid());
-                insert(f, _l);
-            }
-        }
-    }
-
-    void insert_path(const VirtualPath& _path, const Label& _l)
-    {
-        // Path elements ("virtual vertices")
-        LE_ASSERT(_path.size() >= 2);
-        // Note: We deliberately skip the first and last element
-        for (int i = 1; i < _path.size() - 1; ++i) {
-            insert_element(_path[i], _l);
-        }
-
-        // Path segments ("virtual edges")
-        for (int i = 0; i < _path.size() - 1; ++i) {
-            insert_segment(_path[i], _path[i+1], _l);
-        }
-    }
-};
 
 std::set<pm::edge_index> conflicting_paths(const Embedding& _em, const pm::edge_attribute<VirtualPath>& _paths)
 {
@@ -141,7 +21,7 @@ std::set<pm::edge_index> conflicting_paths(const Embedding& _em, const pm::edge_
     const pm::Mesh& l_m = *_em.l_m;
     const pm::Mesh& t_m = *_em.t_m->m;
 
-    VEIntersectionCache c(t_m);
+    VirtualPathConflictSentinel vpcs(t_m);
 
     for (const auto& l_e : l_m.edges()) {
         const auto& path = _paths[l_e];
@@ -151,12 +31,12 @@ std::set<pm::edge_index> conflicting_paths(const Embedding& _em, const pm::edge_
             continue;
         }
         LE_ASSERT(path.size() >= 2);
-        c.insert_path(path, l_e);
+        vpcs.insert_path(path, l_e);
     }
 
     // TODO: detect additional conflicts due to cyclic order!
 
-    return c.global_conflicts;
+    return vpcs.global_conflicts;
 }
 
 struct Candidate
