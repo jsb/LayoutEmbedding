@@ -33,6 +33,7 @@ int main(int argc, char** argv)
     // Default files for Target and Layout Mesh
     std::string target_mesh_file = data_path + "/models/target-meshes/horse_8078.obj";
     std::string layout_mesh_file = data_path + "/models/layouts/horse_layout_praun_challenge.obj";
+    int jitter_level = 1;
 
     if(argc > 1)
     {
@@ -42,6 +43,11 @@ int main(int argc, char** argv)
         {
             // Assuming second extra argument is Layout Mesh name, adds /layouts/ prefix
             layout_mesh_file = data_path + "/models/layouts/" + std::string(argv[2]);
+            if(argc > 3)
+            {
+                // Assuming second extra argument is Layout Mesh name, adds /layouts/ prefix
+                jitter_level = std::stoi(argv[3]);
+            }
         }
     }
 
@@ -89,7 +95,7 @@ int main(int argc, char** argv)
     auto matching_vertices = find_matching_vertices(l_pos, t_pos);
 
     // Optional: Perturb the target positions on the surface of the Target Mesh a bit
-    //jitter_matching_vertices(l_m, t_m, matching_vertices, 5);
+    jitter_matching_vertices(l_m, t_m, matching_vertices, jitter_level);
 
     // Store the vertex embedding positions
     set_matching_vertices(em, matching_vertices);
