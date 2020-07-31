@@ -88,7 +88,7 @@ VirtualPath find_shortest_path(
 
     struct Candidate
     {
-        VirtualVertex el;
+        VirtualVertex vv;
         tg::pos3 p;
         Distance dist;
 
@@ -111,10 +111,10 @@ VirtualPath find_shortest_path(
     const pm::vertex_handle t_v_start = _t_h_sector_start.vertex_from();
     const pm::vertex_handle t_v_end   = _t_h_sector_end.vertex_from();
 
-    const VirtualVertex el_start(t_v_start);
-    const VirtualVertex el_end(t_v_end);
+    const VirtualVertex vv_start(t_v_start);
+    const VirtualVertex vv_end(t_v_end);
 
-    auto get_elements_in_sector = [&](const pm::halfedge_handle& t_he_sector) {
+    auto get_virtual_vertices_in_sector = [&](const pm::halfedge_handle& t_he_sector) {
         auto t_he_sector_start = t_he_sector;
         auto t_he_sector_end = t_he_sector;
         t_he_sector_end = t_he_sector_end.prev().opposite(); // Rotate ccw
@@ -132,27 +132,25 @@ VirtualPath find_shortest_path(
                 break;
             }
         }
-        std::vector<VirtualVertex> elements;
+        std::vector<VirtualVertex> vvs;
         auto t_he = t_he_sector_start;
         do {
             // Incident edge midpoints
-            VirtualVertex el_edge(t_he.next().edge());
-            elements.push_back(el_edge);
+            vvs.push_back(t_he.next().edge());
 
             // Incident vertices
             if (!is_blocked(_e, t_he.edge())) {
-                VirtualVertex el_vertex(t_he.vertex_to());
-                elements.push_back(el_vertex);
+                vvs.push_back(t_he.vertex_to());
             }
 
             t_he = t_he.prev().opposite(); // Rotate ccw
         }
         while (t_he != t_he_sector_end);
-        return elements;
+        return vvs;
     };
 
-    std::vector<VirtualVertex> legal_first_elements = get_elements_in_sector(_t_h_sector_start);
-    std::vector<VirtualVertex> legal_last_elements = get_elements_in_sector(_t_h_sector_end);
+    std::vector<VirtualVertex> legal_first_vvs = get_virtual_vertices_in_sector(_t_h_sector_start);
+    std::vector<VirtualVertex> legal_last_vvs = get_virtual_vertices_in_sector(_t_h_sector_end);
 
     distance[t_v_start].edges_crossed = 0;
     distance[t_v_start].geodesic = 0.0;
@@ -161,7 +159,7 @@ VirtualPath find_shortest_path(
 
     {
         Candidate c;
-        c.el = VirtualVertex(t_v_start);
+        c.vv = VirtualVertex(t_v_start);
         c.p = t_pos[t_v_start];
         c.dist.edges_crossed = 0;
         c.dist.geodesic = 0.0;
@@ -169,14 +167,14 @@ VirtualPath find_shortest_path(
     }
 
     auto legal_step = [&](const VirtualVertex& from, const VirtualVertex& to) {
-        if (from == el_start) {
-            if (std::find(legal_first_elements.cbegin(), legal_first_elements.cend(), to) == legal_first_elements.cend()) {
+        if (from == vv_start) {
+            if (std::find(legal_first_vvs.cbegin(), legal_first_vvs.cend(), to) == legal_first_vvs.cend()) {
                 return false;
             }
         }
 
-        if (to == el_end) {
-            if (std::find(legal_last_elements.cbegin(), legal_last_elements.cend(), from) == legal_last_elements.cend()) {
+        if (to == vv_end) {
+            if (std::find(legal_last_vvs.cbegin(), legal_last_vvs.cend(), from) == legal_last_vvs.cend()) {
                 return false;
             }
         }
@@ -189,24 +187,24 @@ VirtualPath find_shortest_path(
         return true;
     };
 
-    auto visit_elem = [&](const Candidate& c, const VirtualVertex& el) {
-        if (legal_step(c.el, el)) {
-            const Distance& current_dist = distance[el];
-            const auto& p = element_pos(_e, el);
+    auto visit_vv = [&](const Candidate& c, const VirtualVertex& vv) {
+        if (legal_step(c.vv, vv)) {
+            const Distance& current_dist = distance[vv];
+            const auto& p = element_pos(_e, vv);
             Distance new_dist = c.dist;
             new_dist.geodesic += tg::distance(p, c.p);
-            if (is_real_edge(el)) {
+            if (is_real_edge(vv)) {
                 new_dist.edges_crossed += 1;
             }
 
             if (new_dist < current_dist) {
                 Candidate new_c;
-                new_c.el = VirtualVertex(el);
+                new_c.vv = vv;
                 new_c.p = p;
                 new_c.dist = new_dist;
 
-                distance[el] = new_c.dist;
-                prev[el] = c.el;
+                distance[vv] = new_c.dist;
+                prev[vv] = c.vv;
 
                 q.push(new_c);
             }
@@ -217,11 +215,11 @@ VirtualPath find_shortest_path(
         const auto u = q.top();
         q.pop();
 
-        const auto& el = u.el;
+        const auto& vv = u.vv;
 
         // Expand vertex neighborhood
-        if (is_real_vertex(el)) {
-            const auto& t_v = real_vertex(u.el);
+        if (is_real_vertex(vv)) {
+            const auto& t_v = real_vertex(u.vv);
 
             if (t_v == t_v_end) {
                 break;
@@ -229,7 +227,7 @@ VirtualPath find_shortest_path(
 
             // Add incident vertices (if they're not blocked)
             for (const auto t_v_adj : t_v.adjacent_vertices()) {
-                visit_elem(u, VirtualVertex(t_v_adj));
+                visit_vv(u, VirtualVertex(t_v_adj));
             }
 
             // Add incident edge midpoints (if they're not blocked)
@@ -238,12 +236,12 @@ VirtualPath find_shortest_path(
                     continue;
                 }
                 const auto eh_opp_edge = t_he_out.next().edge();
-                visit_elem(u, VirtualVertex(eh_opp_edge));
+                visit_vv(u, VirtualVertex(eh_opp_edge));
             }
         }
         // Expand edge midpoint neighborhood
-        else if (is_real_edge(el)) {
-            const auto& t_e = real_edge(el);
+        else if (is_real_edge(vv)) {
+            const auto& t_e = real_edge(vv);
 
             const auto& t_he = t_e.halfedgeA();
             const auto& t_he_opp = t_e.halfedgeB();
@@ -251,21 +249,21 @@ VirtualPath find_shortest_path(
             // Visit opposite vertices
             const auto& t_v_u = opposite_vertex(t_he);
             const auto& t_v_u_opp = opposite_vertex(t_he_opp);
-            visit_elem(u, VirtualVertex(t_v_u));
-            visit_elem(u, VirtualVertex(t_v_u_opp));
+            visit_vv(u, VirtualVertex(t_v_u));
+            visit_vv(u, VirtualVertex(t_v_u_opp));
 
             // Visit incident edges
             if (!t_he.is_boundary()) {
                 const auto& eh_u_r = t_he.next().edge();
                 const auto& eh_u_l = t_he.prev().edge();
-                visit_elem(u, eh_u_r);
-                visit_elem(u, eh_u_l);
+                visit_vv(u, eh_u_r);
+                visit_vv(u, eh_u_l);
             }
             if (!t_he_opp.is_boundary()) {
                 const auto& eh_u_opp_r = t_he_opp.prev().edge();
                 const auto& eh_u_opp_l = t_he_opp.next().edge();
-                visit_elem(u, eh_u_opp_r);
-                visit_elem(u, eh_u_opp_l);
+                visit_vv(u, eh_u_opp_r);
+                visit_vv(u, eh_u_opp_l);
             }
         }
     }
@@ -275,13 +273,13 @@ VirtualPath find_shortest_path(
     }
     else {
         VirtualPath path;
-        VirtualVertex el_current(t_v_end);
-        VirtualVertex el_start(t_v_start);
-        while (el_current != el_start) {
-            path.push_back(el_current);
-            el_current = prev[el_current];
+        VirtualVertex vv_current(t_v_end);
+        VirtualVertex vv_start(t_v_start);
+        while (vv_current != vv_start) {
+            path.push_back(vv_current);
+            vv_current = prev[vv_current];
         }
-        path.push_back(el_start);
+        path.push_back(vv_start);
         std::reverse(path.begin(), path.end());
         return path;
     }
@@ -321,12 +319,12 @@ bool is_blocked(const Embedding& _e, const pm::vertex_handle& _t_v)
     return false;
 }
 
-bool is_blocked(const Embedding& _e, const VirtualVertex& _t_el)
+bool is_blocked(const Embedding& _e, const VirtualVertex& _t_vv)
 {
-    if (const auto* v = std::get_if<pm::vertex_handle>(&_t_el)) {
+    if (const auto* v = std::get_if<pm::vertex_handle>(&_t_vv)) {
         return is_blocked(_e, *v);
     }
-    else if (const auto* e = std::get_if<pm::edge_handle>(&_t_el)) {
+    else if (const auto* e = std::get_if<pm::edge_handle>(&_t_vv)) {
         return is_blocked(_e, *e);
     }
     else {
@@ -346,12 +344,12 @@ tg::pos3 element_pos(const Embedding& _e, const pm::vertex_handle& _t_v)
     return t_pos[_t_v];
 }
 
-tg::pos3 element_pos(const Embedding& _e, const VirtualVertex& _t_el)
+tg::pos3 element_pos(const Embedding& _e, const VirtualVertex& _t_vv)
 {
-    if (const auto* v = std::get_if<pm::vertex_handle>(&_t_el)) {
+    if (const auto* v = std::get_if<pm::vertex_handle>(&_t_vv)) {
         return element_pos(_e, *v);
     }
-    else if (const auto* e = std::get_if<pm::edge_handle>(&_t_el)) {
+    else if (const auto* e = std::get_if<pm::edge_handle>(&_t_vv)) {
         return element_pos(_e, *e);
     }
     else {
@@ -368,14 +366,14 @@ void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VirtualPat
 
     // Turn the VertexEdgePath into a pure vertex path by splitting edges
     std::vector<pm::vertex_handle> vertex_path;
-    for (const auto& el : _path) {
-        if (is_real_edge(el)) {
-            const auto& t_e = real_edge(el);
+    for (const auto& vv : _path) {
+        if (is_real_edge(vv)) {
+            const auto& t_e = real_edge(vv);
             const auto t_v_new = split_edge(*_e.t_m, t_e);
             vertex_path.push_back(t_v_new);
         }
         else {
-            vertex_path.push_back(std::get<pm::vertex_handle>(el));
+            vertex_path.push_back(std::get<pm::vertex_handle>(vv));
         }
     }
 
@@ -394,10 +392,10 @@ double path_length(const Embedding& _e, const VirtualPath& _path)
     LE_ASSERT(_path.size() >= 2);
     double length = 0.0;
     for (int i = 0; i < _path.size() - 1; ++i) {
-        const auto& el_i = _path[i];
-        const auto& el_j = _path[i+1];
-        const auto p_i = element_pos(_e, el_i);
-        const auto p_j = element_pos(_e, el_j);
+        const auto& vv_i = _path[i];
+        const auto& vv_j = _path[i+1];
+        const auto p_i = element_pos(_e, vv_i);
+        const auto p_j = element_pos(_e, vv_j);
         length += tg::distance(p_i, p_j);
     }
     return length;

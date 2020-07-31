@@ -74,13 +74,13 @@ struct VEIntersectionCache
         }
     }
 
-    void insert_segment(const VirtualVertex& _el0, const VirtualVertex& _el1, const Label& _l)
+    void insert_segment(const VirtualVertex& _vv0, const VirtualVertex& _vv1, const Label& _l)
     {
-        if (is_real_vertex(_el0)) {
-            if (is_real_vertex(_el1)) {
+        if (is_real_vertex(_vv0)) {
+            if (is_real_vertex(_vv1)) {
                 // (V,V) case
-                const auto& v0 = real_vertex(_el0);
-                const auto& v1 = real_vertex(_el1);
+                const auto& v0 = real_vertex(_vv0);
+                const auto& v1 = real_vertex(_vv1);
                 const auto& he = pm::halfedge_from_to(v0, v1);
                 LE_ASSERT(he.is_valid());
                 const auto& e = he.edge();
@@ -88,26 +88,26 @@ struct VEIntersectionCache
             }
             else {
                 // (V,E) case
-                const auto& v = real_vertex(_el0);
-                const auto& e = real_edge(_el1);
+                const auto& v = real_vertex(_vv0);
+                const auto& e = real_edge(_vv1);
                 const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
                 LE_ASSERT(f.is_valid());
                 insert(f, _l);
             }
         }
         else {
-            if (is_real_vertex(_el1)) {
+            if (is_real_vertex(_vv1)) {
                 // (E,V) case
-                const auto& e = real_edge(_el0);
-                const auto& v = real_vertex(_el1);
+                const auto& e = real_edge(_vv0);
+                const auto& v = real_vertex(_vv1);
                 const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
                 LE_ASSERT(f.is_valid());
                 insert(f, _l);
             }
             else {
                 // (E,E) case
-                const auto& e0 = real_edge(_el0);
-                const auto& e1 = real_edge(_el1);
+                const auto& e0 = real_edge(_vv0);
+                const auto& e1 = real_edge(_vv1);
                 const auto& f = common_face(e0, e1);
                 LE_ASSERT(f.is_valid());
                 insert(f, _l);

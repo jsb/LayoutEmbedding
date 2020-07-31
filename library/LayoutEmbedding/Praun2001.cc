@@ -73,13 +73,13 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
     };
 
     for (int i = 0; i < _path.size(); ++i) {
-        const auto& el = _path[i];
+        const auto& vv = _path[i];
 
-        if (is_real_vertex(el)) {
+        if (is_real_vertex(vv)) {
             if (i > 0 && i < _path.size() - 1) {
                 const auto& el_prev = _path[i - 1];
                 const auto& el_next = _path[i + 1];
-                const auto& v = real_vertex(el);
+                const auto& v = real_vertex(vv);
 
                 VirtualHalfedge vh_start{v, el_prev};
                 VirtualHalfedge vh_end{v, el_next};
@@ -102,16 +102,16 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
                 }
             }
         }
-        else if (is_real_edge(el)) {
+        else if (is_real_edge(vv)) {
             LE_ASSERT(i > 0);
             LE_ASSERT(i < _path.size() - 1);
 
-            const auto& e = real_edge(el);
+            const auto& e = real_edge(vv);
             auto he = pm::halfedge_handle::invalid;
 
-            const auto& el_next = _path[i + 1];
-            if (is_real_vertex(el_next)) {
-                const auto& v_next = real_vertex(el_next);
+            const auto& vv_next = _path[i + 1];
+            if (is_real_vertex(vv_next)) {
+                const auto& v_next = real_vertex(vv_next);
                 if (e.halfedgeA().next().vertex_to() == v_next) {
                     he = e.halfedgeA();
                 }
@@ -119,8 +119,8 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
                     he = e.halfedgeB();
                 }
             }
-            else if (is_real_edge(el_next)) {
-                const auto& e_next = real_edge(el_next);
+            else if (is_real_edge(vv_next)) {
+                const auto& e_next = real_edge(vv_next);
 
                 if ((e.halfedgeA().face() == e_next.halfedgeA().face()) || (e.halfedgeA().face() == e_next.halfedgeB().face())) {
                     he = e.halfedgeA();

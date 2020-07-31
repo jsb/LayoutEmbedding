@@ -32,11 +32,11 @@ pm::halfedge_handle get_embeddable_sector(const Embedding& _e, const pm::halfedg
 
 bool is_blocked(const Embedding& _e, const pm::edge_handle& _t_e);
 bool is_blocked(const Embedding& _e, const pm::vertex_handle& _t_v);
-bool is_blocked(const Embedding& _e, const VirtualVertex& _t_el);
+bool is_blocked(const Embedding& _e, const VirtualVertex& _t_vv);
 
 tg::pos3 element_pos(const Embedding& _e, const pm::edge_handle& _t_e);
 tg::pos3 element_pos(const Embedding& _e, const pm::vertex_handle& _t_v);
-tg::pos3 element_pos(const Embedding& _e, const VirtualVertex& _t_el);
+tg::pos3 element_pos(const Embedding& _e, const VirtualVertex& _t_vv);
 
 VirtualPath find_shortest_path(
     const Embedding& _e,
