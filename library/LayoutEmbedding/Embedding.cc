@@ -2,6 +2,7 @@
 
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
+#include <LayoutEmbedding/VirtualVertexAttribute.hh>
 
 #include <queue>
 

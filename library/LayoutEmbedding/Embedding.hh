@@ -3,6 +3,7 @@
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/RefinableMesh.hh>
 #include <LayoutEmbedding/VirtualVertex.hh>
+#include <LayoutEmbedding/VirtualPath.hh>
 
 namespace LayoutEmbedding {
 
