@@ -279,6 +279,13 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         const double cost_lower_bound = embedded_cost + unembedded_cost;
 
+        // TODO: Shouldn't these values always match? Bug?
+        //LE_ASSERT(cost_lower_bound == c.lower_bound);
+        gap = 1.0 - cost_lower_bound / global_upper_bound;
+        if (gap <= _settings.optimality_gap) {
+            continue;
+        }
+
         std::cout << "|Embd|: " << c.insertions.size();
         std::cout << "    ";
         std::cout << "|Conf|: " << conflicting_l_e.size();
