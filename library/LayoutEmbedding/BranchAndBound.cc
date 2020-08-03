@@ -4,9 +4,7 @@
 #include <LayoutEmbedding/Connectivity.hh>
 #include <LayoutEmbedding/VirtualPathConflictSentinel.hh>
 
-// DEBUG
-#include <iostream>
-
+#include <chrono>
 #include <queue>
 
 namespace LayoutEmbedding {
@@ -148,11 +146,28 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         q.push(c);
     }
 
+    const auto start_time = std::chrono::steady_clock::now();
+
     while (!q.empty()) {
+        // Timeout
+        if (_settings.timeout > 0.0) {
+            const auto current_time = std::chrono::steady_clock::now();
+            const auto interval = current_time - start_time;
+            using seconds_double = std::chrono::duration<double>;
+            const double elapsed_seconds = std::chrono::duration_cast<seconds_double>(interval).count();
+            if (elapsed_seconds >= _settings.timeout) {
+                std::cout << "Reached time limit of " << _settings.timeout << " s. Terminating." << std::endl;
+                if (std::isinf(global_upper_bound)) {
+                    std::cout << "Warning: No valid solution was found during that time." << std::endl;
+                }
+                break;
+            }
+        }
+
         auto c = q.top();
         q.pop();
 
-        const double gap = 1.0 - c.lower_bound / global_upper_bound;
+        double gap = 1.0 - c.lower_bound / global_upper_bound;
         if (gap <= _settings.optimality_gap) {
             continue;
         }
