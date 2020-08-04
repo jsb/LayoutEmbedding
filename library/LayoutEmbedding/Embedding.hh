@@ -8,6 +8,10 @@ namespace LayoutEmbedding {
 
 struct Embedding
 {
+    // This object does not take ownership of its Layout and Target Mesh
+    // (and its positions), it merely holds references to them.
+    // Note: Inserting paths using embed_path will modify the Target Mesh!
+
     const pm::Mesh* l_m; // Layout mesh
     pm::Mesh* t_m; // Target mesh
     pm::vertex_attribute<tg::pos3>* t_pos;
