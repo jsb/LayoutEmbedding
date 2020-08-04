@@ -1,7 +1,6 @@
 #pragma once
 
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/RefinableMesh.hh>
 #include <LayoutEmbedding/VirtualVertex.hh>
 #include <LayoutEmbedding/VirtualPath.hh>
 
@@ -10,13 +9,15 @@ namespace LayoutEmbedding {
 struct Embedding
 {
     const pm::Mesh* l_m; // Layout mesh
-    RefinableMesh* t_m; // Target mesh
+    pm::Mesh* t_m; // Target mesh
+    pm::vertex_attribute<tg::pos3>* t_pos;
+
     pm::vertex_attribute<pm::vertex_handle> l_matching_vertex;
     pm::vertex_attribute<pm::vertex_handle> t_matching_vertex;
     pm::halfedge_attribute<pm::halfedge_handle> t_matching_halfedge;
 };
 
-Embedding make_embedding(const pm::Mesh& _l_m, RefinableMesh& _rm);
+Embedding make_embedding(const pm::Mesh& _l_m, pm::Mesh& _t_m, pm::vertex_attribute<tg::pos3>& _t_pos);
 
 void set_matching_vertices(Embedding& _e, const MatchingVertices& _mvs);
 

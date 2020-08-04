@@ -13,7 +13,6 @@
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/Praun2001.hh>
-#include <LayoutEmbedding/RefinableMesh.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
@@ -49,8 +48,7 @@ int main()
         matching_vertices.push_back({l_m.vertices()[i], t_vertices[i]});
     }
 
-    RefinableMesh rm = make_refinable_mesh(t_m, t_pos);
-    Embedding em = make_embedding(l_m, rm);
+    Embedding em = make_embedding(l_m, t_m, t_pos);
     set_matching_vertices(em, matching_vertices);
 
     branch_and_bound(em);

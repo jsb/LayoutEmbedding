@@ -13,7 +13,6 @@
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/Praun2001.hh>
-#include <LayoutEmbedding/RefinableMesh.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
@@ -79,11 +78,8 @@ void run_test_case(const TestCase& tc)
         std::cout << t_m.faces().count() << " faces. ";
         std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
 
-        // Wrap the Target Mesh into a RefinableMesh to enable adaptive refinement
-        RefinableMesh rm = make_refinable_mesh(t_m, t_pos);
-
-        // Create the embedding linking the Layout and the (wrapped) Target Mesh
-        Embedding em = make_embedding(l_m, rm);
+        // Create the embedding linking the Layout and the Target Mesh
+        Embedding em = make_embedding(l_m, t_m, t_pos);
 
         // Find embedding positions for the Layout vertices on the Target Mesh (nearest neighbors)
         auto matching_vertices = find_matching_vertices(l_pos, t_pos);

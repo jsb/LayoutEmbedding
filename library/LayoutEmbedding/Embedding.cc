@@ -8,9 +8,9 @@
 
 namespace LayoutEmbedding {
 
-Embedding make_embedding(const pm::Mesh& _l_m, RefinableMesh& _rm)
+Embedding make_embedding(const pm::Mesh& _l_m, pm::Mesh& _t_m, pm::vertex_attribute<tg::pos3>& _t_pos)
 {
-    return {&_l_m, &_rm, _l_m, *_rm.m, *_rm.m};
+    return {&_l_m, &_t_m, &_t_pos, _l_m, _t_m, _t_m};
 }
 
 void set_matching_vertices(Embedding& _e, const MatchingVertices& _mvs)
@@ -64,7 +64,7 @@ polymesh::halfedge_handle get_embeddable_sector(const Embedding& _e, const pm::h
         const auto& l_v = _l_he.vertex_from();
         const auto& t_v = _e.l_matching_vertex[l_v];
         LE_ASSERT(t_v.is_valid());
-        LE_ASSERT(t_v.mesh == _e.t_m->m);
+        LE_ASSERT(t_v.mesh == _e.t_m);
         return t_v.any_outgoing_halfedge();
     }
 }
@@ -100,8 +100,8 @@ VirtualPath find_shortest_path(
     };
 
     const pm::Mesh& l_m = *_e.l_m;
-    const pm::Mesh& t_m = *_e.t_m->m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_e.t_m->pos;
+    const pm::Mesh& t_m = *_e.t_m;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_e.t_pos;
 
     LE_ASSERT(_t_h_sector_start.mesh == &t_m);
     LE_ASSERT(_t_h_sector_end.mesh == &t_m);
@@ -305,13 +305,13 @@ VirtualPath find_shortest_path(const Embedding& _e, const pm::edge_handle& _l_e)
 
 bool is_blocked(const Embedding& _e, const pm::edge_handle& _t_e)
 {
-    LE_ASSERT(_t_e.mesh == _e.t_m->m);
+    LE_ASSERT(_t_e.mesh == _e.t_m);
     return _e.t_matching_halfedge[_t_e.halfedgeA()].is_valid() || _e.t_matching_halfedge[_t_e.halfedgeB()].is_valid();
 }
 
 bool is_blocked(const Embedding& _e, const pm::vertex_handle& _t_v)
 {
-    LE_ASSERT(_t_v.mesh == _e.t_m->m);
+    LE_ASSERT(_t_v.mesh == _e.t_m);
     for (const auto& t_e : _t_v.edges()) {
         if (is_blocked(_e, t_e)) {
             return true;
@@ -335,13 +335,13 @@ bool is_blocked(const Embedding& _e, const VirtualVertex& _t_vv)
 
 tg::pos3 element_pos(const Embedding& _e, const pm::edge_handle& _t_e)
 {
-    const auto& t_pos = *_e.t_m->pos;
+    const auto& t_pos = *_e.t_pos;
     return tg::centroid(t_pos[_t_e.vertexA()], t_pos[_t_e.vertexB()]);
 }
 
 tg::pos3 element_pos(const Embedding& _e, const pm::vertex_handle& _t_v)
 {
-    const auto& t_pos = *_e.t_m->pos;
+    const auto& t_pos = *_e.t_pos;
     return t_pos[_t_v];
 }
 
@@ -363,14 +363,21 @@ void embed_path(Embedding& _e, const pm::halfedge_handle& _l_h, const VirtualPat
     LE_ASSERT(!get_embedded_target_halfedge(_e, _l_h).is_valid());
     LE_ASSERT(_path.size() >= 2);
 
-    auto& t_m = *_e.t_m->m;
+    auto& t_m = *_e.t_m;
+    auto& t_pos = *_e.t_pos;
 
     // Turn the VertexEdgePath into a pure vertex path by splitting edges
     std::vector<pm::vertex_handle> vertex_path;
     for (const auto& vv : _path) {
         if (is_real_edge(vv)) {
             const auto& t_e = real_edge(vv);
-            const auto t_v_new = split_edge(*_e.t_m, t_e);
+
+            const auto& p0 = t_pos[t_e.vertexA()];
+            const auto& p1 = t_pos[t_e.vertexB()];
+            const auto p = tg::mix(p0, p1, 0.5);
+
+            const auto t_v_new = t_m.edges().split_and_triangulate(t_e);
+            t_pos[t_v_new] = p;
             vertex_path.push_back(t_v_new);
         }
         else {
@@ -457,7 +464,7 @@ double embedded_path_length(const Embedding& _e, const polymesh::halfedge_handle
     const auto& path = get_embedded_path(_e, _l_he);
     LE_ASSERT(path.size() >= 2);
     double length = 0.0;
-    const auto& t_pos = *_e.t_m->pos;
+    const auto& t_pos = *_e.t_pos;
     for (int i = 0; i < path.size() - 1; ++i) {
         const auto& v_i = path[i];
         const auto& v_j = path[i + 1];

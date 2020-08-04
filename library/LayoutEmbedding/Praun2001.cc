@@ -19,8 +19,8 @@ namespace LayoutEmbedding {
 bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const VirtualPath& _path)
 {
     const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m->m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+    const pm::Mesh& t_m = *_em.t_m;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
 
     // Walk along the VertexEdgePath and mark the vertices directly left and right of it with a special attribute:
     // The indicator attribute assigns each vertex a value in {-1, 0, 1},
@@ -205,8 +205,8 @@ bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l
 void praun2001(Embedding& _em, const Praun2001Settings& _settings)
 {
     const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m->m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+    const pm::Mesh& t_m = *_em.t_m;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
 
     const int l_num_v = l_m.vertices().count();
 

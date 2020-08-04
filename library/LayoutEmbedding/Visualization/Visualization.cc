@@ -21,7 +21,7 @@ void view_embedding(const Embedding& _em)
 void view_layout(const Embedding& _em)
 {
     const pm::Mesh& l_m = *_em.l_m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
 
     const float node_size = 5.0f;
     const float arc_width = 2.0f;
@@ -69,8 +69,8 @@ void view_layout(const Embedding& _em)
 void view_target(const Embedding& _em)
 {
     const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m->m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+    const pm::Mesh& t_m = *_em.t_m;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
 
     const float node_size = 5.0f;
     const float arc_width = 2.0f;

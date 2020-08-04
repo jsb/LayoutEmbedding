@@ -17,7 +17,7 @@ std::set<pm::edge_index> conflicting_paths(const Embedding& _em, const pm::edge_
     // - Around each layout vertex, the cyclic order of outgoing edges must be consistent with that in the layout.
 
     const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m->m;
+    const pm::Mesh& t_m = *_em.t_m;
 
     VirtualPathConflictSentinel vpcs(t_m);
 
@@ -62,15 +62,14 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
 {
     // Copy embedding
     const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m->m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+    const pm::Mesh& t_m = *_em.t_m;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
 
     pm::unique_ptr<pm::Mesh> t_m_copy = t_m.copy();
     auto t_pos_copy = t_m_copy->vertices().make_attribute<tg::pos3>();
     t_pos_copy.copy_from(t_pos);
 
-    RefinableMesh rm = make_refinable_mesh(*t_m_copy, t_pos_copy);
-    Embedding em = make_embedding(l_m, rm);
+    Embedding em = make_embedding(l_m, *t_m_copy, t_pos_copy);
 
     for (const auto& l_v : l_m.vertices()) {
         em.l_matching_vertex[l_v.idx] = (*t_m_copy)[_em.l_matching_vertex[l_v.idx].idx];
@@ -128,8 +127,8 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
 void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 {
     const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m->m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+    const pm::Mesh& t_m = *_em.t_m;
+    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
 
     double global_upper_bound = std::numeric_limits<double>::infinity();
     // TODO: Run heuristic algorithm to find a tighter initial upper bound
@@ -177,8 +176,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         auto t_pos_copy = t_m_copy->vertices().make_attribute<tg::pos3>();
         t_pos_copy.copy_from(t_pos);
 
-        RefinableMesh rm = make_refinable_mesh(*t_m_copy, t_pos_copy);
-        Embedding em = make_embedding(l_m, rm);
+        Embedding em = make_embedding(l_m, *t_m_copy, t_pos_copy);
 
         for (const auto& l_v : l_m.vertices()) {
             em.l_matching_vertex[l_v.idx] = (*t_m_copy)[_em.l_matching_vertex[l_v.idx].idx];
