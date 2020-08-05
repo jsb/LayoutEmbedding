@@ -50,21 +50,26 @@ void run_test_case(const TestCase& tc)
 
     for (const auto& algorithm : algorithms) {
         // Load Target Mesh from file
-        pm::Mesh t_m;
-        auto t_pos = t_m.vertices().make_attribute<tg::pos3>();
-        load(tc.target_mesh_filename, t_m, t_pos);
+        pm::Mesh input_t_m;
+        auto input_t_pos = input_t_m.vertices().make_attribute<tg::pos3>();
+        load(tc.target_mesh_filename, input_t_m, input_t_pos);
 
         // Load Layout Mesh from file
-        pm::Mesh l_m;
-        auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-        load(tc.layout_mesh_filename, l_m, l_pos);
+        pm::Mesh input_l_m;
+        auto input_l_pos = input_l_m.vertices().make_attribute<tg::pos3>();
+        load(tc.layout_mesh_filename, input_l_m, input_l_pos);
 
         // Generate Layout from the Target Mesh by incremental decimation
         /*
-        pm::Mesh l_m;
-        auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-        make_layout_by_decimation(t_pos, 28, l_m, l_pos);
+        pm::Mesh input_l_m;
+        auto input_l_pos = input_l_m.vertices().make_attribute<tg::pos3>();
+        make_layout_by_decimation(input_t_pos, 28, input_l_m, input_l_pos);
         */
+
+        Embedding em(input_l_m, input_t_m, input_t_pos);
+        const pm::Mesh& l_m = em.layout_mesh();
+        const pm::Mesh& t_m = em.target_mesh();
+        const pm::vertex_attribute<tg::pos3>& t_pos = em.target_pos();
 
         std::cout << "Layout Mesh: ";
         std::cout << l_m.vertices().count() << " vertices, ";
@@ -79,16 +84,15 @@ void run_test_case(const TestCase& tc)
         std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
 
         // Create the embedding linking the Layout and the Target Mesh
-        Embedding em = make_embedding(l_m, t_m, t_pos);
 
         // Find embedding positions for the Layout vertices on the Target Mesh (nearest neighbors)
-        auto matching_vertices = find_matching_vertices(l_pos, t_pos);
+        auto matching_vertices = find_matching_vertices(input_l_pos, t_pos);
 
         // Optional: Perturb the target positions on the surface of the Target Mesh a bit
         jitter_matching_vertices(l_m, t_m, matching_vertices, tc.jitter_vertices);
 
         // Store the vertex embedding positions
-        set_matching_vertices(em, matching_vertices);
+        em.set_matching_vertices(matching_vertices);
 
         glow::timing::CpuTimer timer;
 
@@ -108,7 +112,7 @@ void run_test_case(const TestCase& tc)
 
         // Stats
         const double optimization_time = timer.elapsedSeconds();
-        const double score = total_embedded_path_length(em);
+        const double score = em.total_embedded_path_length();
         std::cout << "Optimization took " << optimization_time << " s" << std::endl;
         std::cout << "Total embedding length: " << score << std::endl;
         {

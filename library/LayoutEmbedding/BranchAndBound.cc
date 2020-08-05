@@ -16,8 +16,8 @@ std::set<pm::edge_index> conflicting_paths(const Embedding& _em, const pm::edge_
     // - Paths are allowed to touch other paths at layout vertices (path endpoints).
     // - Around each layout vertex, the cyclic order of outgoing edges must be consistent with that in the layout.
 
-    const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m;
+    const pm::Mesh& l_m = _em.layout_mesh();
+    const pm::Mesh& t_m = _em.target_mesh();
 
     VirtualPathConflictSentinel vpcs(t_m);
 
@@ -61,33 +61,18 @@ struct EmbeddingStats
 EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm::edge_handle>& _insertions)
 {
     // Copy embedding
-    const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
-
-    pm::unique_ptr<pm::Mesh> t_m_copy = t_m.copy();
-    auto t_pos_copy = t_m_copy->vertices().make_attribute<tg::pos3>();
-    t_pos_copy.copy_from(t_pos);
-
-    Embedding em = make_embedding(l_m, *t_m_copy, t_pos_copy);
-
-    for (const auto& l_v : l_m.vertices()) {
-        em.l_matching_vertex[l_v.idx] = (*t_m_copy)[_em.l_matching_vertex[l_v.idx].idx];
-    }
-    for (const auto& t_v : t_m_copy->vertices()) {
-        em.t_matching_vertex[t_v.idx] = l_m[_em.t_matching_vertex[t_v.idx].idx];
-    }
-    for (const auto& t_he : t_m_copy->halfedges()) {
-        em.t_matching_halfedge[t_he.idx] = l_m[_em.t_matching_halfedge[t_he.idx].idx];
-    }
+    Embedding em(_em);
+    const pm::Mesh& l_m = em.layout_mesh();
+    const pm::Mesh& t_m = em.target_mesh();
+    const pm::vertex_attribute<tg::pos3>& t_pos = em.target_pos();
 
     // Measure length of "embedded" edges
     std::set<pm::edge_index> embedded_l_e;
     double embedded_cost = 0.0;
     for (const auto& l_e : _insertions) {
-        if (is_embedded(em, l_e)) {
+        if (em.is_embedded(l_e)) {
             embedded_l_e.insert(l_e);
-            embedded_cost += embedded_path_length(em, l_e);
+            embedded_cost += em.embedded_path_length(l_e);
         }
     }
 
@@ -99,13 +84,13 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
             continue;
         }
 
-        const auto& path = find_shortest_path(em, l_e);
+        const auto& path = em.find_shortest_path(l_e);
         if (path.empty()) {
             unembedded_cost = std::numeric_limits<double>::infinity();
             break;
         }
         else {
-            unembedded_cost += path_length(em, path);
+            unembedded_cost += em.path_length(path);
             candidate_paths[l_e] = path;
         }
     }
@@ -126,9 +111,9 @@ EmbeddingStats calc_cost_lower_bound(const Embedding& _em, const std::vector<pm:
 
 void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 {
-    const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
+    const pm::Mesh& l_m = _em.layout_mesh();
+    const pm::Mesh& t_m = _em.target_mesh();
+    const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
 
     double global_upper_bound = std::numeric_limits<double>::infinity();
     // TODO: Run heuristic algorithm to find a tighter initial upper bound
@@ -172,18 +157,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         }
 
         // Reconstruct the embedding associated with this embedding sequence
-        pm::unique_ptr<pm::Mesh> t_m_copy = t_m.copy();
-        auto t_pos_copy = t_m_copy->vertices().make_attribute<tg::pos3>();
-        t_pos_copy.copy_from(t_pos);
-
-        Embedding em = make_embedding(l_m, *t_m_copy, t_pos_copy);
-
-        for (const auto& l_v : l_m.vertices()) {
-            em.l_matching_vertex[l_v.idx] = (*t_m_copy)[_em.l_matching_vertex[l_v.idx].idx];
-        }
-        for (const auto& t_v : t_m_copy->vertices()) {
-            em.t_matching_vertex[t_v.idx] = l_m[_em.t_matching_vertex[t_v.idx].idx];
-        }
+        Embedding em(_em);
 
         // Embed the "already embedded" edges
         std::set<pm::edge_index> embedded_l_e;
@@ -191,15 +165,15 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         double embedded_cost = 0.0;
         for (const auto& l_e : c.insertions) {
             auto l_he = l_e.halfedgeA();
-            auto path = find_shortest_path(em, l_he);
+            auto path = em.find_shortest_path(l_he);
             if (path.empty()) {
                 embedded_cost = std::numeric_limits<double>::infinity();
                 break;
             }
 
-            embedded_cost += path_length(em, path);
+            embedded_cost += em.path_length(path);
 
-            embed_path(em, l_he, path);
+            em.embed_path(l_he, path);
             embedded_l_e.insert(l_e);
         }
         if (std::isinf(embedded_cost)) {
@@ -215,12 +189,12 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 continue;
             }
 
-            const auto& path = find_shortest_path(em, l_e);
+            const auto& path = em.find_shortest_path(l_e);
             if (path.empty()) {
                 unembedded_cost = std::numeric_limits<double>::infinity();
                 break;
             }
-            unembedded_cost += path_length(em, path);
+            unembedded_cost += em.path_length(path);
 
             LE_ASSERT(path.size() >= 2);
             candidate_paths[l_e] = path;
@@ -336,16 +310,16 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     std::set<pm::edge_index> l_e_embedded;
     for (const auto& l_e : best_solution.insertions) {
         const auto l_he = l_e.halfedgeA();
-        const auto path = find_shortest_path(_em, l_he);
-        embed_path(_em, l_he, path);
+        const auto path = _em.find_shortest_path(l_he);
+        _em.embed_path(l_he, path);
         l_e_embedded.insert(l_e);
     }
     // Remaining edges
     for (const auto& l_e : l_m.edges()) {
         if (!l_e_embedded.count(l_e)) {
             const auto l_he = l_e.halfedgeA();
-            const auto path = find_shortest_path(_em, l_he);
-            embed_path(_em, l_he, path);
+            const auto path = _em.find_shortest_path(l_he);
+            _em.embed_path(l_he, path);
             l_e_embedded.insert(l_e);
         }
     }

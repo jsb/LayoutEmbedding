@@ -48,8 +48,8 @@ int main()
         matching_vertices.push_back({l_m.vertices()[i], t_vertices[i]});
     }
 
-    Embedding em = make_embedding(l_m, t_m, t_pos);
-    set_matching_vertices(em, matching_vertices);
+    Embedding em(l_m, t_m, t_pos);
+    em.set_matching_vertices(matching_vertices);
 
     branch_and_bound(em);
     //praun2001(em);

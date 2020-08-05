@@ -18,9 +18,9 @@ namespace LayoutEmbedding {
 /// Returns true if a potential swirl is detected, false otherwise.
 bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const VirtualPath& _path)
 {
-    const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
+    const pm::Mesh& l_m = _em.layout_mesh();
+    const pm::Mesh& t_m = _em.target_mesh();
+    const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
 
     // Walk along the VertexEdgePath and mark the vertices directly left and right of it with a special attribute:
     // The indicator attribute assigns each vertex a value in {-1, 0, 1},
@@ -157,7 +157,7 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
         if ((l_v == _l_he.vertex_from()) || (l_v == _l_he.vertex_to())) {
             continue;
         }
-        const auto t_v = _em.l_matching_vertex[l_v];
+        const auto t_v = _em.matching_target_vertex(l_v);
         t_seed_vertices.push_back(t_v);
         distance[t_v] = 0.0;
         q.push({0.0, t_v});
@@ -204,9 +204,9 @@ bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l
 
 void praun2001(Embedding& _em, const Praun2001Settings& _settings)
 {
-    const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_pos;
+    const pm::Mesh& l_m = _em.layout_mesh();
+    const pm::Mesh& t_m = _em.target_mesh();
+    const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
 
     const int l_num_v = l_m.vertices().count();
 
@@ -215,7 +215,7 @@ void praun2001(Embedding& _em, const Praun2001Settings& _settings)
     {
         int b_row = 0;
         for (const auto& l_v : l_m.vertices()) {
-            b[b_row] = _em.l_matching_vertex[l_v].idx.value;
+            b[b_row] = _em.matching_target_vertex(l_v).idx.value;
             ++b_row;
         }
     }
@@ -264,8 +264,8 @@ void praun2001(Embedding& _em, const Praun2001Settings& _settings)
                 }
             }
 
-            VirtualPath path = find_shortest_path(_em, l_e.halfedgeA());
-            double path_cost = path_length(_em, path);
+            VirtualPath path = _em.find_shortest_path(l_e.halfedgeA());
+            double path_cost = _em.path_length(path);
 
             // If we use an arbitrary insertion order, we can early-out after the first path is found
             if (_settings.insertion_order == Praun2001Settings::InsertionOrder::Arbitrary) {
@@ -293,7 +293,7 @@ void praun2001(Embedding& _em, const Praun2001Settings& _settings)
 
         std::cout << "Best path cost: " << best_path_cost << std::endl;
 
-        embed_path(_em, best_l_e.halfedgeA(), best_path);
+        _em.embed_path(best_l_e.halfedgeA(), best_path);
         l_v_components.merge(best_l_e.vertexA().idx.value, best_l_e.vertexB().idx.value);
         l_is_embedded[best_l_e] = true;
         ++l_num_embedded_edges;
