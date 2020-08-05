@@ -1,6 +1,5 @@
 #pragma once
 
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/VirtualVertex.hh>
 #include <LayoutEmbedding/VirtualPath.hh>

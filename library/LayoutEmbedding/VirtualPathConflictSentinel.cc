@@ -1,5 +1,6 @@
 #include "VirtualPathConflictSentinel.hh"
 
+#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 
 namespace LayoutEmbedding {
