@@ -4,11 +4,11 @@
 
 namespace LayoutEmbedding {
 
-VirtualPathConflictSentinel::VirtualPathConflictSentinel(const pm::Mesh& _m) :
-    m(_m),
-    v_label(m),
-    e_label(m),
-    f_label(m)
+VirtualPathConflictSentinel::VirtualPathConflictSentinel(const Embedding& _em) :
+    em(_em),
+    v_label(em.target_mesh()),
+    e_label(em.target_mesh()),
+    f_label(em.target_mesh())
 {
 }
 
@@ -93,6 +93,8 @@ void VirtualPathConflictSentinel::insert_segment(const VirtualVertex& _vv0, cons
 void VirtualPathConflictSentinel::insert_path(const VirtualPath& _path, const VirtualPathConflictSentinel::Label& _l)
 {
     LE_ASSERT(_path.size() >= 2);
+    LE_ASSERT(is_real_vertex(_path.front()));
+    LE_ASSERT(is_real_vertex(_path.back()));
 
     // Note: We deliberately skip the first and last element
     for (int i = 1; i < _path.size() - 1; ++i) {

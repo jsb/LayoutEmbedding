@@ -56,7 +56,7 @@ void EmbeddingState::compute_candidate_paths()
     non_conflicting_l_edges.clear();
     unembedded_cost = 0.0;
 
-    VirtualPathConflictSentinel vpcs(c_em.target_mesh());
+    VirtualPathConflictSentinel vpcs(c_em);
 
     for (const auto& l_e : c_em.layout_mesh().edges()) {
         if (!embedded_l_edges.count(l_e)) {
