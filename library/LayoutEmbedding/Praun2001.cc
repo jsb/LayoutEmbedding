@@ -3,6 +3,7 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/IGLMesh.hh>
 #include <LayoutEmbedding/UnionFind.hh>
+#include <LayoutEmbedding/VirtualPort.hh>
 
 #include <igl/harmonic.h>
 #include <Eigen/Dense>
@@ -32,46 +33,6 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
     LE_ASSERT(is_real_vertex(_path.front()));
     LE_ASSERT(is_real_vertex(_path.back()));
 
-    struct VirtualHalfedge
-    {
-        pm::vertex_handle from;
-        VirtualVertex to;
-
-        bool operator==(const VirtualHalfedge& _rhs) const
-        {
-            return (from == _rhs.from) && (to == _rhs.to);
-        }
-
-        bool operator!=(const VirtualHalfedge& _rhs) const
-        {
-            return !(*this == _rhs);
-        }
-
-        VirtualHalfedge rotated_cw() const
-        {
-            if (is_real_vertex(to)) {
-                const auto he = pm::halfedge_from_to(from, real_vertex(to));
-                const auto e_new = he.opposite().prev().edge();
-                return {from, e_new};
-            }
-            else if (is_real_edge(to)) {
-                const auto e = real_edge(to);
-                auto he = pm::halfedge_handle::invalid;
-                if (e.halfedgeA().next().vertex_to() == from) {
-                    he = e.halfedgeA();
-                }
-                else if (e.halfedgeB().next().vertex_to() == from) {
-                    he = e.halfedgeB();
-                }
-                LE_ASSERT(he.is_valid());
-                const auto v_new = he.vertex_from();
-                return {from, v_new};
-            }
-            LE_ASSERT(false);
-            return {};
-        }
-    };
-
     for (int i = 0; i < _path.size(); ++i) {
         const auto& vv = _path[i];
 
@@ -81,8 +42,8 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
                 const auto& el_next = _path[i + 1];
                 const auto& v = real_vertex(vv);
 
-                VirtualHalfedge vh_start{v, el_prev};
-                VirtualHalfedge vh_end{v, el_next};
+                VirtualPort vh_start{v, el_prev};
+                VirtualPort vh_end{v, el_next};
 
                 auto vh_current = vh_start.rotated_cw();
                 while (vh_current != vh_end) {
