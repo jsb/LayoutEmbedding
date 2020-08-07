@@ -507,6 +507,16 @@ double Embedding::total_embedded_path_length() const
     return total_length;
 }
 
+bool Embedding::is_complete() const
+{
+    for (const auto& l_e : l_m->edges()) {
+        if (!is_embedded(l_e)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 const polymesh::Mesh& Embedding::layout_mesh() const
 {
     return *l_m;

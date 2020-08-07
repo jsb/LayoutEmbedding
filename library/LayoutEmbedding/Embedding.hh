@@ -54,6 +54,7 @@ public:
     double embedded_path_length(const pm::halfedge_handle& _l_he) const;
     double embedded_path_length(const pm::edge_handle& _l_e) const;
     double total_embedded_path_length() const;
+    bool is_complete() const;
 
     // Getters
     const pm::Mesh& layout_mesh() const;
