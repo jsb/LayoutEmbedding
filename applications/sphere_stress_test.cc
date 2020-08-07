@@ -1,8 +1,4 @@
-#include <glow-extras/glfw/GlfwContext.hh>
-#include <glow-extras/viewer/view.hh>
 #include <glow-extras/timing/CpuTimer.hh>
-
-#include <imgui/imgui.h>
 
 #include <polymesh/formats.hh>
 
@@ -13,8 +9,6 @@
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/Praun2001.hh>
-#include <LayoutEmbedding/Visualization/Visualization.hh>
-#include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
 #include <algorithm>
 #include <fstream>
@@ -24,7 +18,6 @@ using namespace LayoutEmbedding;
 
 int main()
 {
-    glow::glfw::GlfwContext ctx;
     const std::string data_path = LE_DATA_PATH;
 
     pm::Mesh input_t_m;
@@ -35,29 +28,56 @@ int main()
     auto input_l_pos = input_l_m.vertices().make_attribute<tg::pos3>();
     load(data_path + "/models/layouts/cube_layout.obj", input_l_m, input_l_pos);
 
-    Embedding em(input_l_m, input_t_m, input_t_pos);
-    const auto& l_m = em.layout_mesh();
-    const auto& t_m = em.target_mesh();
-    const auto& t_pos = em.target_pos();
-
-    // Generate random matching vertices
-    std::srand(0);
-    std::vector<pm::vertex_handle> t_vertices = t_m.vertices().to_vector();
-    std::random_shuffle(t_vertices.begin(), t_vertices.end());
-    MatchingVertices matching_vertices;
-    for (int i = 0; i < l_m.vertices().size(); ++i) {
-        matching_vertices.push_back({l_m.vertices()[i], t_vertices[i]});
+    const std::string stats_filename = "stats_sphere_stress_test.csv";
+    {
+        std::ofstream f(stats_filename);
+        f << "seed,algorithm,runtime,score" << std::endl;
     }
 
-    em.set_matching_vertices(matching_vertices);
+    int seed = 0;
+    while (true) {
+        for (const auto& algorithm : {"greedy", "bnb"}) {
+            Embedding em(input_l_m, input_t_m, input_t_pos);
+            const auto& l_m = em.layout_mesh();
+            const auto& t_m = em.target_mesh();
+            const auto& t_pos = em.target_pos();
 
-    branch_and_bound(em);
-    //praun2001(em);
+            // Generate random matching vertices
+            std::srand(seed);
+            std::vector<pm::vertex_handle> t_vertices = t_m.vertices().to_vector();
+            std::random_shuffle(t_vertices.begin(), t_vertices.end());
+            MatchingVertices matching_vertices;
+            for (int i = 0; i < l_m.vertices().size(); ++i) {
+                matching_vertices.push_back({l_m.vertices()[i], t_vertices[i]});
+            }
 
-    std::cout << "Embedding cost: " << em.total_embedded_path_length() << std::endl;
+            em.set_matching_vertices(matching_vertices);
 
-    auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
-    auto g = gv::grid();
-    view_layout(em);
-    view_target(em);
+            glow::timing::CpuTimer timer;
+            if (algorithm == "greedy") {
+                praun2001(em);
+            }
+            else if (algorithm == "bnb") {
+                BranchAndBoundSettings settings;
+                settings.time_limit = 30 * 60;
+                branch_and_bound(em, settings);
+            }
+            const double runtime = timer.elapsedSeconds();
+            const double embedding_cost = em.is_complete() ? em.total_embedded_path_length() : std::numeric_limits<double>::infinity();
+
+            {
+                std::ofstream f{stats_filename, std::ofstream::app};
+                f << seed << ",";
+                f << algorithm << ",";
+                f << runtime << ",";
+                f << embedding_cost << std::endl;
+            }
+
+            std::cout << "Seed:      " << seed << std::endl;
+            std::cout << "Algorithm: " << algorithm << std::endl;
+            std::cout << "Runtime:   " << runtime << std::endl;
+            std::cout << "Cost:      " << embedding_cost << std::endl;
+        }
+        ++seed;
+    }
 }
