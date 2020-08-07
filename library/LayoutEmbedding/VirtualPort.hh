@@ -9,14 +9,20 @@ namespace LayoutEmbedding {
 /// (alternatingly pointing to real / virtual vertices).
 struct VirtualPort
 {
-    pm::vertex_handle from;
-    VirtualVertex to;
+    VirtualPort() = default;
+    VirtualPort(const pm::vertex_handle& _from, const VirtualVertex& _to);
+    explicit VirtualPort(const pm::halfedge_handle& _real_he);
 
     bool operator==(const VirtualPort& _rhs) const;
     bool operator!=(const VirtualPort& _rhs) const;
 
     VirtualPort rotated_cw() const;
     VirtualPort rotated_ccw() const;
+
+    bool is_valid() const;
+
+    pm::vertex_handle from;
+    VirtualVertex to;
 };
 
 }

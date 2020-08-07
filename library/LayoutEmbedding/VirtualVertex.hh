@@ -12,6 +12,8 @@ using VirtualVertex = std::variant<
     pm::edge_handle
 >;
 
+bool is_valid(const VirtualVertex& _vv);
+
 bool is_real_vertex(const VirtualVertex& _el);
 bool is_real_edge(const VirtualVertex& _el);
 

@@ -55,21 +55,10 @@ public:
     double embedded_path_length(const pm::edge_handle& _l_e) const;
     double total_embedded_path_length() const;
 
-    const pm::Mesh& layout_mesh() const
-    {
-        return *l_m;
-    }
-
-    const pm::Mesh& target_mesh() const
-    {
-        return t_m;
-    }
-
-    const pm::vertex_attribute<tg::pos3>& target_pos() const
-    {
-        return t_pos;
-    }
-
+    // Getters
+    const pm::Mesh& layout_mesh() const;
+    const pm::Mesh& target_mesh() const;
+    const pm::vertex_attribute<tg::pos3>& target_pos() const;
     const pm::vertex_handle matching_target_vertex(const pm::vertex_handle& _l_v) const;
     const pm::vertex_handle matching_layout_vertex(const pm::vertex_handle& _t_v) const;
 

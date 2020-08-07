@@ -507,6 +507,21 @@ double Embedding::total_embedded_path_length() const
     return total_length;
 }
 
+const polymesh::Mesh& Embedding::layout_mesh() const
+{
+    return *l_m;
+}
+
+const polymesh::Mesh& Embedding::target_mesh() const
+{
+    return t_m;
+}
+
+const pm::vertex_attribute<tg::pos3>& Embedding::target_pos() const
+{
+    return t_pos;
+}
+
 const pm::vertex_handle Embedding::matching_target_vertex(const pm::vertex_handle& _l_v) const
 {
     LE_ASSERT(_l_v.mesh == l_m);

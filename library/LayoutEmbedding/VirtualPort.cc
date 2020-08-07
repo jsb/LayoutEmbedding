@@ -4,6 +4,18 @@
 
 namespace LayoutEmbedding {
 
+VirtualPort::VirtualPort(const polymesh::vertex_handle& _from, const VirtualVertex& _to) :
+    from(_from),
+    to(_to)
+{
+}
+
+VirtualPort::VirtualPort(const polymesh::halfedge_handle& _real_he) :
+    from(_real_he.vertex_from()),
+    to(_real_he.vertex_to())
+{
+}
+
 bool VirtualPort::operator==(const VirtualPort& _rhs) const
 {
     return (from == _rhs.from) && (to == _rhs.to);
@@ -21,7 +33,7 @@ VirtualPort VirtualPort::rotated_cw() const
         const auto e_new = he.opposite().prev().edge();
         return {from, e_new};
     }
-    else if (is_real_edge(to)) {
+    else { // if (is_real_edge(to)) {
         const auto e = real_edge(to);
         auto he = pm::halfedge_handle::invalid;
         if (e.halfedgeA().next().vertex_to() == from) {
@@ -34,8 +46,6 @@ VirtualPort VirtualPort::rotated_cw() const
         const auto v_new = he.vertex_from();
         return {from, v_new};
     }
-    LE_ASSERT(false);
-    return {};
 }
 
 VirtualPort VirtualPort::rotated_ccw() const
@@ -45,7 +55,7 @@ VirtualPort VirtualPort::rotated_ccw() const
         const auto e_new = he.next().edge();
         return {from, e_new};
     }
-    else if (is_real_edge(to)) {
+    else { // if (is_real_edge(to)) {
         const auto e = real_edge(to);
         auto he = pm::halfedge_handle::invalid;
         if (e.halfedgeA().next().vertex_to() == from) {
@@ -58,8 +68,11 @@ VirtualPort VirtualPort::rotated_ccw() const
         const auto v_new = he.vertex_to();
         return {from, v_new};
     }
-    LE_ASSERT(false);
-    return {};
+}
+
+bool VirtualPort::is_valid() const
+{
+    return from.is_valid() && LayoutEmbedding::is_valid(to);
 }
 
 }

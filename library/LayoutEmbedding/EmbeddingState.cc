@@ -63,17 +63,21 @@ void EmbeddingState::compute_candidate_paths()
             auto l_he = l_e.halfedgeA();
             auto path = c_em.find_shortest_path(l_he);
             if (path.empty()) {
-                candidate_paths[l_e].cost = std::numeric_limits<double>::infinity();
+                unembedded_cost = std::numeric_limits<double>::infinity();
+                valid = false;
+                break;
             }
-            else {
-                candidate_paths[l_e].path = path;
-                candidate_paths[l_e].cost = c_em.path_length(path);
-                vpcs.insert_path(path, l_e);
-            }
+            candidate_paths[l_e].path = path;
+            candidate_paths[l_e].cost = c_em.path_length(path);
+            vpcs.insert_path(path, l_e);
             unembedded_cost += candidate_paths[l_e].cost;
-            // TODO: Early-out if one candidate path is invalid?
         }
     }
+    if (!valid) {
+        return;
+    }
+
+    vpcs.check_path_ordering();
 
     conflicting_l_edges = vpcs.global_conflicts;
     for (const auto& l_e : c_em.layout_mesh().edges()) {
