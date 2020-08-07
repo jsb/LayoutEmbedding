@@ -22,22 +22,23 @@
 
 using namespace LayoutEmbedding;
 
-static bool screenshots_only = true;
-static auto screenshot_size = tg::ivec2(1920, 1080);
-static int screenshot_samples = 64;
-
 int main()
 {
     glow::glfw::GlfwContext ctx;
     const std::string data_path = LE_DATA_PATH;
 
-    pm::Mesh t_m;
-    auto t_pos = t_m.vertices().make_attribute<tg::pos3>();
-    load(data_path + "/models/target-meshes/sphere.obj", t_m, t_pos);
+    pm::Mesh input_t_m;
+    auto input_t_pos = input_t_m.vertices().make_attribute<tg::pos3>();
+    load(data_path + "/models/target-meshes/sphere.obj", input_t_m, input_t_pos);
 
-    pm::Mesh l_m;
-    auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-    load(data_path + "/models/layouts/cube_layout.obj", l_m, l_pos);
+    pm::Mesh input_l_m;
+    auto input_l_pos = input_l_m.vertices().make_attribute<tg::pos3>();
+    load(data_path + "/models/layouts/cube_layout.obj", input_l_m, input_l_pos);
+
+    Embedding em(input_l_m, input_t_m, input_t_pos);
+    const auto& l_m = em.layout_mesh();
+    const auto& t_m = em.target_mesh();
+    const auto& t_pos = em.target_pos();
 
     // Generate random matching vertices
     std::srand(0);
@@ -48,11 +49,12 @@ int main()
         matching_vertices.push_back({l_m.vertices()[i], t_vertices[i]});
     }
 
-    Embedding em(l_m, t_m, t_pos);
     em.set_matching_vertices(matching_vertices);
 
     branch_and_bound(em);
     //praun2001(em);
+
+    std::cout << "Embedding cost: " << em.total_embedded_path_length() << std::endl;
 
     auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
     auto g = gv::grid();
