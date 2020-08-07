@@ -39,7 +39,10 @@ struct TestCase
 
 void run_test_case(const TestCase& tc)
 {
-    const std::vector<std::string> algorithms = {"greedy", "bnb"};
+    const std::vector<std::string> algorithms = {
+        "bnb",
+        "greedy",
+    };
 
     const std::string stats_filename = "stats_" + tc.name + ".csv";
     {
@@ -164,10 +167,34 @@ int main()
 
     {
         TestCase tc;
-        tc.name = "horse_easy";
-        tc.target_mesh_filename = data_path + "/models/target-meshes/horse_8078.obj";
-        tc.layout_mesh_filename = data_path + "/models/layouts/horse_layout.obj";
-        tc.view = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
+        tc.name = "pigcrazy3";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/pigtarget.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/pigcrazy3.obj";
+        tc.view = glow::viewer::camera_transform(tg::pos3(5.687729f, 2.793668f, -3.253803f), tg::pos3(3.420963f, 1.650422f, -2.051982f));
+        test_cases.push_back(tc);
+    }
+    {
+        TestCase tc;
+        tc.name = "centaur1crazy5";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/centaur1simple.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/centaur1crazy5.obj";
+        tc.view = glow::viewer::camera_transform(tg::pos3(-3.003015f, -1.117670f, -3.858746f), tg::pos3(-1.600717f, -0.867071f, -2.207390f));
+        test_cases.push_back(tc);
+    }
+    {
+        TestCase tc;
+        tc.name = "seahorse1crazy5";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/seahorse1target.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/seahorse1crazy5.obj";
+        tc.view = glow::viewer::camera_transform(tg::pos3(3.134081f, 2.811929f, 3.790234f), tg::pos3(1.946006f, 1.656200f, 2.341523f));
+        test_cases.push_back(tc);
+    }
+    {
+        TestCase tc;
+        tc.name = "cat2crazy3";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/cat2target.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/cat2crazy3.obj";
+        tc.view = glow::viewer::camera_transform(tg::pos3(3.968053f, 0.351618f, 4.078722f), tg::pos3(2.327140f, 0.445463f, 2.521302f));
         test_cases.push_back(tc);
     }
     {
@@ -176,6 +203,14 @@ int main()
         tc.target_mesh_filename = data_path + "/models/target-meshes/horse_8078.obj";
         tc.layout_mesh_filename = data_path + "/models/layouts/horse_layout_praun_challenge.obj";
         tc.jitter_vertices = 5;
+        tc.view = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
+        test_cases.push_back(tc);
+    }
+    {
+        TestCase tc;
+        tc.name = "horse_easy";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/horse_8078.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/horse_layout.obj";
         tc.view = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
         test_cases.push_back(tc);
     }
