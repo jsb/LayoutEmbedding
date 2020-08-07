@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <numeric>
 
 using namespace LayoutEmbedding;
 
