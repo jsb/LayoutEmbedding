@@ -116,6 +116,11 @@ bool Embedding::is_blocked(const pm::edge_handle& _t_e) const
 bool Embedding::is_blocked(const pm::vertex_handle& _t_v) const
 {
     LE_ASSERT(_t_v.mesh == &t_m);
+    // Pinned vertices
+    if (t_matching_vertex[_t_v].is_valid()) {
+        return true;
+    }
+    // Embedded edges
     for (const auto& t_e : _t_v.edges()) {
         if (is_blocked(t_e)) {
             return true;
