@@ -4,6 +4,16 @@
 
 namespace LayoutEmbedding {
 
+bool is_valid(const VirtualVertex& _vv)
+{
+    if (is_real_vertex(_vv)) {
+        return real_vertex(_vv).is_valid();
+    }
+    else {
+        return real_edge(_vv).is_valid();
+    }
+}
+
 bool is_real_vertex(const VirtualVertex& _el)
 {
     return std::holds_alternative<pm::vertex_handle>(_el);

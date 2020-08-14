@@ -11,9 +11,9 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
+#include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/Praun2001.hh>
-#include <LayoutEmbedding/RefinableMesh.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
@@ -40,7 +40,10 @@ struct TestCase
 
 void run_test_case(const TestCase& tc)
 {
-    const std::vector<std::string> algorithms = {"greedy", "bnb"};
+    const std::vector<std::string> algorithms = {
+        "bnb",
+        "greedy",
+    };
 
     const std::string stats_filename = "stats_" + tc.name + ".csv";
     {
@@ -50,22 +53,19 @@ void run_test_case(const TestCase& tc)
     }
 
     for (const auto& algorithm : algorithms) {
-        // Load Target Mesh from file
-        pm::Mesh t_m;
-        auto t_pos = t_m.vertices().make_attribute<tg::pos3>();
-        load(tc.target_mesh_filename, t_m, t_pos);
+        // Load meshes from file
+        EmbeddingInput input;
+        load(tc.target_mesh_filename, input.t_m, input.t_pos);
+        load(tc.layout_mesh_filename, input.l_m, input.l_pos);
 
-        // Load Layout Mesh from file
-        pm::Mesh l_m;
-        auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-        load(tc.layout_mesh_filename, l_m, l_pos);
+        // Find embedding positions for the Layout vertices on the Target Mesh (nearest neighbors)
+        find_matching_vertices_by_proximity(input);
+        // Optional: Perturb the target positions on the surface of the Target Mesh a bit
+        jitter_matching_vertices(input, tc.jitter_vertices);
 
-        // Generate Layout from the Target Mesh by incremental decimation
-        /*
-        pm::Mesh l_m;
-        auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-        make_layout_by_decimation(t_pos, 28, l_m, l_pos);
-        */
+        Embedding em(input);
+        const pm::Mesh& l_m = em.layout_mesh();
+        const pm::Mesh& t_m = em.target_mesh();
 
         std::cout << "Layout Mesh: ";
         std::cout << l_m.vertices().count() << " vertices, ";
@@ -78,21 +78,6 @@ void run_test_case(const TestCase& tc)
         std::cout << t_m.edges().count() << " edges, ";
         std::cout << t_m.faces().count() << " faces. ";
         std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
-
-        // Wrap the Target Mesh into a RefinableMesh to enable adaptive refinement
-        RefinableMesh rm = make_refinable_mesh(t_m, t_pos);
-
-        // Create the embedding linking the Layout and the (wrapped) Target Mesh
-        Embedding em = make_embedding(l_m, rm);
-
-        // Find embedding positions for the Layout vertices on the Target Mesh (nearest neighbors)
-        auto matching_vertices = find_matching_vertices(l_pos, t_pos);
-
-        // Optional: Perturb the target positions on the surface of the Target Mesh a bit
-        jitter_matching_vertices(l_m, t_m, matching_vertices, tc.jitter_vertices);
-
-        // Store the vertex embedding positions
-        set_matching_vertices(em, matching_vertices);
 
         glow::timing::CpuTimer timer;
 
@@ -112,7 +97,7 @@ void run_test_case(const TestCase& tc)
 
         // Stats
         const double optimization_time = timer.elapsedSeconds();
-        const double score = total_embedded_path_length(em);
+        const double score = em.total_embedded_path_length();
         std::cout << "Optimization took " << optimization_time << " s" << std::endl;
         std::cout << "Total embedding length: " << score << std::endl;
         {
@@ -164,10 +149,34 @@ int main()
 
     {
         TestCase tc;
-        tc.name = "horse_easy";
-        tc.target_mesh_filename = data_path + "/models/target-meshes/horse_8078.obj";
-        tc.layout_mesh_filename = data_path + "/models/layouts/horse_layout.obj";
-        tc.view = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
+        tc.name = "pigcrazy3";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/pigtarget.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/pigcrazy3.obj";
+        tc.view = glow::viewer::camera_transform(tg::pos3(5.687729f, 2.793668f, -3.253803f), tg::pos3(3.420963f, 1.650422f, -2.051982f));
+        test_cases.push_back(tc);
+    }
+    {
+        TestCase tc;
+        tc.name = "centaur1crazy5";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/centaur1simple.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/centaur1crazy5.obj";
+        tc.view = glow::viewer::camera_transform(tg::pos3(-3.003015f, -1.117670f, -3.858746f), tg::pos3(-1.600717f, -0.867071f, -2.207390f));
+        test_cases.push_back(tc);
+    }
+    {
+        TestCase tc;
+        tc.name = "seahorse1crazy5";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/seahorse1target.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/seahorse1crazy5.obj";
+        tc.view = glow::viewer::camera_transform(tg::pos3(3.134081f, 2.811929f, 3.790234f), tg::pos3(1.946006f, 1.656200f, 2.341523f));
+        test_cases.push_back(tc);
+    }
+    {
+        TestCase tc;
+        tc.name = "cat2crazy3";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/cat2target.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/cat2crazy3.obj";
+        tc.view = glow::viewer::camera_transform(tg::pos3(3.968053f, 0.351618f, 4.078722f), tg::pos3(2.327140f, 0.445463f, 2.521302f));
         test_cases.push_back(tc);
     }
     {
@@ -176,6 +185,14 @@ int main()
         tc.target_mesh_filename = data_path + "/models/target-meshes/horse_8078.obj";
         tc.layout_mesh_filename = data_path + "/models/layouts/horse_layout_praun_challenge.obj";
         tc.jitter_vertices = 5;
+        tc.view = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
+        test_cases.push_back(tc);
+    }
+    {
+        TestCase tc;
+        tc.name = "horse_easy";
+        tc.target_mesh_filename = data_path + "/models/target-meshes/horse_8078.obj";
+        tc.layout_mesh_filename = data_path + "/models/layouts/horse_layout.obj";
         tc.view = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
         test_cases.push_back(tc);
     }

@@ -20,8 +20,7 @@ void view_embedding(const Embedding& _em)
 
 void view_layout(const Embedding& _em)
 {
-    const pm::Mesh& l_m = *_em.l_m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+    const pm::Mesh& l_m = _em.layout_mesh();
 
     const float node_size = 5.0f;
     const float arc_width = 2.0f;
@@ -39,18 +38,12 @@ void view_layout(const Embedding& _em)
     auto v = gv::view();
 
     // Mesh
-    pm::vertex_attribute<tg::pos3> l_pos(l_m);
-    for (const auto& l_v : l_m.vertices()) {
-        l_pos[l_v] = t_pos[_em.l_matching_vertex[l_v]];
-    }
-    gv::view(l_pos);
-
-    // Wireframe
-    //gv::view(gv::lines(l_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
+    auto l_pos = make_layout_mesh_positions(_em);
+    view_layout_mesh(_em);
 
     // Embedded layout edges
     for (const auto& l_e : l_m.edges()) {
-        if (is_embedded(_em, l_e)) {
+        if (_em.is_embedded(l_e)) {
             const auto& p_i = l_pos[l_e.vertexA()];
             const auto& p_j = l_pos[l_e.vertexB()];
             const auto& color = l_e_color[l_e];
@@ -68,9 +61,8 @@ void view_layout(const Embedding& _em)
 
 void view_target(const Embedding& _em)
 {
-    const pm::Mesh& l_m = *_em.l_m;
-    const pm::Mesh& t_m = *_em.t_m->m;
-    const pm::vertex_attribute<tg::pos3>& t_pos = *_em.t_m->pos;
+    const pm::Mesh& l_m = _em.layout_mesh();
+    const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
 
     const float node_size = 5.0f;
     const float arc_width = 2.0f;
@@ -88,15 +80,12 @@ void view_target(const Embedding& _em)
     auto v = gv::view();
 
     // Mesh
-    gv::view(t_pos);
-
-    // Wireframe
-    //gv::view(gv::lines(t_pos).line_width_px(1.0f), tg::color3{0.9f, 0.9f, 0.9f});
+    view_target_mesh(_em);
 
     // Embedded layout edges
     for (const auto& l_e : l_m.edges()) {
-        if (is_embedded(_em, l_e)) {
-            std::vector<pm::vertex_handle> t_v_path = get_embedded_path(_em, l_e.halfedgeA());
+        if (_em.is_embedded(l_e)) {
+            std::vector<pm::vertex_handle> t_v_path = _em.get_embedded_path(l_e.halfedgeA());
             std::vector<tg::segment3> path_segments;
             for (int i = 0; i < t_v_path.size() - 1; ++i) {
                 const auto& p_i = t_pos[t_v_path[i]];
@@ -110,10 +99,42 @@ void view_target(const Embedding& _em)
 
     // Layout nodes
     for (const auto& l_v : l_m.vertices()) {
-        const auto& p = t_pos[_em.l_matching_vertex[l_v]];
+        const auto& p = t_pos[_em.matching_target_vertex(l_v)];
         const auto& color = l_v_color[l_v];
         gv::view(glow::viewer::points(p).point_size_px(node_size), color, gv::no_shading);
     }
+}
+
+void view_layout_mesh(const Embedding &_em)
+{
+    // Mesh
+    auto l_pos = make_layout_mesh_positions(_em);
+    gv::view(l_pos);
+
+    // Wireframe
+    //gv::view(gv::lines(l_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
+}
+
+void view_target_mesh(const Embedding &_em)
+{
+    // Mesh
+    auto t_pos = _em.target_pos();
+    gv::view(t_pos);
+
+    // Wireframe
+    //gv::view(gv::lines(t_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
+}
+
+pm::vertex_attribute<tg::pos3> make_layout_mesh_positions(const Embedding &_em)
+{
+    const pm::Mesh& l_m = _em.layout_mesh();
+    const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
+
+    pm::vertex_attribute<tg::pos3> l_pos(l_m);
+    for (const auto& l_v : l_m.vertices()) {
+        l_pos[l_v] = t_pos[_em.matching_target_vertex(l_v)];
+    }
+    return l_pos;
 }
 
 }
