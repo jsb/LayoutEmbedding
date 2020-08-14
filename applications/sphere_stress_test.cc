@@ -7,6 +7,7 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
+#include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/Praun2001.hh>
 
@@ -19,13 +20,9 @@ int main()
 {
     const std::string data_path = LE_DATA_PATH;
 
-    pm::Mesh input_t_m;
-    auto input_t_pos = input_t_m.vertices().make_attribute<tg::pos3>();
-    load(data_path + "/models/target-meshes/sphere.obj", input_t_m, input_t_pos);
-
-    pm::Mesh input_l_m;
-    auto input_l_pos = input_l_m.vertices().make_attribute<tg::pos3>();
-    load(data_path + "/models/layouts/cube_layout.obj", input_l_m, input_l_pos);
+    EmbeddingInput input;
+    load(data_path + "/models/target-meshes/sphere.obj", input.t_m, input.t_pos);
+    load(data_path + "/models/layouts/cube_layout.obj", input.l_m, input.l_pos);
 
     const std::string stats_filename = "stats_sphere_stress_test.csv";
     {
@@ -35,22 +32,11 @@ int main()
 
     int seed = 0;
     while (true) {
-        for (const auto& algorithm : {"greedy", "bnb"}) {
-            Embedding em(input_l_m, input_t_m, input_t_pos);
-            const auto& l_m = em.layout_mesh();
-            const auto& t_m = em.target_mesh();
-            const auto& t_pos = em.target_pos();
-
+        for (const auto& algorithm : {"bnb", "greedy"}) {
             // Generate random matching vertices
-            std::srand(seed);
-            std::vector<pm::vertex_handle> t_vertices = t_m.vertices().to_vector();
-            std::random_shuffle(t_vertices.begin(), t_vertices.end());
-            MatchingVertices matching_vertices;
-            for (int i = 0; i < l_m.vertices().size(); ++i) {
-                matching_vertices.push_back({l_m.vertices()[i], t_vertices[i]});
-            }
-
-            em.set_matching_vertices(matching_vertices);
+            std::srand(seed); // TODO: make the seed a parameter of randomize_matching_vertices?
+            randomize_matching_vertices(input);
+            Embedding em(input);
 
             glow::timing::CpuTimer timer;
             if (algorithm == "greedy") {

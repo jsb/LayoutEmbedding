@@ -1,5 +1,6 @@
 #pragma once
 
+#include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/VirtualVertex.hh>
 #include <LayoutEmbedding/VirtualPath.hh>
@@ -9,10 +10,9 @@ namespace LayoutEmbedding {
 class Embedding
 {
 public:
-    explicit Embedding(const pm::Mesh& _l_m, const pm::Mesh& _t_m, const pm::vertex_attribute<tg::pos3>& _t_pos);
-    explicit Embedding(const Embedding& _em);
-
-    void set_matching_vertices(const MatchingVertices& _mvs);
+    //explicit Embedding(const pm::Mesh& _l_m, const pm::Mesh& _t_m, const pm::vertex_attribute<tg::pos3>& _t_pos);
+    explicit Embedding(const EmbeddingInput& _input);
+    Embedding(const Embedding& _em);
 
     /// If the layout halfedge _l_h has an embedding, returns the target halfedge at the start of the corresponding embedded path.
     /// Otherwise, returns an invalid halfedge.
@@ -56,15 +56,17 @@ public:
     double total_embedded_path_length() const;
     bool is_complete() const;
 
-    // Getters
-    const pm::Mesh& layout_mesh() const;
-    const pm::Mesh& target_mesh() const;
+    // Getters.
+    const pm::Mesh& layout_mesh() const; // This will always refer to the original l_m in the input
+    const pm::Mesh& target_mesh() const; // This refers to the local copy contained in this Embedding (can be different from the original target mesh due to local refinements).
+    pm::Mesh& target_mesh();
     const pm::vertex_attribute<tg::pos3>& target_pos() const;
+    pm::vertex_attribute<tg::pos3>& target_pos();
     const pm::vertex_handle matching_target_vertex(const pm::vertex_handle& _l_v) const;
     const pm::vertex_handle matching_layout_vertex(const pm::vertex_handle& _t_v) const;
 
 private:
-    const pm::Mesh* l_m; // Layout mesh. Pointer.
+    const EmbeddingInput* input;
     pm::Mesh t_m; // Target mesh. Copy.
     pm::vertex_attribute<tg::pos3> t_pos; // Target mesh positions. Copy.
 

@@ -8,52 +8,51 @@
 
 namespace LayoutEmbedding {
 
-Embedding::Embedding(const pm::Mesh& _l_m, const pm::Mesh& _t_m, const pm::vertex_attribute<tg::pos3>& _t_pos)  :
-    l_m(&_l_m),
+Embedding::Embedding(const EmbeddingInput& _input) :
+    input(&_input),
     t_m(),
     t_pos(t_m),
-    l_matching_vertex(*l_m),
-    t_matching_vertex(t_m),
-    t_matching_halfedge(t_m)
+    l_matching_vertex(layout_mesh()),
+    t_matching_vertex(target_mesh()),
+    t_matching_halfedge(target_mesh())
 {
-    t_m.copy_from(_t_m);
-    t_pos.copy_from(_t_pos);
-}
+    t_m.copy_from(_input.t_m);
+    t_pos.copy_from(_input.t_pos);
 
-Embedding::Embedding(const Embedding& _em) :
-    l_m(_em.l_m),
-    t_m(),
-    t_pos(t_m),
-    l_matching_vertex(*l_m),
-    t_matching_vertex(t_m),
-    t_matching_halfedge(t_m)
-{
-    t_m.copy_from(_em.t_m);
-    t_pos.copy_from(_em.t_pos);
-    for (const auto& l_v : l_m->vertices()) {
-        l_matching_vertex[l_v] = t_m[_em.l_matching_vertex[l_v.idx].idx];
-    }
-    for (const auto& t_v : t_m.vertices()) {
-        t_matching_vertex[t_v] = (*l_m)[_em.t_matching_vertex[t_v.idx].idx];
-    }
-    for (const auto& t_he : t_m.halfedges()) {
-        t_matching_halfedge[t_he] = (*l_m)[_em.t_matching_halfedge[t_he.idx].idx];
-    }
-}
-
-void Embedding::set_matching_vertices(const MatchingVertices& _mvs)
-{
     l_matching_vertex.clear();
     t_matching_vertex.clear();
-    for (const auto& [l_v, t_v] : _mvs) {
+    for (const auto l_v : layout_mesh().vertices()) {
+        const auto t_v_i = _input.l_matching_vertex[l_v].idx;
+        const auto t_v = target_mesh()[t_v_i];
         l_matching_vertex[l_v] = t_v;
         t_matching_vertex[t_v] = l_v;
     }
 }
 
+Embedding::Embedding(const Embedding& _em) :
+    input(_em.input),
+    t_m(),
+    t_pos(t_m),
+    l_matching_vertex(layout_mesh()),
+    t_matching_vertex(target_mesh()),
+    t_matching_halfedge(target_mesh())
+{
+    t_m.copy_from(_em.t_m);
+    t_pos.copy_from(_em.t_pos);
+    for (const auto& l_v : layout_mesh().vertices()) {
+        l_matching_vertex[l_v] = target_mesh()[_em.l_matching_vertex[l_v.idx].idx];
+    }
+    for (const auto& t_v : target_mesh().vertices()) {
+        t_matching_vertex[t_v] = layout_mesh()[_em.t_matching_vertex[t_v.idx].idx];
+    }
+    for (const auto& t_he : target_mesh().halfedges()) {
+        t_matching_halfedge[t_he] = layout_mesh()[_em.t_matching_halfedge[t_he.idx].idx];
+    }
+}
+
 pm::halfedge_handle Embedding::get_embedded_target_halfedge(const pm::halfedge_handle& _l_he) const
 {
-    LE_ASSERT(_l_he.mesh == l_m);
+    LE_ASSERT(_l_he.mesh == &layout_mesh());
     const auto& l_v = _l_he.vertex_from();
     const auto& t_v = l_matching_vertex[l_v];
     LE_ASSERT(t_v.is_valid());
@@ -77,7 +76,7 @@ bool Embedding::is_embedded(const pm::edge_handle& _l_e) const
 
 pm::halfedge_handle Embedding::get_embeddable_sector(const pm::halfedge_handle& _l_he) const
 {
-    LE_ASSERT(_l_he.mesh == l_m);
+    LE_ASSERT(_l_he.mesh == &layout_mesh());
     LE_ASSERT(get_embedded_target_halfedge(_l_he).is_invalid());
 
     // Find the first layout halfedge that
@@ -109,19 +108,19 @@ pm::halfedge_handle Embedding::get_embeddable_sector(const pm::halfedge_handle& 
 
 bool Embedding::is_blocked(const pm::edge_handle& _t_e) const
 {
-    LE_ASSERT(_t_e.mesh == &t_m);
+    LE_ASSERT(_t_e.mesh == &target_mesh());
     return t_matching_halfedge[_t_e.halfedgeA()].is_valid() || t_matching_halfedge[_t_e.halfedgeB()].is_valid();
 }
 
 bool Embedding::is_blocked(const pm::vertex_handle& _t_v) const
 {
-    LE_ASSERT(_t_v.mesh == &t_m);
+    LE_ASSERT(_t_v.mesh == &target_mesh());
     // Pinned vertices
     if (t_matching_vertex[_t_v].is_valid()) {
         return true;
     }
     // Embedded edges
-    for (const auto& t_e : _t_v.edges()) {
+    for (const auto t_e : _t_v.edges()) {
         if (is_blocked(t_e)) {
             return true;
         }
@@ -144,13 +143,13 @@ bool Embedding::is_blocked(const VirtualVertex& _t_vv) const
 
 tg::pos3 Embedding::element_pos(const pm::edge_handle& _t_e) const
 {
-    LE_ASSERT(_t_e.mesh == &t_m);
+    LE_ASSERT(_t_e.mesh == &target_mesh());
     return tg::centroid(t_pos[_t_e.vertexA()], t_pos[_t_e.vertexB()]);
 }
 
 tg::pos3 Embedding::element_pos(const pm::vertex_handle& _t_v) const
 {
-    LE_ASSERT(_t_v.mesh == &t_m);
+    LE_ASSERT(_t_v.mesh == &target_mesh());
     return t_pos[_t_v];
 }
 
@@ -193,11 +192,11 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
         }
     };
 
-    LE_ASSERT(_t_h_sector_start.mesh == &t_m);
-    LE_ASSERT(_t_h_sector_end.mesh == &t_m);
+    LE_ASSERT(_t_h_sector_start.mesh == &target_mesh());
+    LE_ASSERT(_t_h_sector_end.mesh == &target_mesh());
 
-    VirtualVertexAttribute<VirtualVertex> prev(t_m);
-    VirtualVertexAttribute<Distance> distance(t_m);
+    VirtualVertexAttribute<VirtualVertex> prev(target_mesh());
+    VirtualVertexAttribute<Distance> distance(target_mesh());
 
     const pm::vertex_handle t_v_start = _t_h_sector_start.vertex_from();
     const pm::vertex_handle t_v_end   = _t_h_sector_end.vertex_from();
@@ -378,7 +377,7 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
 
 VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _l_he) const
 {
-    LE_ASSERT(_l_he.mesh == l_m);
+    LE_ASSERT(_l_he.mesh == &layout_mesh());
     LE_ASSERT(!is_embedded(_l_he));
     const auto l_he_end = _l_he.opposite();
     const auto t_he_sector_start = get_embeddable_sector(_l_he);
@@ -388,7 +387,7 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _l_he) cons
 
 VirtualPath Embedding::find_shortest_path(const pm::edge_handle& _l_e) const
 {
-    LE_ASSERT(_l_e.mesh == l_m);
+    LE_ASSERT(_l_e.mesh == &layout_mesh());
     const auto l_he = _l_e.halfedgeA();
     return find_shortest_path(l_he);
 }
@@ -422,7 +421,7 @@ void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& 
             const auto& p1 = t_pos[t_e.vertexB()];
             const auto p = tg::mix(p0, p1, 0.5);
 
-            const auto t_v_new = t_m.edges().split_and_triangulate(t_e);
+            const auto t_v_new = target_mesh().edges().split_and_triangulate(t_e);
             t_pos[t_v_new] = p;
             vertex_path.push_back(t_v_new);
         }
@@ -504,7 +503,7 @@ double Embedding::embedded_path_length(const polymesh::edge_handle& _l_e) const
 double Embedding::total_embedded_path_length() const
 {
     double total_length = 0.0;
-    for (const auto& l_e : l_m->edges()) {
+    for (const auto& l_e : layout_mesh().edges()) {
         if (is_embedded(l_e)) {
             total_length += embedded_path_length(l_e);
         }
@@ -514,7 +513,7 @@ double Embedding::total_embedded_path_length() const
 
 bool Embedding::is_complete() const
 {
-    for (const auto& l_e : l_m->edges()) {
+    for (const auto& l_e : layout_mesh().edges()) {
         if (!is_embedded(l_e)) {
             return false;
         }
@@ -522,12 +521,17 @@ bool Embedding::is_complete() const
     return true;
 }
 
-const polymesh::Mesh& Embedding::layout_mesh() const
+const pm::Mesh& Embedding::layout_mesh() const
 {
-    return *l_m;
+    return input->l_m;
 }
 
-const polymesh::Mesh& Embedding::target_mesh() const
+const pm::Mesh& Embedding::target_mesh() const
+{
+    return t_m;
+}
+
+pm::Mesh& Embedding::target_mesh()
 {
     return t_m;
 }
@@ -537,15 +541,20 @@ const pm::vertex_attribute<tg::pos3>& Embedding::target_pos() const
     return t_pos;
 }
 
+pm::vertex_attribute<tg::pos3> &Embedding::target_pos()
+{
+    return t_pos;
+}
+
 const pm::vertex_handle Embedding::matching_target_vertex(const pm::vertex_handle& _l_v) const
 {
-    LE_ASSERT(_l_v.mesh == l_m);
+    LE_ASSERT(_l_v.mesh == &layout_mesh());
     return l_matching_vertex[_l_v];
 }
 
 const pm::vertex_handle Embedding::matching_layout_vertex(const pm::vertex_handle& _t_v) const
 {
-    LE_ASSERT(_t_v.mesh == &t_m);
+    LE_ASSERT(_t_v.mesh == &target_mesh());
     return t_matching_vertex[_t_v];
 }
 
