@@ -14,7 +14,7 @@
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/Praun2001.hh>
-#include <LayoutEmbedding/RefinableMesh.hh>
+//#include <LayoutEmbedding/RefinableMesh.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
@@ -34,6 +34,10 @@ int main(int argc, char** argv)
     std::string target_mesh_file = data_path + "/models/target-meshes/horse_8078.obj";
     std::string layout_mesh_file = data_path + "/models/layouts/horse_layout_praun_challenge.obj";
 
+    // Path to directory storing finished embeddings
+    std::string result_dir = "./Results/";
+    std::string model_name;
+
     if(argc > 1)
     {
         // Assuming first extra argument is Target Mesh name, adds /models/ prefix
@@ -42,13 +46,22 @@ int main(int argc, char** argv)
         {
             // Assuming second extra argument is Layout Mesh name, adds /layouts/ prefix
             layout_mesh_file = data_path + "/models/layouts/" + std::string(argv[2]);
+            model_name = std::string(argv[2]);
+
+        }
+        else
+        {
+            model_name = "horse_layout_praun_challenge.obj";
         }
     }
+
+    // Embedding Input
+    EmbeddingInput input;
 
     // Load Target Mesh from file
     pm::Mesh t_m;
     auto t_pos = t_m.vertices().make_attribute<tg::pos3>();
-    if(!load(target_mesh_file, t_m, t_pos))
+    if(!load(target_mesh_file, input.t_m, input.t_pos))
     {
         std::cout << "Target Mesh File could not be loaded." << std::endl;
         return 1;
@@ -57,7 +70,7 @@ int main(int argc, char** argv)
     // Load Layout Mesh from file
     pm::Mesh l_m;
     auto l_pos = l_m.vertices().make_attribute<tg::pos3>();
-    if(!load(layout_mesh_file, l_m, l_pos))
+    if(!load(layout_mesh_file, input.l_m, input.l_pos))
     {
             std::cout << "Layout Mesh File could not be loaded." << std::endl;
             return 1;
@@ -79,20 +92,19 @@ int main(int argc, char** argv)
     make_layout_by_decimation(t_pos, 28, l_m, l_pos);
     */
 
-    // Wrap the Target Mesh into a RefinableMesh to enable adaptive refinement
-    RefinableMesh rm = make_refinable_mesh(t_m, t_pos);
-
     // Create the embedding linking the Layout and the (wrapped) Target Mesh
-    Embedding em = make_embedding(l_m, rm);
+    //Embedding em = make_embedding(l_m, rm);
 
     // Find embedding positions for the Layout vertices on the Target Mesh (nearest neighbors)
-    auto matching_vertices = find_matching_vertices(l_pos, t_pos);
+    find_matching_vertices_by_proximity(input);
+    //auto matching_vertices = find_matching_vertices(l_pos, t_pos);
+
+    // Create the embedding linking the Layout and the (wrapped) Target Mesh
+    Embedding em(input);
 
     // Optional: Perturb the target positions on the surface of the Target Mesh a bit
-    //jitter_matching_vertices(l_m, t_m, matching_vertices, 5);
+    // jitter_matching_vertices(l_m, t_m, matching_vertices, 1);
 
-    // Store the vertex embedding positions
-    set_matching_vertices(em, matching_vertices);
 
     // Run the algorithm in "Consistent Mesh Parameterizations" (Praun et al. 2001) to find embeddings for the layout edges
     Praun2001Settings settings;
@@ -102,4 +114,6 @@ int main(int argc, char** argv)
 
     // Visualize the result
     view_embedding(em);
+
+    em.write_embedding(model_name, result_dir);
 }
