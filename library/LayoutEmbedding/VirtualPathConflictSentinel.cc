@@ -170,9 +170,12 @@ void VirtualPathConflictSentinel::check_path_ordering()
         }
     };
 
-    for (const auto& l_v : em.layout_mesh().vertices()) {
-        for (const auto& l_sector_boundary_he : l_v.outgoing_halfedges()) {
+    for (const auto l_v : em.layout_mesh().vertices()) {
+        bool vertex_has_sectors = false;
+        for (const auto l_sector_boundary_he : l_v.outgoing_halfedges()) {
             if (em.is_embedded(l_sector_boundary_he)) {
+                vertex_has_sectors = true;
+
                 // If a halfedge is embedded, the part following it is one "sector".
                 // We now visit all layout halfedges in this sector (l_he_in_sector) in a CCW order
                 // (i.e. until we reach another "embedded" layout halfedge).
@@ -205,7 +208,49 @@ void VirtualPathConflictSentinel::check_path_ordering()
                     l_he_in_sector = rotated_ccw(l_he_in_sector);
                 }
             }
-            // (If there are no embedded edges around a vertex, there are no sectors and hence no ordering requirements.)
+        }
+
+        if (!vertex_has_sectors) {
+            // No sectors around the vertex (yet).
+            // The best we can do is verify that the cyclic order of embedded edges matches that of the layout.
+            // If so, there are no (additional) conflicts. Otherwise, we consider all edges around this vertex as conflicting.
+            // TODO: Is it really necessary to mark all outgoing paths as conflicting in that case? Can we do something that causes less branching?
+
+            const auto l_he_start = l_v.any_outgoing_halfedge();
+            auto l_he = l_he_start;
+            LE_ASSERT(!em.is_embedded(l_he));
+
+            const VirtualPort t_port_start = l_port[l_he_start];
+            VirtualPort t_port = l_port[l_he];
+
+            bool cyclic_conflict = false;
+            do {
+                const auto l_he_next = rotated_ccw(l_he);
+                LE_ASSERT(!em.is_embedded(l_he));
+
+                const auto t_port_next = l_port[l_he];
+
+                // Try to reach t_port_next from t_port via CCW rotations without crossing t_port_start.
+                while (t_port != t_port_next) {
+                    t_port = t_port.rotated_ccw();
+
+                    if (t_port == t_port_start) {
+                        // We have cycled once around the embedded vertex before completing a cycle in the layout.
+                        cyclic_conflict = true;
+                        break;
+                    }
+                }
+
+                l_he = l_he_next;
+            }
+            while (l_he != l_he_start && !cyclic_conflict);
+
+            if (cyclic_conflict) {
+                // Mark all surrounding edges as "conflicting"
+                for (const auto& l_e : l_v.edges()) {
+                    global_conflicts.insert(l_e);
+                }
+            }
         }
     }
 }
