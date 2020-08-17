@@ -1,4 +1,4 @@
-#include "Embedding.hh"
+﻿#include "Embedding.hh"
 
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
@@ -139,6 +139,126 @@ bool Embedding::is_blocked(const VirtualVertex& _t_vv) const
     else {
         LE_ASSERT(false);
     }
+}
+
+void Embedding::write_embedding(std::string file_name, std::string file_directory,
+                                bool write_layout_mesh, bool write_target_mesh) const
+{
+    // Names (including paths) of files to be stored
+    //   For target mesh
+    std::string t_m_write_file_name = file_directory + file_name + "_target.obj";
+    //   For layout mesh
+    std::string l_m_write_file_name = file_directory + file_name + "_layout.obj";
+    //   For embedding
+    std::string em_write_file_name = file_directory + file_name + "_embedding.lem";
+
+    if(write_target_mesh) // default argument: true
+    {
+        write_obj_file(t_m_write_file_name, t_m);
+    }
+
+    if(write_layout_mesh) // default argument: true
+    {
+        write_obj_file(l_m_write_file_name, layout_mesh());
+    }
+
+    // Prepare writing embedded mesh. See file "lem" file format for more information
+
+    // Collect matching vertex pairs
+    std::vector<std::pair<pm::vertex_handle, pm::vertex_handle>> matching_vertices_vector;
+    for(auto layout_vertex: layout_mesh().vertices())
+    {
+        if(matching_target_vertex(layout_vertex).is_valid())
+        {
+            matching_vertices_vector.push_back(std::make_pair(layout_vertex, matching_target_vertex(layout_vertex)));
+        }
+    }
+
+    // Collect layout and embedded halfedges
+    std::vector<std::pair<std::pair<pm::vertex_handle, pm::vertex_handle>, std::vector<pm::vertex_handle>>> embedded_halfedges_vector;
+    // Iterate over layout mesh halfedges
+    for(auto layout_edge: layout_mesh().halfedges())
+    {
+        std::cout << int(layout_edge.idx)<< std::endl;
+        auto start_vertex = layout_edge.vertex_from();
+        auto end_vertex = layout_edge.vertex_to();
+        std::vector<pm::vertex_handle> embedded_halfedge_vertex_sequence = get_embedded_path(layout_edge);
+        embedded_halfedges_vector.push_back(std::make_pair(std::make_pair(start_vertex, end_vertex), embedded_halfedge_vertex_sequence));
+    }
+
+    // Now write this data to the corresponding lem file
+    // TODO: Check whether this file exists using std::filesystem::exists(em_write_file_name)
+    std::ofstream em_file_stream(em_write_file_name);
+    if(em_file_stream.is_open())
+    {
+        // Write model name comment
+        em_file_stream << "# " + file_name + "\n\n";
+
+        // Write links to layout mesh and target mesh
+        em_file_stream << "lf " + l_m_write_file_name + "\n";
+        em_file_stream << "tf " + t_m_write_file_name + "\n\n";
+
+        // Write matching vertices
+        for(auto pair: matching_vertices_vector)
+        {
+            em_file_stream << "mv " + std::to_string(int(pair.first.idx)) + " " + std::to_string(int(pair.second.idx)) + "\n";
+        }
+        em_file_stream << "\n";
+
+        // Write embedded edges as vertex sequences
+        for(auto edgePair: embedded_halfedges_vector)
+        {
+            em_file_stream << "ee " + std::to_string(int(edgePair.first.first.idx)) + " " + std::to_string(int(edgePair.first.second.idx)) + " :";
+            for(auto edgeVertex: edgePair.second)
+            {
+                em_file_stream << " " + std::to_string(int(edgeVertex.idx));
+            }
+            em_file_stream << std::endl;
+        }
+        em_file_stream.close();
+    }
+    else
+    {
+        std::cerr << "Could not create lem file." << std::endl;
+    }
+    return;
+}
+
+// Adopted from obj_writer::write_mesh from polymesh.
+// Currently, the Pos3-based vertex-attributes used in LayoutEmbedding are incompatible with
+//            the obj_writer
+void Embedding::write_obj_file(std::string file_name, const pm::Mesh &mesh) const
+{
+    std::ofstream file_stream(file_name);
+
+    int vertex_idx = 1;
+    auto base_v = vertex_idx;
+    auto position = target_pos();
+
+    // Only write vertex positions
+    for (auto v : mesh.all_vertices())
+    {
+        auto pos = v[position];
+        file_stream << "v " << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
+        ++vertex_idx;
+    }
+
+    // Write connectivity (faces)
+    for (auto f : mesh.faces())
+    {
+        file_stream << "f";
+        for (auto v : f.vertices())
+        {
+            auto i = v.idx.value;
+            file_stream << " ";
+            file_stream << base_v + i;
+        }
+        file_stream << "\n";
+    }
+
+    file_stream.close();
+
+    return;
 }
 
 tg::pos3 Embedding::element_pos(const pm::edge_handle& _t_e) const
