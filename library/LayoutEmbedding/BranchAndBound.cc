@@ -70,6 +70,12 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         es.extend(c.insertions);
         es.compute_candidate_paths();
 
+        if (!es.valid) {
+            // The current embedding might be invalid if paths run into dead ends.
+            // We ignore such states.
+            continue;
+        }
+
         if (c.lower_bound > 0) {
             LE_ASSERT(es.cost_lower_bound() == c.lower_bound);
         }
@@ -118,6 +124,18 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         }
     }
     std::cout << "Branch-and-bound optimization completed." << std::endl;
+
+    {
+        // Drain the rest of the queue to find the maximum optimality gap
+        auto largest_gap = _settings.optimality_gap;
+        while (!q.empty()) {
+            auto c = q.top();
+            const double gap = 1.0 - c.lower_bound / global_upper_bound;
+            largest_gap = std::max(largest_gap, gap);
+            q.pop();
+        }
+        std::cout << "The optimal solution is at most " << (largest_gap * 100.0) << " % better than the found solution." << std::endl;
+    }
 
     // Apply the victorious embedding sequence to the input embedding
 
