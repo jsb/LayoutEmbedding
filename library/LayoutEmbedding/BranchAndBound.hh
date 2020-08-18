@@ -6,7 +6,7 @@ namespace LayoutEmbedding {
 
 struct BranchAndBoundSettings
 {
-    double optimality_gap = 0.03;
+    double optimality_gap = 0.01;
     double time_limit = 1 * 60 * 60; // Seconds. Set to <= 0 to disable.
 };
 
