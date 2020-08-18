@@ -10,7 +10,6 @@ namespace LayoutEmbedding {
 class Embedding
 {
 public:
-    //explicit Embedding(const pm::Mesh& _l_m, const pm::Mesh& _t_m, const pm::vertex_attribute<tg::pos3>& _t_pos);
     explicit Embedding(const EmbeddingInput& _input);
     Embedding(const Embedding& _em);
 
