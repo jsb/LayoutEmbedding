@@ -69,7 +69,7 @@ void jitter_matching_vertices(EmbeddingInput& _input, int _steps)
             if (!t_v_occupied[t_v_new]) {
                 t_v_occupied[t_v] = false;
                 t_v_occupied[t_v_new] = true;
-                _input.l_matching_vertex[l_v] = t_v;
+                _input.l_matching_vertex[l_v] = t_v_new;
             }
         }
     }
