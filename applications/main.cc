@@ -41,8 +41,10 @@ struct TestCase
 void run_test_case(const TestCase& tc)
 {
     const std::vector<std::string> algorithms = {
-        "bnb",
         "greedy",
+        "greedy_with_swirl_detection",
+        "bnb",
+        "bnb_with_hashing",
     };
 
     const std::string stats_filename = "stats_" + tc.name + ".csv";
@@ -82,10 +84,22 @@ void run_test_case(const TestCase& tc)
         glow::timing::CpuTimer timer;
 
         if (algorithm == "bnb") {
-            branch_and_bound(em);
+            BranchAndBoundSettings settings;
+            settings.use_hashing = false;
+            branch_and_bound(em, settings);
+        }
+        else if (algorithm == "bnb_with_hashing") {
+            BranchAndBoundSettings settings;
+            settings.use_hashing = true;
+            branch_and_bound(em, settings);
         }
         else if (algorithm == "greedy") {
-            // Run the algorithm in "Consistent Mesh Parameterizations" (Praun et al. 2001) to find embeddings for the layout edges
+            Praun2001Settings settings;
+            settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
+            settings.use_swirl_detection = false;
+            praun2001(em, settings);
+        }
+        else if (algorithm == "greedy_with_swirl_detection") {
             Praun2001Settings settings;
             settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
             settings.use_swirl_detection = true;
