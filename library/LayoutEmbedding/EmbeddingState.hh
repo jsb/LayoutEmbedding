@@ -2,12 +2,9 @@
 
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/Hash.hh>
-
-#include <vector>
+#include <LayoutEmbedding/InsertionSequence.hh>
 
 namespace LayoutEmbedding {
-
-using InsertionSequence = std::vector<pm::edge_index>;
 
 /// EmbeddingState wraps a (copy of an) Embedding and provides additional functionality to
 /// - modify its local Embedding by inserting additional edges as shortest paths,
