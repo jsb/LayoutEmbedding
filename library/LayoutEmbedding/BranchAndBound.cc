@@ -3,6 +3,7 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 #include <LayoutEmbedding/EmbeddingState.hh>
+#include <LayoutEmbedding/Praun2001.hh>
 
 #include <chrono>
 #include <queue>
@@ -25,7 +26,15 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 {
     Candidate best_solution; // Initially empty
     double global_upper_bound = std::numeric_limits<double>::infinity();
-    // TODO: Run heuristic algorithm to find a tighter initial upper bound.
+
+    // Run heuristic algorithm to find a tighter initial upper bound.
+    {
+        Embedding em(_em);
+        auto result = praun2001(em);
+        best_solution.lower_bound = em.total_embedded_path_length();
+        best_solution.insertions = result.insertion_sequence;
+        global_upper_bound = best_solution.lower_bound;
+    }
 
     std::set<HashValue> known_state_hashes;
 
