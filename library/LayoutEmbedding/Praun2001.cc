@@ -163,8 +163,10 @@ bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l
     }
 }
 
-void praun2001(Embedding& _em, const Praun2001Settings& _settings)
+Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
 {
+    Praun2001Result result;
+
     const pm::Mesh& l_m = _em.layout_mesh();
     const pm::Mesh& t_m = _em.target_mesh();
     const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
@@ -254,11 +256,13 @@ void praun2001(Embedding& _em, const Praun2001Settings& _settings)
 
         std::cout << "Best path cost: " << best_path_cost << std::endl;
 
+        result.insertion_sequence.push_back(best_l_e);
         _em.embed_path(best_l_e.halfedgeA(), best_path);
         l_v_components.merge(best_l_e.vertexA().idx.value, best_l_e.vertexB().idx.value);
         l_is_embedded[best_l_e] = true;
         ++l_num_embedded_edges;
     }
+    return result;
 }
 
 }
