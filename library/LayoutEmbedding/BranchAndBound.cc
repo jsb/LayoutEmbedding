@@ -27,6 +27,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     double global_upper_bound = std::numeric_limits<double>::infinity();
     // TODO: Run heuristic algorithm to find a tighter initial upper bound.
 
+    std::set<HashValue> known_state_hashes;
+
     // Init priority queue with empty state.
     std::priority_queue<Candidate> q;
     {
@@ -42,11 +44,11 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
     while (!q.empty()) {
         // Time limit
+        const auto current_time = std::chrono::steady_clock::now();
+        const auto interval = current_time - start_time;
+        using seconds_double = std::chrono::duration<double>;
+        const double elapsed_seconds = std::chrono::duration_cast<seconds_double>(interval).count();
         if (_settings.time_limit > 0.0) {
-            const auto current_time = std::chrono::steady_clock::now();
-            const auto interval = current_time - start_time;
-            using seconds_double = std::chrono::duration<double>;
-            const double elapsed_seconds = std::chrono::duration_cast<seconds_double>(interval).count();
             if (elapsed_seconds >= _settings.time_limit) {
                 std::cout << "Reached time limit of " << _settings.time_limit << " s. Terminating." << std::endl;
                 if (std::isinf(global_upper_bound)) {
@@ -80,6 +82,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             LE_ASSERT(es.cost_lower_bound() == c.lower_bound);
         }
 
+        std::cout << "t: " << elapsed_seconds;
+        std::cout << "    ";
         std::cout << "|Embd|: " << c.insertions.size();
         std::cout << "    ";
         std::cout << "|Conf|: " << es.conflicting_l_edges.size();
@@ -93,6 +97,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         std::cout << "gap: " << (gap * 100.0) << " %";
         std::cout << "    ";
         std::cout << "|Q|: " << q.size();
+        std::cout << "    ";
+        std::cout << "|H|: " << known_state_hashes.size();
         std::cout << std::endl;
 
         if (es.cost_lower_bound() < global_upper_bound) {
@@ -107,6 +113,16 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 for (const auto& l_e : es.conflicting_l_edges) {
                     EmbeddingState new_es(es); // Copy
                     new_es.extend(l_e);
+
+                    if (_settings.use_hashing) {
+                        const HashValue new_es_hash = new_es.hash();
+                        const auto [it, inserted] = known_state_hashes.insert(new_es_hash);
+                        if (!inserted) {
+                            //std::cout << "Skipping child state (known hash: " << new_es_hash << ")" << std::endl;
+                            continue;
+                        }
+                    }
+
                     new_es.compute_candidate_paths();
 
                     const double new_lower_bound = new_es.cost_lower_bound();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <LayoutEmbedding/Embedding.hh>
+#include <LayoutEmbedding/Hash.hh>
 
 #include <vector>
 
@@ -30,6 +31,8 @@ struct EmbeddingState
     void compute_candidate_paths();
 
     double cost_lower_bound() const;
+
+    HashValue hash() const;
 
     Embedding em;
     bool valid = true;

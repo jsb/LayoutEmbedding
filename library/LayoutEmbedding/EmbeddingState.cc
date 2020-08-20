@@ -93,4 +93,19 @@ double EmbeddingState::cost_lower_bound() const
     return embedded_cost + unembedded_cost;
 }
 
+HashValue EmbeddingState::hash() const
+{
+    HashValue h = 0;
+    for (const auto l_e : em.layout_mesh().edges()) {
+        if (em.is_embedded(l_e)) {
+            const auto& path = em.get_embedded_path(l_e.halfedgeA());
+            for (const auto& t_v : path) {
+                const auto& pos = em.target_pos()[t_v];
+                h = hash_combine(h, LayoutEmbedding::hash(pos));
+            }
+        }
+    }
+    return h;
+}
+
 }
