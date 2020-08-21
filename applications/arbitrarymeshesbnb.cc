@@ -46,11 +46,15 @@ int main(int argc, char** argv)
         {
             // Assuming second extra argument is Layout Mesh name, adds /layouts/ prefix
             layout_mesh_file = data_path + "/models/layouts/" + std::string(argv[2]);
-            model_name = std::string(argv[2]);
+            std::string tempString = std::string(argv[2]);
+            std::replace(tempString.begin(), tempString.end(), '.', ' ');
+            std::stringstream tempStream(tempString);
+            tempStream >> model_name;
+            model_name = "Results/" + model_name;
         }
         else
         {
-            model_name = "horse_layout_praun_challenge.obj";
+            model_name = "Results/horse_layout_praun_challenge";
         }
     }
 
@@ -109,7 +113,8 @@ int main(int argc, char** argv)
 
 
 
-    em.write_embedding(model_name, result_dir);
+    // em.write_embedding(model_name, result_dir);
+    em.save(model_name);
 
     // Visualize the result
     view_embedding(em);

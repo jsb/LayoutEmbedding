@@ -115,5 +115,5 @@ int main(int argc, char** argv)
     // Visualize the result
     view_embedding(em);
 
-    em.write_embedding(model_name, result_dir);
+    em.save(model_name);
 }
