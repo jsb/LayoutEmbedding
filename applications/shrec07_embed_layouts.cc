@@ -31,7 +31,7 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
 
     const std::vector<std::string> algorithms = {
         "greedy",
-        //"bnb",
+        "bnb",
     };
 
     fs::create_directories(shrec_results_dir);
@@ -64,6 +64,7 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         if (algorithm == "bnb") {
             BranchAndBoundSettings settings;
             settings.use_hashing = true;
+            settings.time_limit = 10 * 60;
             branch_and_bound(em, settings);
         }
         else if (algorithm == "greedy") {
@@ -77,8 +78,13 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         }
 
         // Stats
-        const double optimization_time = timer.elapsedSeconds();
-        const double score = em.total_embedded_path_length();
+        double optimization_time = timer.elapsedSeconds();
+        double score = em.total_embedded_path_length();
+
+        if (!em.is_complete()) {
+            score = std::numeric_limits<double>::infinity();
+        }
+
         std::cout << "Optimization took " << optimization_time << " s" << std::endl;
         std::cout << "Total embedding length: " << score << std::endl;
         {
@@ -114,6 +120,12 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
                 view_target(em);
             }
         }
+
+        // Save to file
+        fs::path saved_embeddings_dir = shrec_results_dir / "saved_embeddings";
+        fs::create_directories(saved_embeddings_dir);
+        fs::path embedding_path = saved_embeddings_dir / (_name + "_" + algorithm);
+        em.save(embedding_path);
     }
 }
 
