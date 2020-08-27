@@ -160,14 +160,21 @@ bool Embedding::save(std::string filename, bool write_target_mesh,
     std::string em_write_file_name  = filename + ".lem";
     // Filename without path (for symbolic links in em file
     auto last_slash_pos = filename.find_last_of("/");
-    std::string filename_without_path = filename.substr(last_slash_pos+1);
+    std::string filename_without_path;
     // Check, whether directory specified in relative path already exists
-    std::string directory_of_em_file = filename.substr(0, last_slash_pos+1);
+    std::string directory_of_em_file;
     // If relative path hints to subdirectory, check whether subdirectory exists
     if(last_slash_pos != std::string::npos)
     {
+        filename_without_path = filename.substr(last_slash_pos+1);
         // Check, whether directory exists
+        directory_of_em_file = filename.substr(0, last_slash_pos+1);
         LE_ASSERT(std::filesystem::exists(directory_of_em_file));
+    }
+    else
+    {
+        // filename does not contain any dirs
+        filename_without_path = filename;
     }
 
     if(write_target_mesh) // default argument: true
@@ -655,10 +662,12 @@ bool Embedding::load_embedding(std::string filename)
 
     // Extract (relative) path of embedding file (relative to current working directory)
     auto last_slash_position = filename.find_last_of("/");
-    std::string directory_of_em_file = filename.substr(0, last_slash_position+1);
+    std::string directory_of_em_file = "";
     // If relative path hints to subdirectory, check whether subdirectory exists
     if(last_slash_position != std::string::npos)
     {
+        // Only add relative path, if it is not . (same directory)
+        directory_of_em_file = filename.substr(0, last_slash_position+1);
         // Check, whether directory exists
         LE_ASSERT(std::filesystem::exists(directory_of_em_file));
     }
