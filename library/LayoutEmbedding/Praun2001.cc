@@ -171,7 +171,7 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
     const pm::Mesh& t_m = _em.target_mesh();
     const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
 
-    const int l_num_v = l_m.vertices().count();
+    const int l_num_v = l_m.vertices().size();
 
     IGLMesh t_igl = to_igl_mesh(t_pos);
     Eigen::VectorXi b(l_num_v); // Boundary indices into t_igl.V
@@ -202,7 +202,7 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
     const int l_num_edges = l_m.edges().size();
     int l_num_embedded_edges = 0;
 
-    UnionFind l_v_components(l_m.vertices().count());
+    UnionFind l_v_components(l_m.vertices().size());
 
     while (l_num_embedded_edges < l_num_edges) {
         std::cout << "Embedding edge " << (l_num_embedded_edges + 1) << " / " << l_num_edges << std::endl;

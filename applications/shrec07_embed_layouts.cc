@@ -47,18 +47,6 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         const pm::Mesh& l_m = em.layout_mesh();
         const pm::Mesh& t_m = em.target_mesh();
 
-        std::cout << "Layout Mesh: ";
-        std::cout << l_m.vertices().count() << " vertices, ";
-        std::cout << l_m.edges().count() << " edges, ";
-        std::cout << l_m.faces().count() << " faces. ";
-        std::cout << "χ = " << pm::euler_characteristic(l_m) << std::endl;
-
-        std::cout << "Target Mesh: ";
-        std::cout << t_m.vertices().count() << " vertices, ";
-        std::cout << t_m.edges().count() << " edges, ";
-        std::cout << t_m.faces().count() << " faces. ";
-        std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
-
         glow::timing::CpuTimer timer;
 
         if (algorithm == "bnb") {
@@ -89,7 +77,7 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         std::cout << "Total embedding length: " << score << std::endl;
         {
             std::ofstream f{stats_path, std::ofstream::app};
-            f << l_m.edges().count() << ",";
+            f << l_m.edges().size() << ",";
             f << algorithm << ",";
             f << optimization_time << ",";
             f << score << std::endl;
@@ -167,22 +155,22 @@ int main()
 
             pm::load(layout_mesh_path, input.l_m, input.l_pos);
             std::cout << "Layout Mesh: ";
-            std::cout << input.l_m.vertices().count() << " vertices, ";
-            std::cout << input.l_m.edges().count() << " edges, ";
-            std::cout << input.l_m.faces().count() << " faces. ";
+            std::cout << input.l_m.vertices().size() << " vertices, ";
+            std::cout << input.l_m.edges().size() << " edges, ";
+            std::cout << input.l_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.l_m) << std::endl;
 
             pm::load(target_mesh_path, input.t_m, input.t_pos);
             std::cout << "Target Mesh: ";
-            std::cout << input.t_m.vertices().count() << " vertices, ";
-            std::cout << input.t_m.edges().count() << " edges, ";
-            std::cout << input.t_m.faces().count() << " faces. ";
+            std::cout << input.t_m.vertices().size() << " vertices, ";
+            std::cout << input.t_m.edges().size() << " edges, ";
+            std::cout << input.t_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.t_m) << std::endl;
 
             // Load landmarks
             const auto landmark_ids = load_landmarks(corrs_path);
             std::cout << landmark_ids.size() << " landmarks." << std::endl;
-            if (landmark_ids.size() != input.l_m.vertices().count()) {
+            if (landmark_ids.size() != input.l_m.vertices().size()) {
                 std::cout << "Wrong number of landmarks, Skipping." << std::endl;
                 continue;
             }

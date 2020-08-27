@@ -9,9 +9,8 @@ IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
     const pm::Mesh& m = _pos.mesh();
 
     LE_ASSERT(m.is_compact());
-
-    const int num_v = m.vertices().count();
-    const int num_f = m.faces().count();
+    const int num_v = m.vertices().size();
+    const int num_f = m.faces().size();
 
     IGLMesh result;
     result.V.resize(num_v, 3);
