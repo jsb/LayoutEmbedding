@@ -137,7 +137,6 @@ int main()
             continue;
         }
 
-
         for (int mesh_index = 0; mesh_index < shrec_meshes_per_category; ++mesh_index) {
             const int mesh_id = (category - 1) * shrec_meshes_per_category + mesh_index + 1;
 

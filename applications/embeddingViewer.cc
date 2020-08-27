@@ -43,14 +43,12 @@ int main(int argc, char** argv)
         // Assuming first extra argument is model_name of embedding
         embedding_file = result_dir + std::string(argv[1]);
         std::cout << embedding_file << std::endl;
-
     }
 
     // Embedding Input
     EmbeddingInput input;
     // Create the embedding linking the Layout and the (wrapped) Target Mesh
     Embedding em(input);
-
 
     // Load Embedding from file
     if(!em.load_embedding(embedding_file))
