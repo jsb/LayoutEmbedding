@@ -123,7 +123,7 @@ void run_test_case(const TestCase& tc)
         }
 
         // Visualization
-        auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
+        auto style = default_style();
 
         // Optional config: Camera position
         auto cfg_view = tc.view ? gv::config(tc.view.value()) : gv::config();
