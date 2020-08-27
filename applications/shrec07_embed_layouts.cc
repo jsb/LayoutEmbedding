@@ -25,7 +25,7 @@ static int screenshot_samples = 64;
 
 namespace  {
 
-void compute_embeddings(const std::string& _name, const EmbeddingInput& _input)
+void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
 {
     namespace fs = std::filesystem;
 
