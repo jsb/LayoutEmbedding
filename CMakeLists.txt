@@ -20,7 +20,9 @@ add_library(LayoutEmbedding ${LE_LIBRARY_SOURCE_FILES})
 target_link_libraries(LayoutEmbedding PUBLIC imgui typed-geometry polymesh glow-extras eigen)
 target_include_directories(LayoutEmbedding PUBLIC library)
 target_compile_definitions(LayoutEmbedding PUBLIC LE_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_compile_definitions(LayoutEmbedding PUBLIC LE_OUTPUT_PATH="${CMAKE_CURRENT_BINARY_DIR}/output")
 target_include_directories(LayoutEmbedding PRIVATE extern/libigl/include) # We use libigl header-only
+target_link_libraries(LayoutEmbedding PRIVATE stdc++fs)
 
 # Executable targets (applications directory)
 file(GLOB LE_APP_SOURCE_FILES "applications/*.cc")

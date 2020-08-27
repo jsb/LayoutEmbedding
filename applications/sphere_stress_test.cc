@@ -32,7 +32,7 @@ int main()
 
     int seed = 0;
     while (true) {
-        for (const auto& algorithm : {"bnb", "greedy"}) {
+        for (const auto& algorithm : {"greedy", "greedy_with_swirl_detection", "bnb", "bnb_with_hashing"}) {
             // Generate random matching vertices
             std::srand(seed); // TODO: make the seed a parameter of randomize_matching_vertices?
             randomize_matching_vertices(input);
@@ -40,13 +40,31 @@ int main()
 
             glow::timing::CpuTimer timer;
             if (algorithm == "greedy") {
-                praun2001(em);
+                Praun2001Settings settings;
+                settings.use_swirl_detection = false;
+                praun2001(em, settings);
+            }
+            else if (algorithm == "greedy_with_swirl_detection") {
+                Praun2001Settings settings;
+                settings.use_swirl_detection = true;
+                praun2001(em, settings);
             }
             else if (algorithm == "bnb") {
                 BranchAndBoundSettings settings;
                 settings.time_limit = 30 * 60;
+                settings.use_hashing = false;
                 branch_and_bound(em, settings);
             }
+            else if (algorithm == "bnb_with_hashing") {
+                BranchAndBoundSettings settings;
+                settings.time_limit = 30 * 60;
+                settings.use_hashing = true;
+                branch_and_bound(em, settings);
+            }
+            else {
+                LE_ASSERT(false);
+            }
+
             const double runtime = timer.elapsedSeconds();
             const double embedding_cost = em.is_complete() ? em.total_embedded_path_length() : std::numeric_limits<double>::infinity();
 
