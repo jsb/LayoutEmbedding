@@ -6,7 +6,6 @@
 #include <LayoutEmbedding/VirtualPath.hh>
 #include <polymesh/formats/obj.hh>
 
-
 namespace LayoutEmbedding {
 
 class Embedding
@@ -64,8 +63,6 @@ public:
 
     bool load_embedding(std::string filename);
 
-
-
     // Getters.
     const pm::Mesh& layout_mesh() const; // This will always refer to the original l_m in the input
     const pm::Mesh& target_mesh() const; // This refers to the local copy contained in this Embedding (can be different from the original target mesh due to local refinements).
@@ -74,6 +71,9 @@ public:
     pm::vertex_attribute<tg::pos3>& target_pos();
     const pm::vertex_handle matching_target_vertex(const pm::vertex_handle& _l_v) const;
     const pm::vertex_handle matching_layout_vertex(const pm::vertex_handle& _t_v) const;
+
+public:
+    double path_length_norm = 1.0; // TODO: find a suitable place for this
 
 private:
     // TODO: Change back to const
@@ -86,6 +86,5 @@ private:
     pm::halfedge_attribute<pm::halfedge_handle> t_matching_halfedge;
 
 };
-
 
 }
