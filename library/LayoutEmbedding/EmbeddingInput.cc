@@ -19,14 +19,22 @@ bool LayoutEmbedding::EmbeddingInput::save(std::string filename,
     std::string inp_write_file_name  = filename + ".inp";
     // Filename without path (for symbolic links in inp file
     auto last_slash_pos = filename.find_last_of("/");
-    std::string filename_without_path = filename.substr(last_slash_pos+1);
+    std::string filename_without_path;
     // Check, whether directory specified in relative path already exists
-    std::string directory_of_inp_file = filename.substr(0, last_slash_pos+1);
+    std::string directory_of_inp_file;
     // If relative path hints to subdirectory, check whether subdirectory exists
     if(last_slash_pos != std::string::npos)
     {
+        filename_without_path = filename.substr(last_slash_pos+1);
+
         // Check, whether directory exists
+         directory_of_inp_file = filename.substr(0, last_slash_pos+1);
         LE_ASSERT(std::filesystem::exists(directory_of_inp_file));
+    }
+    else
+    {
+        // No dirs in filename
+        filename_without_path = filename;
     }
 
 
@@ -127,10 +135,12 @@ bool LayoutEmbedding::EmbeddingInput::load(std::string filename)
     std::string tim_file_name;
     // Extract (relative) path of embedding file (relative to current working directory)
     auto last_slash_position = filename.find_last_of("/");
-    std::string directory_of_inp_file = filename.substr(0, last_slash_position+1);
+    std::string directory_of_inp_file = "";
     // If relative path hints to subdirectory, check whether subdirectory exists
     if(last_slash_position != std::string::npos)
     {
+        // Only add relative path, if it is not . (same directory)
+        directory_of_inp_file = filename.substr(0, last_slash_position+1);
         // Check, whether directory exists
         LE_ASSERT(std::filesystem::exists(directory_of_inp_file));
     }
