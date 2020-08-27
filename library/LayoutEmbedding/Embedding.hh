@@ -4,14 +4,23 @@
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/VirtualVertex.hh>
 #include <LayoutEmbedding/VirtualPath.hh>
+#include <polymesh/formats/obj.hh>
+
+// TODO: Remove
+#include <fstream>
+#include <sstream>
 
 namespace LayoutEmbedding {
 
 class Embedding
 {
 public:
-    explicit Embedding(const EmbeddingInput& _input);
+    // TODO: Change to const again
+    explicit Embedding(EmbeddingInput& _input);
+
     Embedding(const Embedding& _em);
+    //Embedding(std::string file_name, std::string file_directory,
+    //          pm::Mesh& external_layout_mesh, pm::Mesh& external_target_mesh);
 
     /// If the layout halfedge _l_h has an embedding, returns the target halfedge at the start of the corresponding embedded path.
     /// Otherwise, returns an invalid halfedge.
@@ -55,6 +64,18 @@ public:
     double total_embedded_path_length() const;
     bool is_complete() const;
 
+    // Write embedding, layout and modified target mesh to files
+    //void write_embedding(std::string file_name, std::string file_directory,
+    //                     bool write_layout_mesh=true, bool write_target_mesh=true)
+    //const;
+
+    bool save(std::string filename, bool write_target_mesh=true,
+              bool write_layout_mesh=true, bool write_target_input_mesh=true) const;
+
+    bool load_embedding(std::string filename);
+
+
+
     // Getters.
     const pm::Mesh& layout_mesh() const; // This will always refer to the original l_m in the input
     const pm::Mesh& target_mesh() const; // This refers to the local copy contained in this Embedding (can be different from the original target mesh due to local refinements).
@@ -65,13 +86,20 @@ public:
     const pm::vertex_handle matching_layout_vertex(const pm::vertex_handle& _t_v) const;
 
 private:
-    const EmbeddingInput* input;
+    // TODO: Change back to const
+    EmbeddingInput* input;
     pm::Mesh t_m; // Target mesh. Copy.
     pm::vertex_attribute<tg::pos3> t_pos; // Target mesh positions. Copy.
 
     pm::vertex_attribute<pm::vertex_handle> l_matching_vertex;
     pm::vertex_attribute<pm::vertex_handle> t_matching_vertex;
     pm::halfedge_attribute<pm::halfedge_handle> t_matching_halfedge;
+
+    // TODO: Find elegant way to cast vertex-attribute position from pos3 to std::array<float,3>
+    // void write_obj_file(std::string file_name, const pm::Mesh & mesh) const;
 };
+
+    //Embedding load_embedding(std::string model_name, std::string file_directory,
+    //                         EmbeddingInput& input);
 
 }
