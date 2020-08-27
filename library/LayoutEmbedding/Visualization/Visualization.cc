@@ -1,9 +1,6 @@
 #include "Visualization.hh"
 
 #include <LayoutEmbedding/Visualization/HaltonColorGenerator.hh>
-#include <LayoutEmbedding/Visualization/RWTHColors.hh>
-
-#include <glow-extras/viewer/view.hh>
 
 namespace LayoutEmbedding {
 
