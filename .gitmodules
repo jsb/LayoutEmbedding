@@ -12,7 +12,7 @@
 	url = https://graphics.rwth-aachen.de:9000/ptrettner/typed-geometry
 [submodule "extern/imgui"]
 	path = extern/imgui
-	url = https://graphics.rwth-aachen.de:9000/ptrettner/imgui-lean
+	url = https://www.graphics.rwth-aachen.de:9000/pschmidt/imgui-lean.git
 [submodule "extern/glfw"]
 	path = extern/glfw
 	url = https://github.com/glfw/glfw
