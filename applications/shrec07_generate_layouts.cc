@@ -61,9 +61,9 @@ int main()
 
             pm::load(mesh_path, input.t_m, input.t_pos);
             std::cout << "Target Mesh: ";
-            std::cout << input.t_m.vertices().count() << " vertices, ";
-            std::cout << input.t_m.edges().count() << " edges, ";
-            std::cout << input.t_m.faces().count() << " faces. ";
+            std::cout << input.t_m.vertices().size() << " vertices, ";
+            std::cout << input.t_m.edges().size() << " edges, ";
+            std::cout << input.t_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.t_m) << std::endl;
 
             // Load landmarks
@@ -95,12 +95,12 @@ int main()
             input.l_m.compactify();
 
             std::cout << "Layout Mesh: ";
-            std::cout << input.l_m.vertices().count() << " vertices, ";
-            std::cout << input.l_m.edges().count() << " edges, ";
-            std::cout << input.l_m.faces().count() << " faces. ";
+            std::cout << input.l_m.vertices().size() << " vertices, ";
+            std::cout << input.l_m.edges().size() << " edges, ";
+            std::cout << input.l_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.l_m) << std::endl;
 
-            if(input.l_m.vertices().count() == landmarks.size()) {
+            if(input.l_m.vertices().size() == landmarks.size()) {
                 // Decimation successful
                 success = true;
                 std::cout << "Success!" << std::endl;

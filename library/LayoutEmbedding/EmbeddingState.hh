@@ -31,6 +31,8 @@ struct EmbeddingState
 
     HashValue hash() const;
 
+    int count_connected_components() const;
+
     Embedding em;
     bool valid = true;
 

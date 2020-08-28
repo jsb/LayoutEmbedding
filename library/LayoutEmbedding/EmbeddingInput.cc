@@ -17,6 +17,26 @@ bool LayoutEmbedding::EmbeddingInput::save(std::string filename,
     std::string l_m_write_file_name = filename + "_layout.obj";
     //   For embedding
     std::string inp_write_file_name  = filename + ".inp";
+    // Filename without path (for symbolic links in inp file
+    auto last_slash_pos = filename.find_last_of("/");
+    std::string filename_without_path;
+    // Check, whether directory specified in relative path already exists
+    std::string directory_of_inp_file;
+    // If relative path hints to subdirectory, check whether subdirectory exists
+    if(last_slash_pos != std::string::npos)
+    {
+        filename_without_path = filename.substr(last_slash_pos+1);
+
+        // Check, whether directory exists
+         directory_of_inp_file = filename.substr(0, last_slash_pos+1);
+        LE_ASSERT(std::filesystem::exists(directory_of_inp_file));
+    }
+    else
+    {
+        // No dirs in filename
+        filename_without_path = filename;
+    }
+
 
     if(write_target_input_mesh) // default argument: true
     {
@@ -51,8 +71,8 @@ bool LayoutEmbedding::EmbeddingInput::save(std::string filename,
         inp_file_stream << "# " + filename + "\n\n";
 
         // Write links to layout mesh and target mesh
-        inp_file_stream << "lf " + l_m_write_file_name + "\n";
-        inp_file_stream << "tif " + t_m_write_file_name + "\n\n";
+        inp_file_stream << "lf " + filename_without_path + "_layout.obj" + "\n";
+        inp_file_stream << "tif " + filename_without_path + "_target_input.obj" + "\n\n";
 
         // Write matching vertices
         for(auto pair: matching_vertices_vector)
@@ -113,6 +133,17 @@ bool LayoutEmbedding::EmbeddingInput::load(std::string filename)
     std::cout << "Input file name: " << inp_file_name << std::endl;
     std::string lm_file_name;
     std::string tim_file_name;
+    // Extract (relative) path of embedding file (relative to current working directory)
+    auto last_slash_position = filename.find_last_of("/");
+    std::string directory_of_inp_file = "";
+    // If relative path hints to subdirectory, check whether subdirectory exists
+    if(last_slash_position != std::string::npos)
+    {
+        // Only add relative path, if it is not . (same directory)
+        directory_of_inp_file = filename.substr(0, last_slash_position+1);
+        // Check, whether directory exists
+        LE_ASSERT(std::filesystem::exists(directory_of_inp_file));
+    }
     // Open input file stream for embedding file
     std::ifstream inp_file_stream(inp_file_name);
     LE_ASSERT(inp_file_stream.is_open()==true);
@@ -170,16 +201,23 @@ bool LayoutEmbedding::EmbeddingInput::load(std::string filename)
             mv_token_vector.emplace_back(std::make_pair(layout_vertex_id, target_vertex_id));
         }
     }
+
+    // Add relative path prefix
+    lm_file_name = directory_of_inp_file + lm_file_name;
+    std::cout << "Name of layout file " + lm_file_name << std::endl;
+    tim_file_name = directory_of_inp_file + tim_file_name;
+
+
     // Load layout mesh into input
     if(!pm::load(lm_file_name, l_m, l_pos))
     {
-        std::cerr << "Could not load layout mesh object file that was specified in the lem file. Please check again." << std::endl;
+        std::cerr << "Could not load layout mesh object file that was specified in the inp file. Please check again." << std::endl;
         return false;
     }
     // Load target mesh into input
     if(!pm::load(tim_file_name, t_m, t_pos))
     {
-        std::cerr << "Could not load target mesh object file that was specified in the lem file. Please check again." << std::endl;
+        std::cerr << "Could not load target mesh object file that was specified in the inp file. Please check again." << std::endl;
         return false;
     }
     // Save matching vertices

@@ -108,6 +108,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         std::cout << "|Q|: " << q.size();
         std::cout << "    ";
         std::cout << "|H|: " << known_state_hashes.size();
+        std::cout << "    ";
+        std::cout << "|CC|: " << es.count_connected_components();
         std::cout << std::endl;
 
         if (es.cost_lower_bound() < global_upper_bound) {

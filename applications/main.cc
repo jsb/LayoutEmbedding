@@ -70,15 +70,15 @@ void run_test_case(const TestCase& tc)
         const pm::Mesh& t_m = em.target_mesh();
 
         std::cout << "Layout Mesh: ";
-        std::cout << l_m.vertices().count() << " vertices, ";
-        std::cout << l_m.edges().count() << " edges, ";
-        std::cout << l_m.faces().count() << " faces. ";
+        std::cout << l_m.vertices().size() << " vertices, ";
+        std::cout << l_m.edges().size() << " edges, ";
+        std::cout << l_m.faces().size() << " faces. ";
         std::cout << "χ = " << pm::euler_characteristic(l_m) << std::endl;
 
         std::cout << "Target Mesh: ";
-        std::cout << t_m.vertices().count() << " vertices, ";
-        std::cout << t_m.edges().count() << " edges, ";
-        std::cout << t_m.faces().count() << " faces. ";
+        std::cout << t_m.vertices().size() << " vertices, ";
+        std::cout << t_m.edges().size() << " edges, ";
+        std::cout << t_m.faces().size() << " faces. ";
         std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
 
         glow::timing::CpuTimer timer;
@@ -116,14 +116,14 @@ void run_test_case(const TestCase& tc)
         std::cout << "Total embedding length: " << score << std::endl;
         {
             std::ofstream f{stats_filename, std::ofstream::app};
-            f << l_m.edges().count() << ",";
+            f << l_m.edges().size() << ",";
             f << algorithm << ",";
             f << optimization_time << ",";
             f << score << std::endl;
         }
 
         // Visualization
-        auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
+        auto style = default_style();
 
         // Optional config: Camera position
         auto cfg_view = tc.view ? gv::config(tc.view.value()) : gv::config();

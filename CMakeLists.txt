@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(layout-embedding)
 
+set(LE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/output" CACHE PATH "Output path for various files produced by the applications.")
+
 set(CMAKE_CXX_STANDARD 17)
 
 # Dependencies
@@ -20,7 +22,7 @@ add_library(LayoutEmbedding ${LE_LIBRARY_SOURCE_FILES})
 target_link_libraries(LayoutEmbedding PUBLIC imgui typed-geometry polymesh glow-extras eigen)
 target_include_directories(LayoutEmbedding PUBLIC library)
 target_compile_definitions(LayoutEmbedding PUBLIC LE_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data")
-target_compile_definitions(LayoutEmbedding PUBLIC LE_OUTPUT_PATH="${CMAKE_CURRENT_BINARY_DIR}/output")
+target_compile_definitions(LayoutEmbedding PUBLIC LE_OUTPUT_PATH="${LE_OUTPUT_PATH}")
 target_include_directories(LayoutEmbedding PRIVATE extern/libigl/include) # We use libigl header-only
 target_link_libraries(LayoutEmbedding PRIVATE stdc++fs)
 
