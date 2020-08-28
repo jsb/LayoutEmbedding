@@ -652,6 +652,11 @@ const pm::vertex_handle Embedding::matching_layout_vertex(const pm::vertex_handl
     return t_matching_vertex[_t_v];
 }
 
+const pm::halfedge_handle Embedding::matching_layout_halfedge(const pm::halfedge_handle& _t_v) const
+{
+    LE_ASSERT(_t_v.mesh == &target_mesh());
+    return t_matching_halfedge[_t_v];
+}
 
 bool Embedding::load_embedding(std::string filename)
 {

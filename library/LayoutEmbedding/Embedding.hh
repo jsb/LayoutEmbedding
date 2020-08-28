@@ -71,6 +71,7 @@ public:
     pm::vertex_attribute<tg::pos3>& target_pos();
     const pm::vertex_handle matching_target_vertex(const pm::vertex_handle& _l_v) const;
     const pm::vertex_handle matching_layout_vertex(const pm::vertex_handle& _t_v) const;
+    const pm::halfedge_handle matching_layout_halfedge(const pm::halfedge_handle& _t_v) const;
 
 public:
     double path_length_norm = 1.0; // TODO: find a suitable place for this
