@@ -65,6 +65,8 @@ public:
 
     // Getters.
     const pm::Mesh& layout_mesh() const; // This will always refer to the original l_m in the input
+    const pm::vertex_attribute<tg::pos3>& layout_pos() const;
+    pm::vertex_attribute<tg::pos3>& layout_pos();
     const pm::Mesh& target_mesh() const; // This refers to the local copy contained in this Embedding (can be different from the original target mesh due to local refinements).
     pm::Mesh& target_mesh();
     const pm::vertex_attribute<tg::pos3>& target_pos() const;

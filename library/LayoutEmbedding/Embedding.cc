@@ -620,6 +620,16 @@ const pm::Mesh& Embedding::layout_mesh() const
     return input->l_m;
 }
 
+const pm::vertex_attribute<tg::pos3>& Embedding::layout_pos() const
+{
+    return input->l_pos;
+}
+
+pm::vertex_attribute<tg::pos3> &Embedding::layout_pos()
+{
+    return input->l_pos;
+}
+
 const pm::Mesh& Embedding::target_mesh() const
 {
     return t_m;
