@@ -193,7 +193,6 @@ bool Embedding::save(std::string filename, bool write_target_mesh,
     // Iterate over layout mesh halfedges
     for(auto layout_edge: layout_mesh().halfedges())
     {
-        std::cout << int(layout_edge.idx)<< std::endl;
         auto start_vertex = layout_edge.vertex_from();
         auto end_vertex = layout_edge.vertex_to();
         std::vector<pm::vertex_handle> embedded_halfedge_vertex_sequence = get_embedded_path(layout_edge);
