@@ -117,6 +117,35 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
     }
 }
 
+// Warning:
+// - Loses all attributes stored on edges, halfedges, and faces.
+// - May change the indices of edges and halfedges.
+void invert_mesh(pm::Mesh& _m)
+{
+    // Remember face connectivity
+    std::vector<std::vector<pm::vertex_handle>> fv_indices;
+    for (const auto f : _m.faces()) {
+        std::vector<pm::vertex_handle> local_fv_indices;
+        for (const auto v : f.vertices()) {
+            local_fv_indices.push_back(v);
+        }
+        fv_indices.push_back(std::move(local_fv_indices));
+    }
+
+    // Remove all edges and faces
+    for (const auto e : _m.edges()) {
+        _m.edges().remove(e);
+    }
+
+    // Rebuild the mesh using inverted faces
+    for (auto& local_fv_indices : fv_indices) {
+        std::reverse(local_fv_indices.begin(), local_fv_indices.end());
+        _m.faces().add(local_fv_indices);
+    }
+
+    _m.compactify();
+}
+
 }
 
 int main()
@@ -159,6 +188,11 @@ int main()
             std::cout << input.l_m.edges().size() << " edges, ";
             std::cout << input.l_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.l_m) << std::endl;
+
+            if (shrec_flipped_landmarks.count(mesh_id)) {
+                std::cout << "This object is flipped. Inverting layout mesh." << std::endl;
+                invert_mesh(input.l_m);
+            }
 
             pm::load(target_mesh_path, input.t_m, input.t_pos);
             std::cout << "Target Mesh: ";

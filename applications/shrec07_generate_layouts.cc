@@ -45,6 +45,11 @@ int main()
             const int mesh_id = (category - 1) * shrec_meshes_per_category + mesh_index + 1;
             std::cout << "Category " << category << ", mesh " << mesh_index << ": Mesh ID " << mesh_id << "." << std::endl;
 
+            if (shrec_flipped_landmarks.count(mesh_id)) {
+                std::cout << "This mesh is flipped" << std::endl;
+                continue;
+            }
+
             const fs::path mesh_path = shrec_meshes_dir / (std::to_string(mesh_id) + ".off");
             if (!fs::is_regular_file(mesh_path)) {
                 std::cout << "Could not find mesh " << mesh_path << std::endl;
