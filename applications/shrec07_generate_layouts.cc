@@ -66,6 +66,11 @@ int main()
             std::cout << input.t_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.t_m) << std::endl;
 
+            if (pm::euler_characteristic(input.t_m) != 2) {
+                std::cout << "Mesh is not genus 0" << std::endl;
+                continue;
+            }
+
             // Load landmarks
             const auto landmarks = load_landmarks(corrs_path);
             std::cout << landmarks.size() << " landmarks." << std::endl;
@@ -99,6 +104,11 @@ int main()
             std::cout << input.l_m.edges().size() << " edges, ";
             std::cout << input.l_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.l_m) << std::endl;
+
+            if (pm::euler_characteristic(input.l_m) != 2) {
+                std::cout << "Decimated mesh is not genus 0" << std::endl;
+                continue;
+            }
 
             if(input.l_m.vertices().size() == landmarks.size()) {
                 // Decimation successful
