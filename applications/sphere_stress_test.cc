@@ -12,21 +12,27 @@
 #include <LayoutEmbedding/Praun2001.hh>
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 
 using namespace LayoutEmbedding;
 
 int main()
 {
-    const std::string data_path = LE_DATA_PATH;
+    namespace fs = std::filesystem;
+
+    const fs::path data_path = LE_DATA_PATH;
+    const fs::path output_dir = LE_OUTPUT_PATH;
+    const fs::path sphere_stress_test_output_dir = output_dir / "sphere_stress_test";
 
     EmbeddingInput input;
-    load(data_path + "/models/target-meshes/sphere.obj", input.t_m, input.t_pos);
-    load(data_path + "/models/layouts/cube_layout.obj", input.l_m, input.l_pos);
+    load(data_path / "models/target-meshes/sphere.obj", input.t_m, input.t_pos);
+    load(data_path / "models/layouts/cube_layout.obj", input.l_m, input.l_pos);
 
-    const std::string stats_filename = "stats_sphere_stress_test.csv";
+    fs::create_directories(sphere_stress_test_output_dir);
+    const fs::path stats_path = sphere_stress_test_output_dir / "stats.csv";
     {
-        std::ofstream f(stats_filename);
+        std::ofstream f(stats_path);
         f << "seed,algorithm,runtime,score" << std::endl;
     }
 
@@ -69,7 +75,7 @@ int main()
             const double embedding_cost = em.is_complete() ? em.total_embedded_path_length() : std::numeric_limits<double>::infinity();
 
             {
-                std::ofstream f{stats_filename, std::ofstream::app};
+                std::ofstream f{stats_path, std::ofstream::app};
                 f << seed << ",";
                 f << algorithm << ",";
                 f << runtime << ",";
