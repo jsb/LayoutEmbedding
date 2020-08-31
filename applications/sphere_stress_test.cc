@@ -38,7 +38,11 @@ int main()
 
     int seed = 0;
     while (true) {
-        for (const auto& algorithm : {"greedy", "greedy_with_swirl_detection", "bnb", "bnb_with_hashing"}) {
+        for (const auto& algorithm : {
+            "greedy",
+            "greedy_with_swirl_detection",
+            "bnb",
+        }) {
             // Generate random matching vertices
             std::srand(seed); // TODO: make the seed a parameter of randomize_matching_vertices?
             randomize_matching_vertices(input);
@@ -56,12 +60,6 @@ int main()
                 praun2001(em, settings);
             }
             else if (algorithm == "bnb") {
-                BranchAndBoundSettings settings;
-                settings.time_limit = 30 * 60;
-                settings.use_hashing = false;
-                branch_and_bound(em, settings);
-            }
-            else if (algorithm == "bnb_with_hashing") {
                 BranchAndBoundSettings settings;
                 settings.time_limit = 30 * 60;
                 settings.use_hashing = true;
