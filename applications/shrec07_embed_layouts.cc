@@ -167,11 +167,16 @@ int main()
             std::cout << input.t_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.t_m) << std::endl;
 
+            if (pm::euler_characteristic(input.l_m) != pm::euler_characteristic(input.t_m)) {
+                std::cout << "Euler characteristic does not match. Skipping." << std::endl;
+                continue;
+            }
+
             // Load landmarks
             const auto landmark_ids = load_landmarks(corrs_path);
             std::cout << landmark_ids.size() << " landmarks." << std::endl;
             if (landmark_ids.size() != input.l_m.vertices().size()) {
-                std::cout << "Wrong number of landmarks, Skipping." << std::endl;
+                std::cout << "Wrong number of landmarks. Skipping." << std::endl;
                 continue;
             }
             for (size_t i = 0; i < landmark_ids.size(); ++i) {
