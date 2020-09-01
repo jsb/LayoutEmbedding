@@ -3,7 +3,7 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 #include <LayoutEmbedding/EmbeddingState.hh>
-#include <LayoutEmbedding/Praun2001.hh>
+#include <LayoutEmbedding/Greedy.hh>
 
 #include <chrono>
 #include <queue>

@@ -1,4 +1,4 @@
-#include "Praun2001.hh"
+#include "Greedy.hh"
 
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/IGLMesh.hh>

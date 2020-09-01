@@ -8,8 +8,8 @@
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
+#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/Praun2001.hh>
 
 #include <algorithm>
 #include <filesystem>
