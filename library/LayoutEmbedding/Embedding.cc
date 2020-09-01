@@ -193,7 +193,6 @@ bool Embedding::save(std::string filename, bool write_target_mesh,
     // Iterate over layout mesh halfedges
     for(auto layout_edge: layout_mesh().halfedges())
     {
-        std::cout << int(layout_edge.idx)<< std::endl;
         auto start_vertex = layout_edge.vertex_from();
         auto end_vertex = layout_edge.vertex_to();
         std::vector<pm::vertex_handle> embedded_halfedge_vertex_sequence = get_embedded_path(layout_edge);
@@ -263,12 +262,12 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
     struct Distance
     {
         int edges_crossed = std::numeric_limits<int>::max();
-        double geodesic = std::numeric_limits<double>::infinity();
+        double distance_from_source = std::numeric_limits<double>::infinity();
         double remaining_distance_heuristic = 0.0; // Used for A* search
 
         bool operator<(const Distance& rhs) const
         {
-            return geodesic + remaining_distance_heuristic < rhs.geodesic + rhs.remaining_distance_heuristic;
+            return distance_from_source + remaining_distance_heuristic < rhs.distance_from_source + rhs.remaining_distance_heuristic;
         }
     };
 
@@ -335,7 +334,7 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
     std::vector<VirtualVertex> legal_last_vvs = get_virtual_vertices_in_sector(_t_h_sector_end);
 
     distance[t_v_start].edges_crossed = 0;
-    distance[t_v_start].geodesic = 0.0;
+    distance[t_v_start].distance_from_source = 0.0;
 
     std::priority_queue<Candidate, std::vector<Candidate>, std::greater<Candidate>> q;
 
@@ -344,7 +343,7 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
         c.vv = VirtualVertex(t_v_start);
         c.p = t_pos[t_v_start];
         c.dist.edges_crossed = 0;
-        c.dist.geodesic = 0.0;
+        c.dist.distance_from_source = 0.0;
         c.dist.remaining_distance_heuristic = std::numeric_limits<double>::max();
         q.push(c);
     }
@@ -375,7 +374,7 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
             const Distance& current_dist = distance[vv];
             const auto& p = element_pos(vv);
             Distance new_dist = c.dist;
-            new_dist.geodesic += tg::distance(c.p, p);
+            new_dist.distance_from_source += tg::distance(c.p, p);
             new_dist.remaining_distance_heuristic = tg::distance(p, t_pos[t_v_end]);
             if (is_real_edge(vv)) {
                 new_dist.edges_crossed += 1;
@@ -452,7 +451,7 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
         }
     }
 
-    if (std::isinf(distance[t_v_end].geodesic)) {
+    if (std::isinf(distance[t_v_end].distance_from_source)) {
         return {};
     }
     else {

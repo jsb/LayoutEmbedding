@@ -14,7 +14,7 @@ struct Praun2001Settings
     };
 
     InsertionOrder insertion_order = InsertionOrder::BestFirst;
-    bool use_swirl_detection = true;
+    bool use_swirl_detection = false;
 };
 
 struct Praun2001Result

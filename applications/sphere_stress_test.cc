@@ -12,27 +12,37 @@
 #include <LayoutEmbedding/Praun2001.hh>
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 
 using namespace LayoutEmbedding;
 
 int main()
 {
-    const std::string data_path = LE_DATA_PATH;
+    namespace fs = std::filesystem;
+
+    const fs::path data_path = LE_DATA_PATH;
+    const fs::path output_dir = LE_OUTPUT_PATH;
+    const fs::path sphere_stress_test_output_dir = output_dir / "sphere_stress_test";
 
     EmbeddingInput input;
-    load(data_path + "/models/target-meshes/sphere.obj", input.t_m, input.t_pos);
-    load(data_path + "/models/layouts/cube_layout.obj", input.l_m, input.l_pos);
+    load(data_path / "models/target-meshes/sphere.obj", input.t_m, input.t_pos);
+    load(data_path / "models/layouts/cube_layout.obj", input.l_m, input.l_pos);
 
-    const std::string stats_filename = "stats_sphere_stress_test.csv";
+    fs::create_directories(sphere_stress_test_output_dir);
+    const fs::path stats_path = sphere_stress_test_output_dir / "stats.csv";
     {
-        std::ofstream f(stats_filename);
+        std::ofstream f(stats_path);
         f << "seed,algorithm,runtime,score" << std::endl;
     }
 
     int seed = 0;
     while (true) {
-        for (const auto& algorithm : {"greedy", "greedy_with_swirl_detection", "bnb", "bnb_with_hashing"}) {
+        for (const auto& algorithm : {
+            "greedy",
+            "greedy_with_swirl_detection",
+            "bnb",
+        }) {
             // Generate random matching vertices
             std::srand(seed); // TODO: make the seed a parameter of randomize_matching_vertices?
             randomize_matching_vertices(input);
@@ -52,12 +62,6 @@ int main()
             else if (algorithm == "bnb") {
                 BranchAndBoundSettings settings;
                 settings.time_limit = 30 * 60;
-                settings.use_hashing = false;
-                branch_and_bound(em, settings);
-            }
-            else if (algorithm == "bnb_with_hashing") {
-                BranchAndBoundSettings settings;
-                settings.time_limit = 30 * 60;
                 settings.use_hashing = true;
                 branch_and_bound(em, settings);
             }
@@ -69,7 +73,7 @@ int main()
             const double embedding_cost = em.is_complete() ? em.total_embedded_path_length() : std::numeric_limits<double>::infinity();
 
             {
-                std::ofstream f{stats_filename, std::ofstream::app};
+                std::ofstream f{stats_path, std::ofstream::app};
                 f << seed << ",";
                 f << algorithm << ",";
                 f << runtime << ",";

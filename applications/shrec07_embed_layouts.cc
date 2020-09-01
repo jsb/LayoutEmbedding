@@ -117,6 +117,35 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
     }
 }
 
+// Warning:
+// - Loses all attributes stored on edges, halfedges, and faces.
+// - May change the indices of edges and halfedges.
+void invert_mesh(pm::Mesh& _m)
+{
+    // Remember face connectivity
+    std::vector<std::vector<pm::vertex_handle>> fv_indices;
+    for (const auto f : _m.faces()) {
+        std::vector<pm::vertex_handle> local_fv_indices;
+        for (const auto v : f.vertices()) {
+            local_fv_indices.push_back(v);
+        }
+        fv_indices.push_back(std::move(local_fv_indices));
+    }
+
+    // Remove all edges and faces
+    for (const auto e : _m.edges()) {
+        _m.edges().remove(e);
+    }
+
+    // Rebuild the mesh using inverted faces
+    for (auto& local_fv_indices : fv_indices) {
+        std::reverse(local_fv_indices.begin(), local_fv_indices.end());
+        _m.faces().add(local_fv_indices);
+    }
+
+    _m.compactify();
+}
+
 }
 
 int main()
@@ -160,6 +189,11 @@ int main()
             std::cout << input.l_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.l_m) << std::endl;
 
+            if (shrec_flipped_landmarks.count(mesh_id)) {
+                std::cout << "This object is flipped. Inverting layout mesh." << std::endl;
+                invert_mesh(input.l_m);
+            }
+
             pm::load(target_mesh_path, input.t_m, input.t_pos);
             std::cout << "Target Mesh: ";
             std::cout << input.t_m.vertices().size() << " vertices, ";
@@ -167,11 +201,16 @@ int main()
             std::cout << input.t_m.faces().size() << " faces. ";
             std::cout << "χ = " << pm::euler_characteristic(input.t_m) << std::endl;
 
+            if (pm::euler_characteristic(input.l_m) != pm::euler_characteristic(input.t_m)) {
+                std::cout << "Euler characteristic does not match. Skipping." << std::endl;
+                continue;
+            }
+
             // Load landmarks
             const auto landmark_ids = load_landmarks(corrs_path);
             std::cout << landmark_ids.size() << " landmarks." << std::endl;
             if (landmark_ids.size() != input.l_m.vertices().size()) {
-                std::cout << "Wrong number of landmarks, Skipping." << std::endl;
+                std::cout << "Wrong number of landmarks. Skipping." << std::endl;
                 continue;
             }
             for (size_t i = 0; i < landmark_ids.size(); ++i) {

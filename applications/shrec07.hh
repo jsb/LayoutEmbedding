@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <set>
 
 // Where to find the input data: The SHREC07 dataset (with additional landmarks provided by BIM).
 const std::filesystem::path shrec_dir = "/servers/ash/hdd-storage1/pschmidt/Backups/SurfaceMapsMeshes/bim/Data/watertight_shrec07";
@@ -35,6 +36,11 @@ const std::vector<int> shrec_categories = {
     18, // Bearing   ( 8 points each, same as before)   341-360
     19, // Vase      (missing landmarks?)               361-380
     20, // Fourleg   (21 points each, 15 before)        381-400
+};
+
+const std::set<int> shrec_flipped_landmarks = {
+    // TODO: Table?
+    183, 184, 185, 186, 190, 191, 192, 193, 194, 195, 196, 197, 200, // Hands
 };
 
 const int shrec_meshes_per_category = 20;
