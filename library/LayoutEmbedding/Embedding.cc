@@ -2,6 +2,7 @@
 
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
+#include <LayoutEmbedding/VertexRepulsiveEnergy.hh>
 #include <LayoutEmbedding/VirtualVertexAttribute.hh>
 
 #include <queue>
@@ -257,7 +258,7 @@ tg::pos3 Embedding::element_pos(const VirtualVertex& _t_vv) const
     }
 }
 
-VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector_start, const pm::halfedge_handle& _t_h_sector_end) const
+VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector_start, const pm::halfedge_handle& _t_h_sector_end, ShortestPathMetric _metric) const
 {
     struct Distance
     {
@@ -374,8 +375,25 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
             const Distance& current_dist = distance[vv];
             const auto& p = element_pos(vv);
             Distance new_dist = c.dist;
-            new_dist.distance_from_source += tg::distance(c.p, p);
-            new_dist.remaining_distance_heuristic = tg::distance(p, t_pos[t_v_end]);
+
+            if (_metric == ShortestPathMetric::Geodesic) {
+                new_dist.distance_from_source += tg::distance(c.p, p);
+                new_dist.remaining_distance_heuristic = tg::distance(p, t_pos[t_v_end]);
+            }
+            else if (_metric == ShortestPathMetric::VertexRepulsive) {
+                const auto& l_v_start = matching_layout_vertex(t_v_start);
+                const auto& l_v_end   = matching_layout_vertex(t_v_end);
+                LE_ASSERT(l_v_start.is_valid());
+                LE_ASSERT(l_v_end.is_valid());
+                const double vrf_start = get_vertex_repulsive_energy(vv, l_v_start);
+                const double vrf_end   = get_vertex_repulsive_energy(vv, l_v_end);
+                new_dist.distance_from_source = 1.0 - vrf_start - vrf_end;
+                new_dist.remaining_distance_heuristic = 0.0; // No heuristic
+            }
+            else {
+                LE_ASSERT(false); // Never reached.
+            }
+
             if (is_real_edge(vv)) {
                 new_dist.edges_crossed += 1;
             }
@@ -468,21 +486,21 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
     }
 }
 
-VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _l_he) const
+VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _l_he, ShortestPathMetric _metric) const
 {
     LE_ASSERT(_l_he.mesh == &layout_mesh());
     LE_ASSERT(!is_embedded(_l_he));
     const auto l_he_end = _l_he.opposite();
     const auto t_he_sector_start = get_embeddable_sector(_l_he);
     const auto t_he_sector_end = get_embeddable_sector(l_he_end);
-    return find_shortest_path(t_he_sector_start, t_he_sector_end);
+    return find_shortest_path(t_he_sector_start, t_he_sector_end, _metric);
 }
 
-VirtualPath Embedding::find_shortest_path(const pm::edge_handle& _l_e) const
+VirtualPath Embedding::find_shortest_path(const pm::edge_handle& _l_e, ShortestPathMetric _metric) const
 {
     LE_ASSERT(_l_e.mesh == &layout_mesh());
     const auto l_he = _l_e.halfedgeA();
-    return find_shortest_path(l_he);
+    return find_shortest_path(l_he, _metric);
 }
 
 double Embedding::path_length(const VirtualPath& _path) const
@@ -531,6 +549,8 @@ void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& 
         t_matching_halfedge[t_he] = _l_he;
         t_matching_halfedge[t_he.opposite()] = _l_he.opposite();
     }
+
+    vertex_repulsive_energy.reset(); // Invalidate cache
 }
 
 void Embedding::unembed_path(const pm::halfedge_handle& _l_he)
@@ -545,6 +565,7 @@ void Embedding::unembed_path(const pm::halfedge_handle& _l_he)
         t_matching_halfedge[t_he] = pm::halfedge_handle::invalid;
         t_matching_halfedge[t_he.opposite()] = pm::halfedge_handle::invalid;
     }
+    vertex_repulsive_energy.reset();
 }
 
 void Embedding::unembed_path(const pm::edge_handle& _l_e)
@@ -655,6 +676,36 @@ const pm::halfedge_handle Embedding::matching_layout_halfedge(const pm::halfedge
 {
     LE_ASSERT(_t_v.mesh == &target_mesh());
     return t_matching_halfedge[_t_v];
+}
+
+double Embedding::get_vertex_repulsive_energy(const pm::vertex_handle& _t_v, const pm::vertex_handle& _l_v) const
+{
+    LE_ASSERT(_t_v.mesh == &target_mesh());
+    LE_ASSERT(_l_v.mesh == &layout_mesh());
+
+    if (!vertex_repulsive_energy.has_value()) {
+        vertex_repulsive_energy = compute_vertex_repulsive_energy(*this);
+    }
+    LE_ASSERT(vertex_repulsive_energy.has_value());
+    return (*vertex_repulsive_energy)(_t_v.idx.value, _l_v.idx.value);
+}
+
+double Embedding::get_vertex_repulsive_energy(const VirtualVertex& _t_vv, const pm::vertex_handle& _l_v) const
+{
+    LE_ASSERT(_l_v.mesh == &layout_mesh());
+
+    if (is_real_vertex(_t_vv)) {
+        // Real vertex, just return the value there
+        return get_vertex_repulsive_energy(real_vertex(_t_vv), _l_v);
+    }
+    else {
+        // Vertex on an edge, return the average value at the endpoints
+        const auto& t_v_A = real_edge(_t_vv).vertexA();
+        const auto& t_v_B = real_edge(_t_vv).vertexB();
+        const double vrf_A = get_vertex_repulsive_energy(t_v_A, _l_v);
+        const double vrf_B = get_vertex_repulsive_energy(t_v_B, _l_v);
+        return tg::mix(vrf_A, vrf_B, 0.5);
+    }
 }
 
 bool Embedding::load_embedding(std::string filename)

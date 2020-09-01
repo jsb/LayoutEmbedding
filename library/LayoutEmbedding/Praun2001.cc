@@ -5,8 +5,6 @@
 #include <LayoutEmbedding/UnionFind.hh>
 #include <LayoutEmbedding/VirtualPort.hh>
 
-#include <igl/harmonic.h>
-#include <Eigen/Dense>
 #include <set>
 #include <queue>
 
@@ -168,30 +166,6 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
     Praun2001Result result;
 
     const pm::Mesh& l_m = _em.layout_mesh();
-    const pm::Mesh& t_m = _em.target_mesh();
-    const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
-
-    const int l_num_v = l_m.vertices().size();
-
-    IGLMesh t_igl = to_igl_mesh(t_pos);
-    Eigen::VectorXi b(l_num_v); // Boundary indices into t_igl.V
-    {
-        int b_row = 0;
-        for (const auto& l_v : l_m.vertices()) {
-            b[b_row] = _em.matching_target_vertex(l_v).idx.value;
-            ++b_row;
-        }
-    }
-    Eigen::MatrixXd bc(l_num_v, l_num_v);
-    bc.setIdentity();
-
-    Eigen::MatrixXd W; // Output
-    igl::harmonic(t_igl.V, t_igl.F, b, bc, 1, W);
-
-    // Normalize rows of W
-    for (int i = 0; i < W.rows(); ++i) {
-        W.row(i) /= W.row(i).sum();
-    }
 
     // If edges fail the "Swirl Test", their score will receive a penalty so they are processed later.
     const double penalty_factor = 2.0; // This is a guess. The exact value is never mentioned in [Praun2001].
@@ -213,7 +187,7 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
 
         const bool is_spanning_tree = (l_num_embedded_edges >= l_num_vertices - 1);
 
-        for (const auto& l_e : l_m.edges()) {
+        for (const auto l_e : l_m.edges()) {
             if (l_is_embedded[l_e]) {
                 continue;
             }

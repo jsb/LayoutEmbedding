@@ -6,6 +6,10 @@
 #include <LayoutEmbedding/VirtualPath.hh>
 #include <polymesh/formats/obj.hh>
 
+#include <Eigen/Dense>
+
+#include <optional>
+
 namespace LayoutEmbedding {
 
 class Embedding
@@ -35,15 +39,24 @@ public:
     tg::pos3 element_pos(const pm::vertex_handle& _t_v) const;
     tg::pos3 element_pos(const VirtualVertex& _t_vv) const;
 
+    enum class ShortestPathMetric
+    {
+        Geodesic,
+        VertexRepulsive,
+    };
+
     VirtualPath find_shortest_path(
         const pm::halfedge_handle& _t_h_sector_start, // Target halfedge, at the beginning of a sector
-        const pm::halfedge_handle& _t_h_sector_end    // Target halfedge, at the beginning of a sector
+        const pm::halfedge_handle& _t_h_sector_end,   // Target halfedge, at the beginning of a sector
+        ShortestPathMetric _metric = ShortestPathMetric::Geodesic
     ) const;
     VirtualPath find_shortest_path(
-        const pm::halfedge_handle& _l_he // Layout halfedge
+        const pm::halfedge_handle& _l_he, // Layout halfedge
+        ShortestPathMetric _metric = ShortestPathMetric::Geodesic
     ) const;
     VirtualPath find_shortest_path(
-        const pm::edge_handle& _l_e // Layout edge
+        const pm::edge_handle& _l_e, // Layout edge
+        ShortestPathMetric _metric = ShortestPathMetric::Geodesic
     ) const;
 
     double path_length(const VirtualPath& _path) const;
@@ -73,6 +86,9 @@ public:
     const pm::vertex_handle matching_layout_vertex(const pm::vertex_handle& _t_v) const;
     const pm::halfedge_handle matching_layout_halfedge(const pm::halfedge_handle& _t_v) const;
 
+    double get_vertex_repulsive_energy(const pm::vertex_handle& _t_v, const pm::vertex_handle& _l_v) const;
+    double get_vertex_repulsive_energy(const VirtualVertex& _t_vv, const pm::vertex_handle& _l_v) const;
+
 public:
     double path_length_norm = 1.0; // TODO: find a suitable place for this
 
@@ -86,6 +102,9 @@ private:
     pm::vertex_attribute<pm::vertex_handle> t_matching_vertex;
     pm::halfedge_attribute<pm::halfedge_handle> t_matching_halfedge;
 
+    // Cache for the energy used for vertex repulsive path tracing [Praun2001].
+    // Computed lazily when required. Access via get_vertex_repulsive_energy.
+    mutable std::optional<Eigen::MatrixXd> vertex_repulsive_energy;
 };
 
 }
