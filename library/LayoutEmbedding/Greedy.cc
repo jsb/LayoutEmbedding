@@ -199,7 +199,7 @@ GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings)
 
     auto incident_to_extremal_vertex = [&] (const pm::edge_handle& _l_e) {
         if (_l_e.is_valid()) {
-            return l_extremal_vertex[_l_e.vertexA()] || l_extremal_vertex[_l_e.vertexB()];
+            return l_extremal_vertex[_l_e.vertexA()] && l_extremal_vertex[_l_e.vertexB()];
         }
         else {
             return false;

@@ -21,7 +21,7 @@ struct GreedySettings
     // Use path tracing using a harmonic field that tries to avoid layout vertices [Praun2001]
     bool use_vertex_repulsive_tracing = false;
 
-    // Detect extremal vertices (based on distance to their neighbors) and try to connect those earlier [Schreiner2004]
+    // Prefer insertion of edges that connect extremal vertices (with large average distance to neighbors) [Schreiner2004]
     bool prefer_extremal_vertices = false;
     double extremal_vertex_ratio = 0.25;
 };
