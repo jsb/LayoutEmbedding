@@ -15,6 +15,8 @@ struct Praun2001Settings
 
     InsertionOrder insertion_order = InsertionOrder::BestFirst;
     bool use_swirl_detection = false;
+    double swirl_penalty_factor = 2.0; // This value is a guess.
+    bool use_vertex_repulsive_tracing = false;
 };
 
 struct Praun2001Result

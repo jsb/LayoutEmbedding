@@ -168,7 +168,6 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
     const pm::Mesh& l_m = _em.layout_mesh();
 
     // If edges fail the "Swirl Test", their score will receive a penalty so they are processed later.
-    const double penalty_factor = 2.0; // This is a guess. The exact value is never mentioned in [Praun2001].
     pm::edge_attribute<bool> l_penalty(l_m);
 
     pm::edge_attribute<bool> l_is_embedded(l_m);
@@ -201,7 +200,12 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
                 }
             }
 
-            VirtualPath path = _em.find_shortest_path(l_e.halfedgeA());
+            auto metric = Embedding::ShortestPathMetric::Geodesic;
+            if (_settings.use_vertex_repulsive_tracing) {
+                metric = Embedding::ShortestPathMetric::VertexRepulsive;
+            }
+
+            VirtualPath path = _em.find_shortest_path(l_e.halfedgeA(), metric);
             double path_cost = _em.path_length(path);
 
             // If we use an arbitrary insertion order, we can early-out after the first path is found
@@ -216,7 +220,7 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
                 // Only do the swirl test if the current path is already a contender.
                 if (path_cost < best_path_cost) {
                     if (swirl_detection_bidirectional(_em, l_e.halfedgeA(), path)) {
-                        path_cost *= penalty_factor;
+                        path_cost *= _settings.swirl_penalty_factor;
                     }
                 }
             }
