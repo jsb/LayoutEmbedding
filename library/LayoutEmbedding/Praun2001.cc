@@ -5,6 +5,7 @@
 #include <LayoutEmbedding/UnionFind.hh>
 #include <LayoutEmbedding/VirtualPort.hh>
 
+#include <algorithm>
 #include <set>
 #include <queue>
 
@@ -167,6 +168,44 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
 
     const pm::Mesh& l_m = _em.layout_mesh();
 
+    auto l_extremal_vertex = l_m.vertices().make_attribute<bool>(false);
+    if (_settings.prefer_extremal_vertices) {
+        // Compute for each vertex the average geodesic distance to its neighbors
+        auto l_avg_neighbor_distance = l_m.vertices().make_attribute<double>();
+        for (const auto l_v : l_m.vertices()) {
+            double total_distance = 0.0;
+            int valence = 0;
+            for (const auto l_he : l_v.outgoing_halfedges()) {
+                const auto path = _em.find_shortest_path(l_he);
+                total_distance += _em.path_length(path);
+                ++valence;
+            }
+            l_avg_neighbor_distance[l_v] = total_distance / valence;
+        }
+
+        std::vector<pm::vertex_handle> extremal_vertices = l_m.vertices().to_vector();
+        std::sort(extremal_vertices.begin(), extremal_vertices.end(), [&](const auto& a, const auto& b){
+            return l_avg_neighbor_distance[a] > l_avg_neighbor_distance[b];
+        });
+        double cutoff = l_avg_neighbor_distance[extremal_vertices[extremal_vertices.size() * _settings.extremal_vertex_ratio]];
+        int num_extremal_vertices = 0;
+        for (const auto& l_v : extremal_vertices) {
+            if (l_avg_neighbor_distance[l_v] > cutoff) {
+                l_extremal_vertex[l_v] = true;
+                ++num_extremal_vertices;
+            }
+        }
+    }
+
+    auto incident_to_extremal_vertex = [&] (const pm::edge_handle& _l_e) {
+        if (_l_e.is_valid()) {
+            return l_extremal_vertex[_l_e.vertexA()] || l_extremal_vertex[_l_e.vertexB()];
+        }
+        else {
+            return false;
+        }
+    };
+
     // If edges fail the "Swirl Test", their score will receive a penalty so they are processed later.
     pm::edge_attribute<bool> l_penalty(l_m);
 
@@ -188,6 +227,10 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
 
         for (const auto l_e : l_m.edges()) {
             if (l_is_embedded[l_e]) {
+                continue;
+            }
+
+            if (incident_to_extremal_vertex(best_l_e) && !incident_to_extremal_vertex(l_e)) {
                 continue;
             }
 
@@ -225,7 +268,9 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
                 }
             }
 
-            if (path_cost < best_path_cost) {
+            const int extremal_priority = 1 - incident_to_extremal_vertex(l_e);
+            const int best_extremal_priority = 1 - incident_to_extremal_vertex(best_l_e);
+            if (std::tie(extremal_priority, path_cost) < std::tie(best_extremal_priority, best_path_cost)) {
                 best_path_cost = path_cost;
                 best_path = std::move(path);
                 best_l_e = l_e;

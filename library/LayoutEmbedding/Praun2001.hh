@@ -12,11 +12,15 @@ struct Praun2001Settings
         BestFirst,
         Arbitrary,
     };
-
     InsertionOrder insertion_order = InsertionOrder::BestFirst;
+
     bool use_swirl_detection = false;
     double swirl_penalty_factor = 2.0; // This value is a guess.
+
     bool use_vertex_repulsive_tracing = false;
+
+    bool prefer_extremal_vertices = false;
+    double extremal_vertex_ratio = 0.25;
 };
 
 struct Praun2001Result
