@@ -32,6 +32,7 @@ Embedding::Embedding(EmbeddingInput& _input) :
 }
 
 Embedding::Embedding(const Embedding& _em) :
+    path_length_norm(_em.path_length_norm),
     input(_em.input),
     t_m(),
     t_pos(t_m),
@@ -41,14 +42,18 @@ Embedding::Embedding(const Embedding& _em) :
 {
     t_m.copy_from(_em.t_m);
     t_pos.copy_from(_em.t_pos);
-    for (const auto& l_v : layout_mesh().vertices()) {
+    for (const auto l_v : layout_mesh().vertices()) {
         l_matching_vertex[l_v] = target_mesh()[_em.l_matching_vertex[l_v.idx].idx];
     }
-    for (const auto& t_v : target_mesh().vertices()) {
+    for (const auto t_v : target_mesh().vertices()) {
         t_matching_vertex[t_v] = layout_mesh()[_em.t_matching_vertex[t_v.idx].idx];
     }
-    for (const auto& t_he : target_mesh().halfedges()) {
+    for (const auto t_he : target_mesh().halfedges()) {
         t_matching_halfedge[t_he] = layout_mesh()[_em.t_matching_halfedge[t_he.idx].idx];
+    }
+    if (_em.vertex_repulsive_energy.has_value()) {
+        vertex_repulsive_energy = target_mesh().vertices().make_attribute<Eigen::VectorXd>();
+        vertex_repulsive_energy->copy_from(*_em.vertex_repulsive_energy);
     }
 }
 
@@ -527,13 +532,21 @@ void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& 
     for (const auto& vv : _path) {
         if (is_real_edge(vv)) {
             const auto& t_e = real_edge(vv);
+            const auto& t_vA = t_e.vertexA();
+            const auto& t_vB = t_e.vertexB();
 
-            const auto& p0 = t_pos[t_e.vertexA()];
-            const auto& p1 = t_pos[t_e.vertexB()];
+            const auto& p0 = t_pos[t_vA];
+            const auto& p1 = t_pos[t_vB];
             const auto p = tg::mix(p0, p1, 0.5);
 
             const auto t_v_new = target_mesh().edges().split_and_triangulate(t_e);
             t_pos[t_v_new] = p;
+
+            if (vertex_repulsive_energy.has_value()) {
+                Eigen::VectorXd vre = 0.5 * (*vertex_repulsive_energy)[t_vA] + 0.5 * (*vertex_repulsive_energy)[t_vB];
+                (*vertex_repulsive_energy)[t_v_new] = vre;
+            }
+
             vertex_path.push_back(t_v_new);
         }
         else {
@@ -549,8 +562,6 @@ void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& 
         t_matching_halfedge[t_he] = _l_he;
         t_matching_halfedge[t_he.opposite()] = _l_he.opposite();
     }
-
-    vertex_repulsive_energy.reset(); // Invalidate cache
 }
 
 void Embedding::unembed_path(const pm::halfedge_handle& _l_he)
@@ -565,7 +576,6 @@ void Embedding::unembed_path(const pm::halfedge_handle& _l_he)
         t_matching_halfedge[t_he] = pm::halfedge_handle::invalid;
         t_matching_halfedge[t_he.opposite()] = pm::halfedge_handle::invalid;
     }
-    vertex_repulsive_energy.reset();
 }
 
 void Embedding::unembed_path(const pm::edge_handle& _l_e)
@@ -684,10 +694,14 @@ double Embedding::get_vertex_repulsive_energy(const pm::vertex_handle& _t_v, con
     LE_ASSERT(_l_v.mesh == &layout_mesh());
 
     if (!vertex_repulsive_energy.has_value()) {
-        vertex_repulsive_energy = compute_vertex_repulsive_energy(*this);
+        Eigen::MatrixXd vre = compute_vertex_repulsive_energy(*this);
+        vertex_repulsive_energy = target_mesh().vertices().make_attribute<Eigen::VectorXd>();
+        for (const auto t_v : target_mesh().vertices()) {
+            (*vertex_repulsive_energy)[t_v] = vre.row(t_v.idx.value);
+        }
     }
     LE_ASSERT(vertex_repulsive_energy.has_value());
-    return (*vertex_repulsive_energy)(_t_v.idx.value, _l_v.idx.value);
+    return (*vertex_repulsive_energy)[_t_v][_l_v.idx.value];
 }
 
 double Embedding::get_vertex_repulsive_energy(const VirtualVertex& _t_vv, const pm::vertex_handle& _l_v) const

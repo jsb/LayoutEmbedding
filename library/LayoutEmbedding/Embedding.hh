@@ -104,7 +104,7 @@ private:
 
     // Cache for the energy used for vertex repulsive path tracing [Praun2001].
     // Computed lazily when required. Access via get_vertex_repulsive_energy.
-    mutable std::optional<Eigen::MatrixXd> vertex_repulsive_energy;
+    mutable std::optional<pm::vertex_attribute<Eigen::VectorXd>> vertex_repulsive_energy;
 };
 
 }
