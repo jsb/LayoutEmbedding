@@ -33,4 +33,6 @@ struct GreedyResult
 
 GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 
+GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings = GreedySettings());
+
 }

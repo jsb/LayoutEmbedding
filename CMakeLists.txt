@@ -16,10 +16,12 @@ add_subdirectory(extern/imgui)
 add_subdirectory(extern/glow-extras)
 add_subdirectory(extern/eigen-lean)
 
+find_package(OpenMP REQUIRED)
+
 # LayoutEmbedding Library (library directory)
 file(GLOB_RECURSE LE_LIBRARY_SOURCE_FILES "library/LayoutEmbedding/*.cc" "library/LayoutEmbedding/*.hh")
 add_library(LayoutEmbedding ${LE_LIBRARY_SOURCE_FILES})
-target_link_libraries(LayoutEmbedding PUBLIC imgui typed-geometry polymesh glow-extras eigen)
+target_link_libraries(LayoutEmbedding PUBLIC imgui typed-geometry polymesh glow-extras eigen OpenMP::OpenMP_CXX)
 target_include_directories(LayoutEmbedding PUBLIC library)
 target_compile_definitions(LayoutEmbedding PUBLIC LE_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_compile_definitions(LayoutEmbedding PUBLIC LE_OUTPUT_PATH="${LE_OUTPUT_PATH}")
