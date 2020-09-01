@@ -40,7 +40,7 @@ int main()
     while (true) {
         for (const auto& algorithm : {
             "greedy",
-            "greedy_with_swirl_detection",
+            "greedy_brute_force",
             "bnb",
         }) {
             // Generate random matching vertices
@@ -50,14 +50,10 @@ int main()
 
             glow::timing::CpuTimer timer;
             if (algorithm == "greedy") {
-                GreedySettings settings;
-                settings.use_swirl_detection = false;
-                embed_greedy(em, settings);
+                embed_greedy(em);
             }
-            else if (algorithm == "greedy_with_swirl_detection") {
-                GreedySettings settings;
-                settings.use_swirl_detection = true;
-                embed_greedy(em, settings);
+            else if (algorithm == "greedy_brute_force") {
+                embed_greedy_brute_force(em);
             }
             else if (algorithm == "bnb") {
                 BranchAndBoundSettings settings;

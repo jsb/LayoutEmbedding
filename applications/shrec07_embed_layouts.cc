@@ -31,6 +31,7 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
 
     const std::vector<std::string> algorithms = {
         "greedy",
+        "greedy_brute_force",
         "bnb",
     };
 
@@ -56,10 +57,10 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
             branch_and_bound(em, settings);
         }
         else if (algorithm == "greedy") {
-            GreedySettings settings;
-            settings.insertion_order = GreedySettings::InsertionOrder::BestFirst;
-            settings.use_swirl_detection = false;
-            embed_greedy(em, settings);
+            embed_greedy(em);
+        }
+         else if (algorithm == "greedy_brute_force") {
+            embed_greedy_brute_force(em);
         }
         else {
             LE_ASSERT(false);
