@@ -56,10 +56,10 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
             branch_and_bound(em, settings);
         }
         else if (algorithm == "greedy") {
-            Praun2001Settings settings;
-            settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
+            GreedySettings settings;
+            settings.insertion_order = GreedySettings::InsertionOrder::BestFirst;
             settings.use_swirl_detection = false;
-            praun2001(em, settings);
+            embed_greedy(em, settings);
         }
         else {
             LE_ASSERT(false);

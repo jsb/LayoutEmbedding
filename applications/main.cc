@@ -94,16 +94,16 @@ void run_test_case(const TestCase& tc)
             branch_and_bound(em, settings);
         }
         else if (algorithm == "greedy") {
-            Praun2001Settings settings;
-            settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
+            GreedySettings settings;
+            settings.insertion_order = GreedySettings::InsertionOrder::BestFirst;
             settings.use_swirl_detection = false;
-            praun2001(em, settings);
+            embed_greedy(em, settings);
         }
         else if (algorithm == "greedy_with_swirl_detection") {
-            Praun2001Settings settings;
-            settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
+            GreedySettings settings;
+            settings.insertion_order = GreedySettings::InsertionOrder::BestFirst;
             settings.use_swirl_detection = true;
-            praun2001(em, settings);
+            embed_greedy(em, settings);
         }
         else {
             LE_ASSERT(false);

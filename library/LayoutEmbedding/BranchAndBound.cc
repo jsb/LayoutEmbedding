@@ -30,7 +30,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     // Run heuristic algorithm to find a tighter initial upper bound.
     {
         Embedding em(_em);
-        auto result = praun2001(em);
+        auto result = embed_greedy(em);
         best_solution.lower_bound = em.total_embedded_path_length();
         best_solution.insertions = result.insertion_sequence;
         global_upper_bound = best_solution.lower_bound;

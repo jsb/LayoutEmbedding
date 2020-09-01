@@ -5,7 +5,7 @@
 
 namespace LayoutEmbedding {
 
-struct Praun2001Settings
+struct GreedySettings
 {
     enum class InsertionOrder
     {
@@ -14,20 +14,23 @@ struct Praun2001Settings
     };
     InsertionOrder insertion_order = InsertionOrder::BestFirst;
 
+    // Try to detect swirled paths and postpone their embedding [Praun2001]
     bool use_swirl_detection = false;
-    double swirl_penalty_factor = 2.0; // This value is a guess.
+    double swirl_penalty_factor = 2.0;
 
+    // Use path tracing using a harmonic field that tries to avoid layout vertices [Praun2001]
     bool use_vertex_repulsive_tracing = false;
 
+    // Detect extremal vertices (based on distance to their neighbors) and try to connect those earlier [Schreiner2004]
     bool prefer_extremal_vertices = false;
     double extremal_vertex_ratio = 0.25;
 };
 
-struct Praun2001Result
+struct GreedyResult
 {
     InsertionSequence insertion_sequence;
 };
 
-Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings = Praun2001Settings());
+GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 
 }

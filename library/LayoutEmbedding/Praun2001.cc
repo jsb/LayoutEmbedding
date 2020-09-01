@@ -162,9 +162,9 @@ bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l
     }
 }
 
-Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
+GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings)
 {
-    Praun2001Result result;
+    GreedyResult result;
 
     const pm::Mesh& l_m = _em.layout_mesh();
 
@@ -252,7 +252,7 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
             double path_cost = _em.path_length(path);
 
             // If we use an arbitrary insertion order, we can early-out after the first path is found
-            if (_settings.insertion_order == Praun2001Settings::InsertionOrder::Arbitrary) {
+            if (_settings.insertion_order == GreedySettings::InsertionOrder::Arbitrary) {
                 best_path_cost = path_cost;
                 best_path = std::move(path);
                 best_l_e = l_e;

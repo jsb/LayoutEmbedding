@@ -50,14 +50,14 @@ int main()
 
             glow::timing::CpuTimer timer;
             if (algorithm == "greedy") {
-                Praun2001Settings settings;
+                GreedySettings settings;
                 settings.use_swirl_detection = false;
-                praun2001(em, settings);
+                embed_greedy(em, settings);
             }
             else if (algorithm == "greedy_with_swirl_detection") {
-                Praun2001Settings settings;
+                GreedySettings settings;
                 settings.use_swirl_detection = true;
-                praun2001(em, settings);
+                embed_greedy(em, settings);
             }
             else if (algorithm == "bnb") {
                 BranchAndBoundSettings settings;
