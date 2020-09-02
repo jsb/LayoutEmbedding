@@ -303,7 +303,7 @@ GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _set
         }
     }
 
-    #pragma omp parallel for
+    #pragma omp parallel for shared(best_cost, best_settings, best_result)
     for (std::size_t i = 0; i < all_settings.size(); ++i) {
         const auto& settings = all_settings[i];
 

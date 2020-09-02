@@ -53,7 +53,6 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
 
         if (algorithm == "bnb") {
             BranchAndBoundSettings settings;
-            settings.use_hashing = true;
             settings.time_limit = 10 * 60;
             branch_and_bound(em, settings);
         }
