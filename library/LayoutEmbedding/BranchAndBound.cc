@@ -167,14 +167,12 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
                     new_es.extend(l_e, new_state.path);
 
-                    //if (_settings.use_hashing) {
-                        const HashValue new_es_hash = new_es.hash();
-                        const auto [it, inserted] = known_states.emplace(new_es_hash, new_state);
-                        if (!inserted) {
-                            //std::cout << "Skipping child state (known hash: " << new_es_hash << ")" << std::endl;
-                            continue;
-                        }
-                    //}
+                    const HashValue new_es_hash = new_es.hash();
+                    const auto [it, inserted] = known_states.emplace(new_es_hash, new_state);
+                    if (!inserted) {
+                        //std::cout << "Skipping child state (known hash: " << new_es_hash << ")" << std::endl;
+                        continue;
+                    }
 
                     new_es.compute_candidate_paths();
 
@@ -190,6 +188,12 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 }
             }
         }
+
+        // After we are done processing a state, we will never visit it again.
+        // We can release some of the expensive data to save memory.
+        State& state = known_states[c.state];
+        state.path.clear();
+        state.path.shrink_to_fit();
     }
     std::cout << "Branch-and-bound optimization completed." << std::endl;
 
