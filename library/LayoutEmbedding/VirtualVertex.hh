@@ -21,4 +21,8 @@ bool is_real_edge(const VirtualVertex& _el);
 pm::vertex_handle real_vertex(const VirtualVertex& _el);
 pm::edge_handle real_edge(const VirtualVertex& _el);
 
+// Re-setting the mesh pointer
+void set_mesh(VirtualVertex& _vv, const pm::Mesh& _m);
+VirtualVertex on_mesh(const VirtualVertex& _vv, const pm::Mesh& _m);
+
 }

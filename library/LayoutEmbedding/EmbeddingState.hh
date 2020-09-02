@@ -21,8 +21,8 @@ struct EmbeddingState
     explicit EmbeddingState(const Embedding& _em);
     explicit EmbeddingState(const EmbeddingState& _es) = default;
 
-    void extend(const pm::edge_handle& _l_e);
     void extend(const pm::edge_index& _l_ei);
+    void extend(const pm::edge_index& _l_ei, const VirtualPath& _path);
     void extend(const InsertionSequence& _seq);
 
     void compute_candidate_paths();

@@ -10,11 +10,20 @@
 
 namespace LayoutEmbedding {
 
+struct State
+{
+    HashValue parent;
+    pm::edge_index l_e;
+    VirtualPath path;
+};
+
 struct Candidate
 {
     double lower_bound = std::numeric_limits<double>::infinity();
     double priority = 0.0;
-    InsertionSequence insertions;
+
+    //InsertionSequence insertions;
+    HashValue state;
 
     bool operator<(const Candidate& _rhs) const
     {
@@ -24,19 +33,24 @@ struct Candidate
 
 void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 {
-    Candidate best_solution; // Initially empty
+    InsertionSequence best_insertion_sequence;
     double global_upper_bound = std::numeric_limits<double>::infinity();
 
     // Run heuristic algorithm to find a tighter initial upper bound.
     {
         Embedding em(_em);
         auto result = embed_greedy_brute_force(em);
-        best_solution.lower_bound = em.total_embedded_path_length();
-        best_solution.insertions = result.insertion_sequence;
-        global_upper_bound = best_solution.lower_bound;
+        global_upper_bound = em.total_embedded_path_length();
+        best_insertion_sequence = result.insertion_sequence;
     }
 
-    std::set<HashValue> known_state_hashes;
+    //std::set<HashValue> known_state_hashes;
+    std::map<HashValue, State> known_states;
+    {
+        State root;
+        root.parent = 0;
+        known_states[0] = root;
+    }
 
     // Init priority queue with empty state.
     std::priority_queue<Candidate> q;
@@ -44,7 +58,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         Candidate c;
         c.lower_bound = 0.0;
         c.priority = 0.0;
-        c.insertions = {};
+        c.state = 0;
         q.push(c);
     }
 
@@ -76,9 +90,31 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             continue;
         }
 
-        // Reconstruct the embedding associated with this embedding sequence
+        // Reconstruct the embedding sequence and inserted paths by traversing the state graph
+        InsertionSequence insertion_sequence;
+        std::vector<const VirtualPath*> inserted_paths;
+        HashValue current_state_hash = c.state;
+        while (current_state_hash != 0) {
+            LE_ASSERT(known_states.count(current_state_hash) > 0);
+            const State& state = known_states[current_state_hash];
+            insertion_sequence.push_back(state.l_e);
+            inserted_paths.push_back(&state.path);
+            current_state_hash = state.parent;
+        }
+        std::reverse(insertion_sequence.begin(), insertion_sequence.end());
+        std::reverse(inserted_paths.begin(), inserted_paths.end());
+
+        // Reconstruct the embedding associated with this state
         EmbeddingState es(_em);
-        es.extend(c.insertions);
+        LE_ASSERT(insertion_sequence.size() == inserted_paths.size());
+        for (size_t i = 0; i < insertion_sequence.size(); ++i) {
+            const pm::edge_index& l_e = insertion_sequence[i];
+            const VirtualPath path = on_mesh(*inserted_paths[i], es.em.target_mesh());
+            es.extend(l_e, path);
+        }
+
+        LE_ASSERT(es.hash() == c.state);
+
         es.compute_candidate_paths();
 
         if (!es.valid) {
@@ -93,7 +129,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         std::cout << "t: " << elapsed_seconds;
         std::cout << "    ";
-        std::cout << "|Embd|: " << c.insertions.size();
+        std::cout << "|Embd|: " << es.embedded_l_edges.size();
         std::cout << "    ";
         std::cout << "|Conf|: " << es.conflicting_l_edges.size();
         std::cout << "    ";
@@ -107,7 +143,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         std::cout << "    ";
         std::cout << "|Q|: " << q.size();
         std::cout << "    ";
-        std::cout << "|H|: " << known_state_hashes.size();
+        std::cout << "|H|: " << known_states.size();
         std::cout << "    ";
         std::cout << "|CC|: " << es.count_connected_components();
         std::cout << std::endl;
@@ -116,23 +152,29 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             // Completed layout?
             if (es.conflicting_l_edges.empty()) {
                 global_upper_bound = es.cost_lower_bound();
-                best_solution = c;
+                best_insertion_sequence = insertion_sequence;
                 std::cout << "New upper bound: " << global_upper_bound << std::endl;
             }
             else {
                 // Add children to the queue
                 for (const auto& l_e : es.conflicting_l_edges) {
                     EmbeddingState new_es(es); // Copy
-                    new_es.extend(l_e);
+                    State new_state;
+                    new_state.parent = c.state;
+                    new_state.l_e = l_e;
+                    new_state.path = es.candidate_paths[l_e].path;
+                    set_mesh(new_state.path, new_es.em.target_mesh());
 
-                    if (_settings.use_hashing) {
+                    new_es.extend(l_e, new_state.path);
+
+                    //if (_settings.use_hashing) {
                         const HashValue new_es_hash = new_es.hash();
-                        const auto [it, inserted] = known_state_hashes.insert(new_es_hash);
+                        const auto [it, inserted] = known_states.emplace(new_es_hash, new_state);
                         if (!inserted) {
                             //std::cout << "Skipping child state (known hash: " << new_es_hash << ")" << std::endl;
                             continue;
                         }
-                    }
+                    //}
 
                     new_es.compute_candidate_paths();
 
@@ -140,8 +182,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                     const double new_gap = 1.0 - new_lower_bound / global_upper_bound;
                     if (new_gap > _settings.optimality_gap) {
                         Candidate new_c;
-                        new_c.insertions = c.insertions;
-                        new_c.insertions.push_back(l_e);
+                        new_c.state = new_es_hash;
                         new_c.lower_bound = new_lower_bound;
                         new_c.priority = new_c.lower_bound * new_es.conflicting_l_edges.size();
                         q.push(new_c);
@@ -168,7 +209,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
     // Edges with predefined insertion sequence
     std::set<pm::edge_index> l_e_embedded;
-    for (const auto& l_ei : best_solution.insertions) {
+    for (const auto& l_ei : best_insertion_sequence) {
         const auto l_e = _em.layout_mesh().edges()[l_ei];
         const auto l_he = l_e.halfedgeA();
         const auto path = _em.find_shortest_path(l_he);
