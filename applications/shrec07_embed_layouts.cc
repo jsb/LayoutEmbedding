@@ -14,6 +14,7 @@
 #include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 

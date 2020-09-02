@@ -7,6 +7,7 @@
 
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 
 using namespace LayoutEmbedding;
 

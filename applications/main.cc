@@ -16,6 +16,7 @@
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 
 #include <algorithm>
 #include <fstream>

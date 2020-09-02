@@ -10,6 +10,7 @@
 #include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 
 #include <algorithm>
 #include <filesystem>
