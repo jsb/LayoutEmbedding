@@ -43,9 +43,7 @@ void run_test_case(const TestCase& tc)
 {
     const std::vector<std::string> algorithms = {
         "greedy",
-        "greedy_with_swirl_detection",
         "bnb",
-        "bnb_with_hashing",
     };
 
     const std::string stats_filename = "stats_" + tc.name + ".csv";
@@ -85,26 +83,10 @@ void run_test_case(const TestCase& tc)
         glow::timing::CpuTimer timer;
 
         if (algorithm == "bnb") {
-            BranchAndBoundSettings settings;
-            settings.use_hashing = false;
-            branch_and_bound(em, settings);
-        }
-        else if (algorithm == "bnb_with_hashing") {
-            BranchAndBoundSettings settings;
-            settings.use_hashing = true;
-            branch_and_bound(em, settings);
+            branch_and_bound(em);
         }
         else if (algorithm == "greedy") {
-            GreedySettings settings;
-            settings.insertion_order = GreedySettings::InsertionOrder::BestFirst;
-            settings.use_swirl_detection = false;
-            embed_greedy(em, settings);
-        }
-        else if (algorithm == "greedy_with_swirl_detection") {
-            GreedySettings settings;
-            settings.insertion_order = GreedySettings::InsertionOrder::BestFirst;
-            settings.use_swirl_detection = true;
-            embed_greedy(em, settings);
+            embed_greedy(em);
         }
         else {
             LE_ASSERT(false);
