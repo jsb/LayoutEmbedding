@@ -155,4 +155,9 @@ void view_vertex(const pm::vertex_attribute<tg::pos3> &_pos, const polymesh::ver
     gv::view(glow::viewer::points(p).point_size_px(node_size), _color, gv::no_shading);
 }
 
+void view_vertex(const pm::vertex_attribute<tg::dpos3> &_pos, const polymesh::vertex_handle &_v, const tg::color3 &_color)
+{
+    view_vertex(_pos.map([] (auto p) { return tg::pos3(p[0], p[1], p[2]); }), _v, _color);
+}
+
 }

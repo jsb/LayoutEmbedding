@@ -15,6 +15,7 @@ struct IGLMesh
 
 IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos);
 
-void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::pos3>& _pos);
+void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::dpos3>& _pos);
+void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::dpos2>& _pos);
 
 }

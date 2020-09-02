@@ -34,20 +34,40 @@ IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
     return result;
 }
 
-void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::pos3>& _pos)
+void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::dpos3>& _pos)
 {
     _m.clear();
-    _pos = _m.vertices().make_attribute<tg::pos3>();
+    _pos = _m.vertices().make_attribute<tg::dpos3>();
 
     // Add vertices
     for (int i = 0; i < _igl.V.rows(); ++i) {
         const auto v = _m.vertices().add();
         if (_igl.V.cols() == 2)
-            _pos[v] = tg::pos3(_igl.V(i, 0), _igl.V(i, 1), 0.0);
+            _pos[v] = tg::dpos3(_igl.V(i, 0), _igl.V(i, 1), 0.0);
         else if (_igl.V.cols() == 3)
-            _pos[v] = tg::pos3(_igl.V(i, 0), _igl.V(i, 1), _igl.V(i, 2));
+            _pos[v] = tg::dpos3(_igl.V(i, 0), _igl.V(i, 1), _igl.V(i, 2));
         else
             LE_ERROR_THROW("");
+    }
+
+    // Add faces
+    for (int i = 0; i < _igl.F.rows(); ++i)
+    {
+        _m.faces().add(_m.vertices()[_igl.F(i, 0)],
+                       _m.vertices()[_igl.F(i, 1)],
+                       _m.vertices()[_igl.F(i, 2)]);
+    }
+}
+
+void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::dpos2>& _pos)
+{
+    _m.clear();
+    _pos = _m.vertices().make_attribute<tg::dpos2>();
+
+    // Add vertices
+    for (int i = 0; i < _igl.V.rows(); ++i) {
+        const auto v = _m.vertices().add();
+        _pos[v] = tg::dpos2(_igl.V(i, 0), _igl.V(i, 1));
     }
 
     // Add faces

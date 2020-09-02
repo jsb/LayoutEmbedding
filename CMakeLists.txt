@@ -17,7 +17,7 @@ add_subdirectory(extern/glow-extras)
 add_subdirectory(extern/eigen-lean)
 
 # LayoutEmbedding Library (library directory)
-file(GLOB_RECURSE LE_LIBRARY_SOURCE_FILES "library/LayoutEmbedding/*.cc" "library/LayoutEmbedding/*.hh")
+file(GLOB_RECURSE LE_LIBRARY_SOURCE_FILES "library/LayoutEmbedding/*.cc" "library/LayoutEmbedding/*.hh" "library/LayoutEmbedding/*.c" "library/LayoutEmbedding/*.h")
 add_library(LayoutEmbedding ${LE_LIBRARY_SOURCE_FILES})
 target_link_libraries(LayoutEmbedding PUBLIC imgui typed-geometry polymesh glow-extras eigen)
 target_include_directories(LayoutEmbedding PUBLIC library)
