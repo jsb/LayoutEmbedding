@@ -1,6 +1,7 @@
 #include "Visualization.hh"
 
 #include <LayoutEmbedding/Visualization/HaltonColorGenerator.hh>
+#include <LayoutEmbedding/Snake.hh>
 
 namespace LayoutEmbedding {
 
@@ -135,6 +136,18 @@ void view_path(const Embedding& _em, const VirtualPath& _path, const tg::color3&
     for (int i = 0; i < _path.size() - 1; ++i) {
         const auto& p_i = _em.element_pos(_path[i]);
         const auto& p_j = _em.element_pos(_path[i+1]);
+        path_segments.push_back({p_i, p_j});
+    }
+    gv::view(glow::viewer::lines(path_segments).line_width_px(arc_width), _color, gv::no_shading);
+}
+
+void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _color)
+{
+    const float arc_width = 2.0f; // TODO: parameter?
+    std::vector<tg::segment3> path_segments;
+    for (int i = 0; i < _snake.vertices.size() - 1; ++i) {
+        const auto& p_i = _snake.vertices[i].point(_em.target_pos());
+        const auto& p_j = _snake.vertices[i+1].point(_em.target_pos());
         path_segments.push_back({p_i, p_j});
     }
     gv::view(glow::viewer::lines(path_segments).line_width_px(arc_width), _color, gv::no_shading);

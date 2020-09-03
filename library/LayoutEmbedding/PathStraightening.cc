@@ -14,9 +14,9 @@ namespace LayoutEmbedding
 namespace
 {
 
-void extract_one_ring_region(
+void extract_flap_region(
         const Embedding& _em,
-        const pm::vertex_handle& _l_v,
+        const pm::halfedge_handle& _l_h,
         pm::Mesh& _region,
         pm::vertex_attribute<tg::pos3>& _region_pos,
         pm::vertex_attribute<pm::vertex_handle>& _v_target_to_region,
@@ -32,13 +32,14 @@ void extract_one_ring_region(
 
     // Region flood fill
     std::queue<pm::halfedge_handle> queue;
-    for (auto l_h : _l_v.outgoing_halfedges())
-        queue.push(_em.get_embedded_target_halfedge(l_h));
+    queue.push(_em.get_embedded_target_halfedge(_l_h));
+    queue.push(_em.get_embedded_target_halfedge(_l_h.opposite()));
 
     auto visited = _em.target_mesh().faces().make_attribute<bool>(false);
     while (!queue.empty())
     {
         const auto t_h = queue.front();
+        LE_ASSERT(t_h.is_valid());
         const auto t_f = t_h.face();
         queue.pop();
 
@@ -94,9 +95,9 @@ void append_as_row(
     _M.row(_M.rows() - 1) = _v.transpose();
 }
 
-void n_gon_boundary(
+void flap_n_gon_boundary(
         const Embedding& _em,
-        const pm::vertex_handle& _l_v,
+        const pm::halfedge_handle& _l_h,
         const pm::vertex_attribute<pm::vertex_handle>& _v_target_to_region,
         Eigen::MatrixXi& _b, // boundary vertex indices
         Eigen::MatrixXd& _bc) // boundary coordinates as rows
@@ -104,14 +105,30 @@ void n_gon_boundary(
     _b.resize(0, 1);
     _bc.resize(0, 2);
 
+    // Collect inner halfedges of flap boundary
+    std::vector<pm::halfedge_handle> l_hs_boundary;
+    {
+        auto h = _l_h.next();
+        while (h != _l_h)
+        {
+            l_hs_boundary.push_back(h);
+            h = h.next();
+        }
+        h = _l_h.opposite().next();
+        while (h != _l_h.opposite())
+        {
+            l_hs_boundary.push_back(h);
+            h = h.next();
+        }
+    }
+
     double boundary_length_total = 0.0;
-    for (auto l_h_out : _l_v.outgoing_halfedges())
-         boundary_length_total += _em.embedded_path_length(l_h_out.next());
+    for (auto l_h : l_hs_boundary)
+         boundary_length_total += _em.embedded_path_length(l_h);
 
     double boundary_length_acc = 0.0;
-    for (auto l_h_out : _l_v.outgoing_halfedges())
+    for (auto l_h : l_hs_boundary)
     {
-        const auto l_h = l_h_out.next(); // ccw boundary he
         const auto t_path = _em.get_embedded_path(l_h);
         const double path_length_total = _em.embedded_path_length(l_h);
 
@@ -160,72 +177,70 @@ Eigen::MatrixXd harmonic_param(
     return param;
 }
 
-void transfer_snake_to_target(
-        Snake& _snake,
+Snake transfer_snake_to_target(
+        const Snake& _snake,
         const pm::halfedge_attribute<pm::halfedge_handle>& _h_map)
 {
-    for (auto& v : _snake.vertices)
+    Snake res = _snake;
+
+    for (auto& v : res.vertices)
         v.h = _h_map[v.h];
+
+    return res;
 }
 
-void straighten_one_ring(
+/**
+ * Parametrize flap and straighten edge.
+ */
+void straighten_path(
         Embedding& _em,
-        const pm::vertex_handle& _l_v_center)
+        const pm::halfedge_handle& _l_h)
 {
-    // Extract one ring region mesh
+    // Extract flap region mesh
     pm::Mesh region;
     pm::vertex_attribute<tg::pos3> region_pos;
     pm::vertex_attribute<pm::vertex_handle> v_target_to_region;
     pm::halfedge_attribute<pm::halfedge_handle> h_region_to_target;
-    extract_one_ring_region(_em, _l_v_center, region, region_pos, v_target_to_region, h_region_to_target);
-    const auto region_igl = to_igl_mesh(region_pos);
+    extract_flap_region(_em, _l_h, region, region_pos, v_target_to_region, h_region_to_target);
 
     // TODO FIXME: Split edges with two adjacent boundary edges on same path
 
     // Construct 2D n-gon
     Eigen::MatrixXi b; // boundary vertex indices
     Eigen::MatrixXd bc; // boundary coordinates as rows
-    n_gon_boundary(_em, _l_v_center, v_target_to_region, b, bc);
+    flap_n_gon_boundary(_em, _l_h, v_target_to_region, b, bc);
 
     // Compute harmonic parametrization using intrinsic cotan weights
-    Eigen::MatrixXd param = harmonic_param(region_igl, b, bc);
+    const auto region_igl = to_igl_mesh(region_pos);
+    const Eigen::MatrixXd param_igl = harmonic_param(region_igl, b, bc);
     pm::Mesh param_mesh;
-    pm::vertex_attribute<tg::dpos2> param_pos;
-    from_igl_mesh(IGLMesh { param, region_igl.F }, param_mesh, param_pos);
+    pm::vertex_attribute<tg::dpos2> region_param;
+    to_polymesh_param(param_igl, region, region_param);
 
-    auto r_v_center = v_target_to_region[_em.matching_target_vertex(_l_v_center)];
-    std::vector<Snake> snakes;
-    for (auto h : _l_v_center.outgoing_halfedges())
-    {
-        // Compute snake via 2D straight line intersection
-        auto r_v_neigh = v_target_to_region[_em.matching_target_vertex(h.vertex_to())];
-        snakes.push_back(snake_from_parametrization(param, r_v_center, r_v_neigh));
-        transfer_snake_to_target(snakes.back(), h_region_to_target);
-    }
+    // Compute snake by tracing straight line in parametrization
+    const auto r_v_from = v_target_to_region[_em.matching_target_vertex(_l_h.vertex_from())];
+    const auto r_v_to = v_target_to_region[_em.matching_target_vertex(_l_h.vertex_to())];
+    const auto r_snake = snake_from_parametrization(region_param, r_v_from, r_v_to);
+    const auto t_snake = transfer_snake_to_target(r_snake, h_region_to_target);
 
-    {
-        auto v = gv::view(_em.target_pos());
-        auto style = default_style();
-
-        for (const auto& snake : snakes)
-        {
-            for (auto v : snake.vertices)
-                gv::view(glow::viewer::points(v.point(_em.target_pos())).point_size_px(5), RWTH_MAGENTA, gv::no_shading);
-        }
-    }
-
-//    gv::view(region_pos);
+    // Embed snake in target mesh
+    _em.unembed_path(_l_h);
+    _em.embed_path(_l_h, t_snake);
 }
 
 }
 
 Embedding straighten_paths(
-        const Embedding& _em_orig)
+        const Embedding& _em_orig,
+        const int _n_iters)
 {
     Embedding em = _em_orig; // copy
 
-    for (auto l_v : em.layout_mesh().vertices())
-        straighten_one_ring(em, l_v);
+    for (int iter = 0; iter < _n_iters; ++iter)
+    {
+        for (auto l_e : em.layout_mesh().edges())
+            straighten_path(em, l_e.halfedgeA());
+    }
 
     return em;
 }

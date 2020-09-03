@@ -9,19 +9,25 @@ namespace LayoutEmbedding
 namespace
 {
 
+const double* ptr(
+        const tg::dpos2& _p)
+{
+    return &_p.x;
+}
+
 /**
  * CALL exactinit() once before calling this function!
  * Does straight line segment (a, b) intersect (c, d)?
  * Inclusive: touching an endpoint counts as intersection.
  */
 bool intersects_exact_inclusive_2d(
-        const Eigen::Vector2d& a, const Eigen::Vector2d& b,
-        const Eigen::Vector2d& c, const Eigen::Vector2d& d)
+        const tg::dpos2& a, const tg::dpos2& b,
+        const tg::dpos2& c, const tg::dpos2& d)
 {
-    const auto sign1 = orient2d(a.data(), b.data(), c.data());
-    const auto sign2 = orient2d(a.data(), d.data(), b.data());
-    const auto sign3 = orient2d(a.data(), d.data(), c.data());
-    const auto sign4 = orient2d(b.data(), c.data(), d.data());
+    const auto sign1 = orient2d(ptr(a), ptr(b), ptr(c));
+    const auto sign2 = orient2d(ptr(a), ptr(d), ptr(b));
+    const auto sign3 = orient2d(ptr(a), ptr(d), ptr(c));
+    const auto sign4 = orient2d(ptr(b), ptr(c), ptr(d));
 
     int n_negative = 0;
     int n_positive = 0;
@@ -46,8 +52,8 @@ bool intersects_exact_inclusive_2d(
  * Does not perform any checks.
  */
 double intersection_parameter(
-        const Eigen::Vector2d& a, const Eigen::Vector2d& b,
-        const Eigen::Vector2d& c, const Eigen::Vector2d& d)
+        const tg::dpos2& a, const tg::dpos2& b,
+        const tg::dpos2& c, const tg::dpos2& d)
 {
     // Precondition: not collinear
     return ((a[0] - c[0]) * (c[1] - d[1]) - (a[1] - c[1]) * (c[0] - d[0])) /
@@ -60,19 +66,17 @@ double intersection_parameter(
   */
 std::optional<SnakeVertex> intersection_vertex(
         const pm::halfedge_handle& _h,
-        const Eigen::MatrixXd& _param,
+        const pm::vertex_attribute<tg::dpos2>& _param,
         const pm::vertex_handle& _v_from,
         const pm::vertex_handle& _v_to)
 {
-    auto p = [&_param] (auto v) { return _param.row(v.idx.value); };
-
     if (intersects_exact_inclusive_2d(
-                p(_h.vertex_from()), p(_h.vertex_to()),
-                p(_v_from), p(_v_to)))
+                _param[_h.vertex_from()], _param[_h.vertex_to()],
+                _param[_v_from], _param[_v_to]))
     {
         const double lambda = intersection_parameter(
-                    p(_h.vertex_from()), p(_h.vertex_to()),
-                    p(_v_from), p(_v_to));
+                    _param[_h.vertex_from()], _param[_h.vertex_to()],
+                    _param[_v_from], _param[_v_to]);
 
         return SnakeVertex { _h, lambda };
     }
@@ -85,7 +89,7 @@ std::optional<SnakeVertex> intersection_vertex(
   * straight line segment.
   */
 SnakeVertex find_first_intersection(
-        const Eigen::MatrixXd& _param,
+        const pm::vertex_attribute<tg::dpos2>& _param,
         const pm::vertex_handle& _v_from,
         const pm::vertex_handle& _v_to)
 {
@@ -106,7 +110,7 @@ SnakeVertex find_first_intersection(
 SnakeVertex find_next_intersection(
         const pm::face_handle _f, // intersect edges of this face with line
         const pm::halfedge_handle _h_ignore, // ignore this edge
-        const Eigen::MatrixXd& _param,
+        const pm::vertex_attribute<tg::dpos2>& _param,
         const pm::vertex_handle& _v_from,
         const pm::vertex_handle& _v_to)
 {
@@ -140,7 +144,7 @@ bool incident(
 }
 
 Snake snake_from_parametrization(
-        const Eigen::MatrixXd& _param,
+        const pm::vertex_attribute<tg::dpos2>& _param,
         const pm::vertex_handle& _v_from,
         const pm::vertex_handle& _v_to)
 {
@@ -169,12 +173,57 @@ Snake snake_from_parametrization(
         const auto h = snake.vertices.back().h;
         snake.vertices.push_back(find_next_intersection(h.face(), h, _param, _v_from, _v_to));
 
-        LE_ASSERT(safeguard < 1e6);
+        LE_ASSERT(safeguard < 1e7);
         ++safeguard;
     }
 
     snake.vertices.push_back(sv_to);
     return snake;
 }
+
+template <typename PosT>
+std::vector<pm::vertex_handle> embed_snake(
+        const Snake& _snake,
+        pm::Mesh& _mesh,
+        pm::vertex_attribute<PosT>& _pos)
+{
+    std::vector<pm::vertex_handle> vertex_path;
+    for (int i = 0; i < _snake.vertices.size(); ++i)
+    {
+        const auto& sv = _snake.vertices[i];
+        if (i == 0 || i == _snake.vertices.size() - 1) {
+            LE_ASSERT(sv.lambda == 0.0);
+            vertex_path.push_back(sv.h.vertex_from());
+        }
+        else {
+            const auto p = sv.point(_pos); // Compute before split!!!
+            const auto t_v_new = _mesh.edges().split_and_triangulate(sv.h.edge());
+            _pos[t_v_new] = p;
+            vertex_path.push_back(t_v_new);
+        }
+        LE_ASSERT(vertex_path.back().mesh == &_mesh);
+    }
+    LE_ASSERT(vertex_path.size() == _snake.vertices.size());
+
+    return vertex_path;
+}
+
+// Explit template specialization
+template std::vector<pm::vertex_handle> embed_snake(
+        const Snake&,
+        pm::Mesh& _mesh,
+        pm::vertex_attribute<tg::dpos2>&);
+template std::vector<pm::vertex_handle> embed_snake(
+        const Snake&,
+        pm::Mesh& _mesh,
+        pm::vertex_attribute<tg::dpos3>&);
+template std::vector<pm::vertex_handle> embed_snake(
+        const Snake&,
+        pm::Mesh& _mesh,
+        pm::vertex_attribute<tg::pos2>&);
+template std::vector<pm::vertex_handle> embed_snake(
+        const Snake&,
+        pm::Mesh& _mesh,
+        pm::vertex_attribute<tg::pos3>&);
 
 }

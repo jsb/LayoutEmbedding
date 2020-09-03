@@ -4,7 +4,8 @@
 
 namespace LayoutEmbedding {
 
-IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
+IGLMesh to_igl_mesh(
+        const pm::vertex_attribute<tg::pos3>& _pos)
 {
     const pm::Mesh& m = _pos.mesh();
 
@@ -34,7 +35,10 @@ IGLMesh to_igl_mesh(const pm::vertex_attribute<tg::pos3>& _pos)
     return result;
 }
 
-void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::dpos3>& _pos)
+void to_polymesh(
+        const IGLMesh& _igl,
+        pm::Mesh& _m,
+        pm::vertex_attribute<tg::dpos3>& _pos)
 {
     _m.clear();
     _pos = _m.vertices().make_attribute<tg::dpos3>();
@@ -51,32 +55,22 @@ void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::d
     }
 
     // Add faces
-    for (int i = 0; i < _igl.F.rows(); ++i)
-    {
+    for (int i = 0; i < _igl.F.rows(); ++i) {
         _m.faces().add(_m.vertices()[_igl.F(i, 0)],
                        _m.vertices()[_igl.F(i, 1)],
                        _m.vertices()[_igl.F(i, 2)]);
     }
 }
 
-void from_igl_mesh(const IGLMesh& _igl, pm::Mesh& _m, pm::vertex_attribute<tg::dpos2>& _pos)
+void to_polymesh_param(
+        const Eigen::MatrixXd& _W,
+        const pm::Mesh& _m,
+        pm::vertex_attribute<tg::dpos2>& _param)
 {
-    _m.clear();
-    _pos = _m.vertices().make_attribute<tg::dpos2>();
+    _param = _m.vertices().make_attribute<tg::dpos2>();
 
-    // Add vertices
-    for (int i = 0; i < _igl.V.rows(); ++i) {
-        const auto v = _m.vertices().add();
-        _pos[v] = tg::dpos2(_igl.V(i, 0), _igl.V(i, 1));
-    }
-
-    // Add faces
-    for (int i = 0; i < _igl.F.rows(); ++i)
-    {
-        _m.faces().add(_m.vertices()[_igl.F(i, 0)],
-                       _m.vertices()[_igl.F(i, 1)],
-                       _m.vertices()[_igl.F(i, 2)]);
-    }
+    for (auto v : _m.vertices())
+        _param[v] = tg::dpos2(_W(v.idx.value, 0), _W(v.idx.value, 1));
 }
 
 }

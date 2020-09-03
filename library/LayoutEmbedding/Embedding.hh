@@ -8,6 +8,8 @@
 
 namespace LayoutEmbedding {
 
+struct Snake;
+
 class Embedding
 {
 public:
@@ -49,6 +51,7 @@ public:
     double path_length(const VirtualPath& _path) const;
 
     void embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& _path);
+    void embed_path(const pm::halfedge_handle& _l_he, const Snake& _snake);
     void unembed_path(const pm::halfedge_handle& _l_he);
     void unembed_path(const pm::edge_handle& _l_e);
 

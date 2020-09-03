@@ -12,6 +12,7 @@ namespace LayoutEmbedding
  * patches, as described in [Praun2001].
  */
 Embedding straighten_paths(
-        const Embedding& _em_orig);
+        const Embedding& _em_orig,
+        const int _n_iters = 1);
 
 }

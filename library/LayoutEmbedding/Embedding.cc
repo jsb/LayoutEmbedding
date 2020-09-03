@@ -3,6 +3,7 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 #include <LayoutEmbedding/VirtualVertexAttribute.hh>
+#include <LayoutEmbedding/Snake.hh>
 
 #include <queue>
 
@@ -528,6 +529,32 @@ void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& 
         int j = i + 1;
         const auto t_he = pm::halfedge_from_to(vertex_path[i], vertex_path[j]);
         LE_ASSERT(t_he.is_valid());
+        LE_ASSERT(matching_layout_halfedge(t_he).is_invalid());
+        LE_ASSERT(matching_layout_halfedge(t_he.opposite()).is_invalid());
+        t_matching_halfedge[t_he] = _l_he;
+        t_matching_halfedge[t_he.opposite()] = _l_he.opposite();
+    }
+}
+
+void Embedding::embed_path(const pm::halfedge_handle& _l_he, const Snake& _snake)
+{
+    LE_ASSERT(!get_embedded_target_halfedge(_l_he).is_valid());
+    LE_ASSERT(_snake.vertices.size() >= 2);
+
+    // Turn the Snake into a pure vertex path by splitting edges
+    const auto vertex_path = embed_snake(_snake, t_m, t_pos);
+    LE_ASSERT(matching_layout_vertex(vertex_path.front()).is_valid());
+    LE_ASSERT(matching_layout_vertex(vertex_path.back()).is_valid());
+    LE_ASSERT(matching_layout_vertex(vertex_path.front()) == _l_he.vertex_from());
+    LE_ASSERT(matching_layout_vertex(vertex_path.back()) == _l_he.vertex_to());
+
+    // Mark the halfedges along the newly subdivided vertex path
+    for (int i = 0; i < vertex_path.size() - 1; ++i) {
+        int j = i + 1;
+        const auto t_he = pm::halfedge_from_to(vertex_path[i], vertex_path[j]);
+        LE_ASSERT(t_he.is_valid());
+        LE_ASSERT(matching_layout_halfedge(t_he).is_invalid());
+        LE_ASSERT(matching_layout_halfedge(t_he.opposite()).is_invalid());
         t_matching_halfedge[t_he] = _l_he;
         t_matching_halfedge[t_he.opposite()] = _l_he.opposite();
     }
@@ -545,6 +572,7 @@ void Embedding::unembed_path(const pm::halfedge_handle& _l_he)
         t_matching_halfedge[t_he] = pm::halfedge_handle::invalid;
         t_matching_halfedge[t_he.opposite()] = pm::halfedge_handle::invalid;
     }
+    LE_ASSERT(!is_embedded(_l_he));
 }
 
 void Embedding::unembed_path(const pm::edge_handle& _l_e)
@@ -559,14 +587,22 @@ std::vector<pm::vertex_handle> Embedding::get_embedded_path(const pm::halfedge_h
     const auto t_v_start = get_embedded_target_halfedge(_l_he).vertex_from();
     const auto t_v_end = l_matching_vertex[_l_he.vertex_to()];
     auto t_v = t_v_start;
+    int safeguard = 0;
     while (t_v != t_v_end) {
+        LE_ASSERT(t_v.is_valid());
         result.push_back(t_v);
+
+        bool next_vertex_found = false;
         for (const auto t_he : t_v.outgoing_halfedges()) {
             if (t_matching_halfedge[t_he] == _l_he) {
                 t_v = t_he.vertex_to();
+                next_vertex_found = true;
                 break;
             }
         }
+        LE_ASSERT(next_vertex_found);
+        LE_ASSERT(safeguard < 1e7);
+        ++safeguard;
     }
     result.push_back(t_v_end);
     return result;
