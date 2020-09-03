@@ -286,10 +286,6 @@ GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings)
 
 GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings)
 {
-    double best_cost = std::numeric_limits<double>::infinity();
-    GreedySettings best_settings = _settings;
-    GreedyResult best_result;
-
     std::vector<GreedySettings> all_settings;
     for (bool use_swirl_detection : { false, true }) {
         for (bool use_vertex_repulsive_tracing : { false, true }) {
@@ -303,7 +299,10 @@ GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _set
         }
     }
 
-    #pragma omp parallel for shared(best_cost, best_settings, best_result)
+    std::vector<double> all_costs(all_settings.size(), std::numeric_limits<double>::infinity());
+    std::vector<GreedyResult> all_results(all_settings.size());
+
+    #pragma omp parallel for
     for (std::size_t i = 0; i < all_settings.size(); ++i) {
         const auto& settings = all_settings[i];
 
@@ -312,11 +311,18 @@ GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _set
         const double cost = em.total_embedded_path_length();
         std::cout << "Embedding cost: " << cost << std::endl;
 
-        #pragma omp critical
-        if (cost < best_cost) {
-            best_cost = cost;
-            best_settings = settings;
-            best_result = result;
+        all_costs[i] = cost;
+        all_results[i] = result;
+    }
+
+    double best_cost = std::numeric_limits<double>::infinity();
+    GreedySettings best_settings = _settings;
+    GreedyResult best_result;
+    for (std::size_t i = 0; i < all_settings.size(); ++i) {
+        if (all_costs[i] < best_cost) {
+            best_cost = all_costs[i];
+            best_settings = all_settings[i];
+            best_result = all_results[i];
         }
     }
 
