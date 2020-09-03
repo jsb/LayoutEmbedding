@@ -128,7 +128,10 @@ void VirtualPathConflictSentinel::insert_path(const VirtualPath& _path, const Vi
 
 void VirtualPathConflictSentinel::mark_conflicting(const VirtualPathConflictSentinel::Label& _a, const VirtualPathConflictSentinel::Label& _b)
 {
-    LE_ASSERT(_a != _b);
+    if (_a == _b) {
+        return;
+    }
+
     global_conflicts.insert(_a);
     global_conflicts.insert(_b);
 
@@ -140,6 +143,10 @@ void VirtualPathConflictSentinel::check_path_ordering()
 {
     const auto reachable_by_sweep_ccw_in_sector = [&](VirtualPort& _start, const VirtualPort& _end) {
         LE_ASSERT(_start.from == _end.from);
+        if (_start == _end) {
+            // If both ports are identical then the corresponding paths are conflicting.
+            return false;
+        }
         while (_start != _end) {
             _start = _start.rotated_ccw();
             if (is_real_vertex(_start.to)) {
@@ -153,13 +160,12 @@ void VirtualPathConflictSentinel::check_path_ordering()
         return true;
     };
 
-    const auto mark_and_sweep_cw_in_sector = [&](VirtualPort& _start, const VirtualPort& _end) {
+    const auto mark_and_sweep_cw_in_sector = [&](VirtualPort& _start, const VirtualPort& _end, const Label& _l) {
         LE_ASSERT(_start.from == _end.from);
 
         // Mark all encountered labels as conflicting.
         for (const auto& l : t_port[_start.to]) {
-            // TODO
-            global_conflicts.insert(l);
+            mark_conflicting(_l, l);
         }
 
         while (_start != _end) {
@@ -173,8 +179,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
             }
             // Mark all encountered labels as conflicting.
             for (const auto& l : t_port[_start.to]) {
-                // TODO
-                global_conflicts.insert(l);
+                mark_conflicting(_l, l);
             }
         }
     };
@@ -213,13 +218,12 @@ void VirtualPathConflictSentinel::check_path_ordering()
                     // Try to reach next_port from current_port using CCW rotations (without leaving the sector).
                     if (reachable_by_sweep_ccw_in_sector(current_port, next_port)) {
                         // All good, proceed.
-                        // TODO: Currently, the case where current_port == next_port is also considered "reachable".
-                        // Do we need to handle this here or is it already handled by the candidate path intersection test?
                     }
                     else {
                         // Reach next_port from current_port using CW rotations (without leaving the sector).
                         // All candidate edges that are visited during the CW sweep will be marked "conflicting".
-                        mark_and_sweep_cw_in_sector(current_port, next_port);
+                        const Label& l = l_current_he_in_sector.edge().idx;
+                        mark_and_sweep_cw_in_sector(current_port, next_port, l);
                     }
 
                     // Advance to the next halfedge in this sector.
@@ -233,7 +237,8 @@ void VirtualPathConflictSentinel::check_path_ordering()
             // No sectors around the vertex (yet).
             // The best we can do is verify that the cyclic order of embedded edges matches that of the layout.
             // If so, there are no (additional) conflicts. Otherwise, we consider all edges around this vertex as conflicting.
-            // TODO: Is it really necessary to mark all outgoing paths as conflicting in that case? Can we do something that causes less branching?
+            // TODO: Is it really necessary to mark all outgoing paths as conflicting in that case?
+            // Can we do something that causes less branching?
 
             const auto l_he_start = l_v.any_outgoing_halfedge();
             auto l_he = l_he_start;
@@ -266,9 +271,10 @@ void VirtualPathConflictSentinel::check_path_ordering()
 
             if (cyclic_conflict) {
                 // Mark all surrounding edges as "conflicting"
-                for (const auto l_e : l_v.edges()) {
-                    // TODO
-                    global_conflicts.insert(l_e);
+                for (const auto l_e_A : l_v.edges()) {
+                    for (const auto l_e_B : l_v.edges()) {
+                        mark_conflicting(l_e_A, l_e_B);
+                    }
                 }
             }
         }
