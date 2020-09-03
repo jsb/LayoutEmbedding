@@ -188,12 +188,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 }
             }
         }
-
-        // After we are done processing a state, we will never visit it again.
-        // We can release some of the expensive data to save memory.
-        State& state = known_states[c.state];
-        state.path.clear();
-        state.path.shrink_to_fit();
     }
     std::cout << "Branch-and-bound optimization completed." << std::endl;
 
