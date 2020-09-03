@@ -116,6 +116,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         LE_ASSERT(es.hash() == c.state);
 
         es.compute_candidate_paths();
+        es.detect_candidate_path_conflicts();
 
         if (!es.valid) {
             // The current embedding might be invalid if paths run into dead ends.
@@ -175,6 +176,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                     }
 
                     new_es.compute_candidate_paths();
+                    new_es.detect_candidate_path_conflicts();
 
                     const double new_lower_bound = new_es.cost_lower_bound();
                     const double new_gap = 1.0 - new_lower_bound / global_upper_bound;

@@ -65,35 +65,48 @@ void EmbeddingState::compute_candidate_paths()
 
     LE_ASSERT(&candidate_paths.mesh() == &em.layout_mesh());
     candidate_paths.clear();
-    conflicting_l_edges.clear();
-    non_conflicting_l_edges.clear();
     unembedded_cost = 0.0;
 
-    VirtualPathConflictSentinel vpcs(c_em);
-
-    for (const auto& l_e : c_em.layout_mesh().edges()) {
+    for (const auto l_e : c_em.layout_mesh().edges()) {
         if (!embedded_l_edges.count(l_e)) {
             auto l_he = l_e.halfedgeA();
             auto path = c_em.find_shortest_path(l_he);
-            if (path.empty()) {
-                unembedded_cost = std::numeric_limits<double>::infinity();
-                valid = false;
-                break;
-            }
+
             candidate_paths[l_e].path = path;
-            candidate_paths[l_e].cost = c_em.path_length(path);
-            vpcs.insert_path(path, l_e);
+            if (path.empty()) {
+                candidate_paths[l_e].cost = std::numeric_limits<double>::infinity();
+                valid = false;
+            }
+            else {
+                candidate_paths[l_e].cost = c_em.path_length(path);
+            }
             unembedded_cost += candidate_paths[l_e].cost;
         }
     }
-    if (!valid) {
-        return;
+}
+
+void EmbeddingState::detect_candidate_path_conflicts()
+{
+    const Embedding& c_em = em; // We don't want to modify the embedding in this method.
+
+    conflicting_l_edges.clear();
+    non_conflicting_l_edges.clear();
+
+    if (valid) {
+        VirtualPathConflictSentinel vpcs(c_em);
+        for (const auto l_e : c_em.layout_mesh().edges()) {
+            if (!embedded_l_edges.count(l_e)) {
+                const auto& path = candidate_paths[l_e].path;
+                if (!path.empty()) {
+                    vpcs.insert_path(path, l_e);
+                }
+            }
+        }
+        vpcs.check_path_ordering();
+        conflicting_l_edges = vpcs.global_conflicts;
     }
 
-    vpcs.check_path_ordering();
-
-    conflicting_l_edges = vpcs.global_conflicts;
-    for (const auto& l_e : c_em.layout_mesh().edges()) {
+    for (const auto l_e : c_em.layout_mesh().edges()) {
         if (!embedded_l_edges.count(l_e) && !conflicting_l_edges.count(l_e)) {
             non_conflicting_l_edges.insert(l_e);
         }

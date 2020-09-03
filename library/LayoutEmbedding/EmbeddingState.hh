@@ -26,6 +26,7 @@ struct EmbeddingState
     void extend(const InsertionSequence& _seq);
 
     void compute_candidate_paths();
+    void detect_candidate_path_conflicts();
 
     double cost_lower_bound() const;
 
