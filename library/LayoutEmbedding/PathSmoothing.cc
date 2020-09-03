@@ -1,9 +1,8 @@
-#include "PathStraightening.hh"
+#include "PathSmoothing.hh"
 
-#include <LayoutEmbedding/Visualization/Visualization.hh>
+#include <LayoutEmbedding/Snake.hh>
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/IGLMesh.hh>
-#include <LayoutEmbedding/Snake.hh>
 #include <igl/intrinsic_delaunay_cotmatrix.h>
 #include <igl/harmonic.h>
 #include <queue>
@@ -192,7 +191,7 @@ Snake transfer_snake_to_target(
 /**
  * Parametrize flap and straighten edge.
  */
-void straighten_path(
+void smooth_path(
         Embedding& _em,
         const pm::halfedge_handle& _l_h)
 {
@@ -230,7 +229,7 @@ void straighten_path(
 
 }
 
-Embedding straighten_paths(
+Embedding smooth_paths(
         const Embedding& _em_orig,
         const int _n_iters)
 {
@@ -239,7 +238,7 @@ Embedding straighten_paths(
     for (int iter = 0; iter < _n_iters; ++iter)
     {
         for (auto l_e : em.layout_mesh().edges())
-            straighten_path(em, l_e.halfedgeA());
+            smooth_path(em, l_e.halfedgeA());
     }
 
     return em;

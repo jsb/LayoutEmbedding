@@ -2,7 +2,7 @@
 #include <glow-extras/viewer/view.hh>
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Embedding.hh>
-#include <LayoutEmbedding/PathStraightening.hh>
+#include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 
 using namespace LayoutEmbedding;
@@ -10,7 +10,7 @@ using namespace LayoutEmbedding;
 namespace
 {
 
-void straighten(
+void smooth(
         const std::filesystem::path& _path_prefix)
 {
     // Load layout embedding from file
@@ -24,7 +24,7 @@ void straighten(
 
         // Compare results after different numbers of iterations
         for (int i = 0; i < 3; ++i)
-            view_target(straighten_paths(em_orig, i));
+            view_target(smooth_paths(em_orig, i));
     }
 }
 
@@ -38,7 +38,7 @@ int main()
     { // SHREC
         const auto dir = fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings";
 
-        straighten(dir / "384_bnb"); // Wolf
+        smooth(dir / "384_bnb"); // Wolf
 //        straighten(dir / "3_greedy"); // Human
     }
 
