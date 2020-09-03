@@ -8,8 +8,9 @@
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
+#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/Praun2001.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 
 #include <algorithm>
 #include <filesystem>
@@ -21,6 +22,8 @@ int main()
 {
     namespace fs = std::filesystem;
 
+    register_segfault_handler();
+
     const fs::path data_path = LE_DATA_PATH;
     const fs::path output_dir = LE_OUTPUT_PATH;
     const fs::path sphere_stress_test_output_dir = output_dir / "sphere_stress_test";
@@ -31,6 +34,7 @@ int main()
 
     fs::create_directories(sphere_stress_test_output_dir);
     const fs::path stats_path = sphere_stress_test_output_dir / "stats.csv";
+    if (!fs::exists(stats_path))
     {
         std::ofstream f(stats_path);
         f << "seed,algorithm,runtime,score" << std::endl;
@@ -40,7 +44,7 @@ int main()
     while (true) {
         for (const auto& algorithm : {
             "greedy",
-            "greedy_with_swirl_detection",
+            "greedy_brute_force",
             "bnb",
         }) {
             // Generate random matching vertices
@@ -50,14 +54,10 @@ int main()
 
             glow::timing::CpuTimer timer;
             if (algorithm == "greedy") {
-                Praun2001Settings settings;
-                settings.use_swirl_detection = false;
-                praun2001(em, settings);
+                embed_greedy(em);
             }
-            else if (algorithm == "greedy_with_swirl_detection") {
-                Praun2001Settings settings;
-                settings.use_swirl_detection = true;
-                praun2001(em, settings);
+            else if (algorithm == "greedy_brute_force") {
+                embed_greedy_brute_force(em);
             }
             else if (algorithm == "bnb") {
                 BranchAndBoundSettings settings;

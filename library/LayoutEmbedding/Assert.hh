@@ -1,5 +1,7 @@
 #pragma once
 
+#include <LayoutEmbedding/StackTrace.hh>
+
 #include <iostream>
 
 #define LE_ERROR(str) \
@@ -11,6 +13,7 @@
 
 #define LE_ERROR_THROW(str) \
     {LE_ERROR(str); \
+    print_stack_trace(); \
     throw std::runtime_error("ERROR");}
 
 

@@ -36,4 +36,19 @@ polymesh::edge_handle real_edge(const VirtualVertex& _el)
     return std::get<pm::edge_handle>(_el);
 }
 
+void set_mesh(VirtualVertex& _vv, const pm::Mesh& _m)
+{
+    _vv = on_mesh(_vv, _m);
+}
+
+VirtualVertex on_mesh(const VirtualVertex& _vv, const pm::Mesh& _m)
+{
+    if (is_real_vertex(_vv)) {
+        return VirtualVertex(_m[real_vertex(_vv).idx]);
+    }
+    else {
+        return VirtualVertex(_m[real_edge(_vv).idx]);
+    }
+}
+
 }

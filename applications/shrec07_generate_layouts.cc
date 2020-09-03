@@ -7,6 +7,7 @@
 
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 
 using namespace LayoutEmbedding;
 
@@ -34,6 +35,8 @@ struct DecimateConfig : public pm::decimate_config<tg::pos3, tg::quadric3>
 int main()
 {
     namespace fs = std::filesystem;
+
+    register_segfault_handler();
 
     LE_ASSERT(fs::exists(shrec_dir));
     LE_ASSERT(fs::exists(shrec_corrs_dir));

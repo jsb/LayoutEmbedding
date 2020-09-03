@@ -12,8 +12,9 @@
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
+#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/Praun2001.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
@@ -31,6 +32,7 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
 
     const std::vector<std::string> algorithms = {
         "greedy",
+        "greedy_brute_force",
         "bnb",
     };
 
@@ -51,15 +53,14 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
 
         if (algorithm == "bnb") {
             BranchAndBoundSettings settings;
-            settings.use_hashing = true;
             settings.time_limit = 10 * 60;
             branch_and_bound(em, settings);
         }
         else if (algorithm == "greedy") {
-            Praun2001Settings settings;
-            settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
-            settings.use_swirl_detection = false;
-            praun2001(em, settings);
+            embed_greedy(em);
+        }
+         else if (algorithm == "greedy_brute_force") {
+            embed_greedy_brute_force(em);
         }
         else {
             LE_ASSERT(false);
@@ -151,6 +152,8 @@ void invert_mesh(pm::Mesh& _m)
 int main()
 {
     namespace fs = std::filesystem;
+
+    register_segfault_handler();
 
     glow::glfw::GlfwContext ctx;
 

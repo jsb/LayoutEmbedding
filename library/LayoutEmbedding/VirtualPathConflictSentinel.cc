@@ -20,29 +20,26 @@ VirtualPathConflictSentinel::VirtualPathConflictSentinel(const Embedding& _em) :
 
 void VirtualPathConflictSentinel::insert(const pm::vertex_handle& _v, const VirtualPathConflictSentinel::Label& _l)
 {
-    if (v_label[_v].is_valid()) {
-        global_conflicts.insert(_l);
-        global_conflicts.insert(v_label[_v]);
+    for (const auto& prev_l : v_label[_v]) {
+        mark_conflicting(_l, prev_l);
     }
-    v_label[_v] = _l;
+    v_label[_v].insert(_l);
 }
 
 void VirtualPathConflictSentinel::insert(const pm::edge_handle& _e, const VirtualPathConflictSentinel::Label& _l)
 {
-    if (e_label[_e].is_valid()) {
-        global_conflicts.insert(_l);
-        global_conflicts.insert(e_label[_e]);
+    for (const auto& prev_l : e_label[_e]) {
+        mark_conflicting(_l, prev_l);
     }
-    e_label[_e] = _l;
+    e_label[_e].insert(_l);
 }
 
 void VirtualPathConflictSentinel::insert(const pm::face_handle& _f, const VirtualPathConflictSentinel::Label& _l)
 {
-    if (f_label[_f].is_valid()) {
-        global_conflicts.insert(_l);
-        global_conflicts.insert(f_label[_f]);
+    for (const auto& prev_l : f_label[_f]) {
+        mark_conflicting(_l, prev_l);
     }
-    f_label[_f] = _l;
+    f_label[_f].insert(_l);
 }
 
 void VirtualPathConflictSentinel::insert_virtual_vertex(const VirtualVertex& _vv, const VirtualPathConflictSentinel::Label& _l)
@@ -129,10 +126,27 @@ void VirtualPathConflictSentinel::insert_path(const VirtualPath& _path, const Vi
     t_port[_path[_path.size()-2]].insert(l_e);
 }
 
+void VirtualPathConflictSentinel::mark_conflicting(const VirtualPathConflictSentinel::Label& _a, const VirtualPathConflictSentinel::Label& _b)
+{
+    if (_a == _b) {
+        return;
+    }
+
+    global_conflicts.insert(_a);
+    global_conflicts.insert(_b);
+
+    const Conflict sorted = std::minmax(_a, _b);
+    global_conflict_relation.insert(sorted);
+}
+
 void VirtualPathConflictSentinel::check_path_ordering()
 {
     const auto reachable_by_sweep_ccw_in_sector = [&](VirtualPort& _start, const VirtualPort& _end) {
         LE_ASSERT(_start.from == _end.from);
+        if (_start == _end) {
+            // If both ports are identical then the corresponding paths are conflicting.
+            return false;
+        }
         while (_start != _end) {
             _start = _start.rotated_ccw();
             if (is_real_vertex(_start.to)) {
@@ -146,12 +160,12 @@ void VirtualPathConflictSentinel::check_path_ordering()
         return true;
     };
 
-    const auto mark_and_sweep_cw_in_sector = [&](VirtualPort& _start, const VirtualPort& _end) {
+    const auto mark_and_sweep_cw_in_sector = [&](VirtualPort& _start, const VirtualPort& _end, const Label& _l) {
         LE_ASSERT(_start.from == _end.from);
 
         // Mark all encountered labels as conflicting.
         for (const auto& l : t_port[_start.to]) {
-            global_conflicts.insert(l);
+            mark_conflicting(_l, l);
         }
 
         while (_start != _end) {
@@ -165,7 +179,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
             }
             // Mark all encountered labels as conflicting.
             for (const auto& l : t_port[_start.to]) {
-                global_conflicts.insert(l);
+                mark_conflicting(_l, l);
             }
         }
     };
@@ -179,33 +193,42 @@ void VirtualPathConflictSentinel::check_path_ordering()
                 // If a halfedge is embedded, the part following it is one "sector".
                 // We now visit all layout halfedges in this sector (l_he_in_sector) in a CCW order
                 // (i.e. until we reach another "embedded" layout halfedge).
-                auto l_he_in_sector = rotated_ccw(l_sector_boundary_he);
+                auto l_current_he_in_sector = rotated_ccw(l_sector_boundary_he);
 
                 // Meanwhile, we keep track of the embedded directions (represented by current_port) of the corresponding layout halfedges in the sector.
                 // We will check whether this direction also keeps "increasing" monotonically (a.k.a. rotating CCW) as we advance.
                 // If current_port "decreases" (rotates CW), this introduces potential conflicts.
                 // In that case, all ports that are swept over by a decreasing update of current_port will be marked as conflicting.
-                VirtualPort current_port = l_port[l_he_in_sector];
+                VirtualPort current_port = l_port[l_current_he_in_sector];
 
                 // Visit all layout halfedges in the current sector.
-                while (!em.is_embedded(l_he_in_sector)) {
+                while (true) {
+                    if (em.is_embedded(l_current_he_in_sector)) {
+                        break; // Reached end of sector
+                    }
                     LE_ASSERT(current_port.is_valid());
-                    auto new_port = l_port[l_he_in_sector];
 
-                    LE_ASSERT(current_port.is_valid());
-                    // Try to reach new_port from current_port using CCW rotations (without leaving the sector).
-                    if (reachable_by_sweep_ccw_in_sector(current_port, new_port)) {
+                    auto l_next_he_in_sector = rotated_ccw(l_current_he_in_sector);
+                    if (em.is_embedded(l_next_he_in_sector)) {
+                        break; // Reached end of sector
+                    }
+                    auto next_port = l_port[l_next_he_in_sector];
+                    LE_ASSERT(next_port.is_valid());
+
+                    // Try to reach next_port from current_port using CCW rotations (without leaving the sector).
+                    if (reachable_by_sweep_ccw_in_sector(current_port, next_port)) {
                         // All good, proceed.
-                        // TODO: Currently, the case where current_port == new_port is also considered "reachable".
-                        // Do we need to handle this here or is it already handled by the candidate path intersection test?
                     }
                     else {
-                        // Reach new_port from current_port using CW rotations (without leaving the sector).
+                        // Reach next_port from current_port using CW rotations (without leaving the sector).
                         // All candidate edges that are visited during the CW sweep will be marked "conflicting".
-                        mark_and_sweep_cw_in_sector(current_port, new_port);
+                        const Label& l = l_current_he_in_sector.edge().idx;
+                        mark_and_sweep_cw_in_sector(current_port, next_port, l);
                     }
-                    current_port = new_port;
-                    l_he_in_sector = rotated_ccw(l_he_in_sector);
+
+                    // Advance to the next halfedge in this sector.
+                    l_current_he_in_sector = l_next_he_in_sector;
+                    current_port = next_port;
                 }
             }
         }
@@ -214,7 +237,8 @@ void VirtualPathConflictSentinel::check_path_ordering()
             // No sectors around the vertex (yet).
             // The best we can do is verify that the cyclic order of embedded edges matches that of the layout.
             // If so, there are no (additional) conflicts. Otherwise, we consider all edges around this vertex as conflicting.
-            // TODO: Is it really necessary to mark all outgoing paths as conflicting in that case? Can we do something that causes less branching?
+            // TODO: Is it really necessary to mark all outgoing paths as conflicting in that case?
+            // Can we do something that causes less branching?
 
             const auto l_he_start = l_v.any_outgoing_halfedge();
             auto l_he = l_he_start;
@@ -247,8 +271,10 @@ void VirtualPathConflictSentinel::check_path_ordering()
 
             if (cyclic_conflict) {
                 // Mark all surrounding edges as "conflicting"
-                for (const auto& l_e : l_v.edges()) {
-                    global_conflicts.insert(l_e);
+                for (const auto l_e_A : l_v.edges()) {
+                    for (const auto l_e_B : l_v.edges()) {
+                        mark_conflicting(l_e_A, l_e_B);
+                    }
                 }
             }
         }

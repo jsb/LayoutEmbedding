@@ -12,9 +12,8 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
+#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/Praun2001.hh>
-//#include <LayoutEmbedding/RefinableMesh.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
@@ -130,10 +129,10 @@ int main(int argc, char** argv)
 
 
     // Run the algorithm in "Consistent Mesh Parameterizations" (Praun et al. 2001) to find embeddings for the layout edges
-    Praun2001Settings settings;
-    settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
+    GreedySettings settings;
+    settings.insertion_order = GreedySettings::InsertionOrder::BestFirst;
     settings.use_swirl_detection = true;
-    praun2001(em, settings);
+    embed_greedy(em, settings);
 
     // Visualize the result
     view_embedding(em);

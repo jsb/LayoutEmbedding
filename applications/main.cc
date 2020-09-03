@@ -12,10 +12,11 @@
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
+#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/Praun2001.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 
 #include <algorithm>
 #include <fstream>
@@ -42,9 +43,7 @@ void run_test_case(const TestCase& tc)
 {
     const std::vector<std::string> algorithms = {
         "greedy",
-        "greedy_with_swirl_detection",
         "bnb",
-        "bnb_with_hashing",
     };
 
     const std::string stats_filename = "stats_" + tc.name + ".csv";
@@ -84,26 +83,10 @@ void run_test_case(const TestCase& tc)
         glow::timing::CpuTimer timer;
 
         if (algorithm == "bnb") {
-            BranchAndBoundSettings settings;
-            settings.use_hashing = false;
-            branch_and_bound(em, settings);
-        }
-        else if (algorithm == "bnb_with_hashing") {
-            BranchAndBoundSettings settings;
-            settings.use_hashing = true;
-            branch_and_bound(em, settings);
+            branch_and_bound(em);
         }
         else if (algorithm == "greedy") {
-            Praun2001Settings settings;
-            settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
-            settings.use_swirl_detection = false;
-            praun2001(em, settings);
-        }
-        else if (algorithm == "greedy_with_swirl_detection") {
-            Praun2001Settings settings;
-            settings.insertion_order = Praun2001Settings::InsertionOrder::BestFirst;
-            settings.use_swirl_detection = true;
-            praun2001(em, settings);
+            embed_greedy(em);
         }
         else {
             LE_ASSERT(false);
@@ -156,6 +139,8 @@ void run_test_case(const TestCase& tc)
 
 int main()
 {
+    register_segfault_handler();
+
     glow::glfw::GlfwContext ctx;
     const std::string data_path = LE_DATA_PATH;
 

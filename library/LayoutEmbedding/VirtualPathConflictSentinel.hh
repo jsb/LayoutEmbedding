@@ -16,10 +16,15 @@ struct VirtualPathConflictSentinel
     using Label = pm::edge_index;
     using LabelSet = std::set<Label>;
 
-    pm::vertex_attribute<Label> v_label;
-    pm::edge_attribute<Label> e_label;
-    pm::face_attribute<Label> f_label;
-    LabelSet global_conflicts;
+    using Conflict = std::pair<Label, Label>;
+    using ConflictSet = std::set<Conflict>;
+
+    pm::vertex_attribute<LabelSet> v_label;
+    pm::edge_attribute<LabelSet> e_label;
+    pm::face_attribute<LabelSet> f_label;
+
+    ConflictSet global_conflict_relation; // The pairs of labels which are conflicting
+    LabelSet global_conflicts; // The set of all labels that participate in a conflict
 
     pm::halfedge_attribute<VirtualPort> l_port;
     VirtualVertexAttribute<LabelSet> t_port; // TODO: This seems wasteful. Is there a better way to store this info?
@@ -32,6 +37,8 @@ struct VirtualPathConflictSentinel
     void insert_virtual_vertex(const VirtualVertex& _vv, const Label& _l);
     void insert_segment(const VirtualVertex& _vv0, const VirtualVertex& _vv1, const Label& _l);
     void insert_path(const VirtualPath& _path, const Label& _l);
+
+    void mark_conflicting(const Label& _a, const Label& _b);
 
     void check_path_ordering();
 };

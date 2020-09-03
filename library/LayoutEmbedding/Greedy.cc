@@ -1,12 +1,11 @@
-#include "Praun2001.hh"
+#include "Greedy.hh"
 
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/IGLMesh.hh>
 #include <LayoutEmbedding/UnionFind.hh>
 #include <LayoutEmbedding/VirtualPort.hh>
 
-#include <igl/harmonic.h>
-#include <Eigen/Dense>
+#include <algorithm>
 #include <set>
 #include <queue>
 
@@ -163,38 +162,51 @@ bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l
     }
 }
 
-Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
+GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings)
 {
-    Praun2001Result result;
+    GreedyResult result;
 
     const pm::Mesh& l_m = _em.layout_mesh();
-    const pm::Mesh& t_m = _em.target_mesh();
-    const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
 
-    const int l_num_v = l_m.vertices().size();
+    auto l_extremal_vertex = l_m.vertices().make_attribute<bool>(false);
+    if (_settings.prefer_extremal_vertices) {
+        // Compute for each vertex the average geodesic distance to its neighbors
+        auto l_avg_neighbor_distance = l_m.vertices().make_attribute<double>();
+        for (const auto l_v : l_m.vertices()) {
+            double total_distance = 0.0;
+            int valence = 0;
+            for (const auto l_he : l_v.outgoing_halfedges()) {
+                const auto path = _em.find_shortest_path(l_he);
+                total_distance += _em.path_length(path);
+                ++valence;
+            }
+            l_avg_neighbor_distance[l_v] = total_distance / valence;
+        }
 
-    IGLMesh t_igl = to_igl_mesh(t_pos);
-    Eigen::VectorXi b(l_num_v); // Boundary indices into t_igl.V
-    {
-        int b_row = 0;
-        for (const auto& l_v : l_m.vertices()) {
-            b[b_row] = _em.matching_target_vertex(l_v).idx.value;
-            ++b_row;
+        std::vector<pm::vertex_handle> extremal_vertices = l_m.vertices().to_vector();
+        std::sort(extremal_vertices.begin(), extremal_vertices.end(), [&](const auto& a, const auto& b){
+            return l_avg_neighbor_distance[a] > l_avg_neighbor_distance[b];
+        });
+        double cutoff = l_avg_neighbor_distance[extremal_vertices[extremal_vertices.size() * _settings.extremal_vertex_ratio]];
+        int num_extremal_vertices = 0;
+        for (const auto& l_v : extremal_vertices) {
+            if (l_avg_neighbor_distance[l_v] > cutoff) {
+                l_extremal_vertex[l_v] = true;
+                ++num_extremal_vertices;
+            }
         }
     }
-    Eigen::MatrixXd bc(l_num_v, l_num_v);
-    bc.setIdentity();
 
-    Eigen::MatrixXd W; // Output
-    igl::harmonic(t_igl.V, t_igl.F, b, bc, 1, W);
-
-    // Normalize rows of W
-    for (int i = 0; i < W.rows(); ++i) {
-        W.row(i) /= W.row(i).sum();
-    }
+    auto incident_to_extremal_vertex = [&] (const pm::edge_handle& _l_e) {
+        if (_l_e.is_valid()) {
+            return l_extremal_vertex[_l_e.vertexA()] && l_extremal_vertex[_l_e.vertexB()];
+        }
+        else {
+            return false;
+        }
+    };
 
     // If edges fail the "Swirl Test", their score will receive a penalty so they are processed later.
-    const double penalty_factor = 2.0; // This is a guess. The exact value is never mentioned in [Praun2001].
     pm::edge_attribute<bool> l_penalty(l_m);
 
     pm::edge_attribute<bool> l_is_embedded(l_m);
@@ -205,16 +217,18 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
     UnionFind l_v_components(l_m.vertices().size());
 
     while (l_num_embedded_edges < l_num_edges) {
-        std::cout << "Embedding edge " << (l_num_embedded_edges + 1) << " / " << l_num_edges << std::endl;
-
         VirtualPath best_path;
         double best_path_cost = std::numeric_limits<double>::infinity();
         pm::edge_handle best_l_e = pm::edge_handle::invalid;
 
         const bool is_spanning_tree = (l_num_embedded_edges >= l_num_vertices - 1);
 
-        for (const auto& l_e : l_m.edges()) {
+        for (const auto l_e : l_m.edges()) {
             if (l_is_embedded[l_e]) {
+                continue;
+            }
+
+            if (incident_to_extremal_vertex(best_l_e) && !incident_to_extremal_vertex(l_e)) {
                 continue;
             }
 
@@ -227,11 +241,16 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
                 }
             }
 
-            VirtualPath path = _em.find_shortest_path(l_e.halfedgeA());
+            auto metric = Embedding::ShortestPathMetric::Geodesic;
+            if (_settings.use_vertex_repulsive_tracing) {
+                metric = Embedding::ShortestPathMetric::VertexRepulsive;
+            }
+
+            VirtualPath path = _em.find_shortest_path(l_e.halfedgeA(), metric);
             double path_cost = _em.path_length(path);
 
             // If we use an arbitrary insertion order, we can early-out after the first path is found
-            if (_settings.insertion_order == Praun2001Settings::InsertionOrder::Arbitrary) {
+            if (_settings.insertion_order == GreedySettings::InsertionOrder::Arbitrary) {
                 best_path_cost = path_cost;
                 best_path = std::move(path);
                 best_l_e = l_e;
@@ -242,19 +261,19 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
                 // Only do the swirl test if the current path is already a contender.
                 if (path_cost < best_path_cost) {
                     if (swirl_detection_bidirectional(_em, l_e.halfedgeA(), path)) {
-                        path_cost *= penalty_factor;
+                        path_cost *= _settings.swirl_penalty_factor;
                     }
                 }
             }
 
-            if (path_cost < best_path_cost) {
+            const int extremal_priority = 1 - incident_to_extremal_vertex(l_e);
+            const int best_extremal_priority = 1 - incident_to_extremal_vertex(best_l_e);
+            if (std::tie(extremal_priority, path_cost) < std::tie(best_extremal_priority, best_path_cost)) {
                 best_path_cost = path_cost;
                 best_path = std::move(path);
                 best_l_e = l_e;
             }
         }
-
-        std::cout << "Best path cost: " << best_path_cost << std::endl;
 
         result.insertion_sequence.push_back(best_l_e);
         _em.embed_path(best_l_e.halfedgeA(), best_path);
@@ -263,6 +282,60 @@ Praun2001Result praun2001(Embedding& _em, const Praun2001Settings& _settings)
         ++l_num_embedded_edges;
     }
     return result;
+}
+
+GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings)
+{
+    std::vector<GreedySettings> all_settings;
+    for (bool use_swirl_detection : { false, true }) {
+        for (bool use_vertex_repulsive_tracing : { false, true }) {
+            for (bool prefer_extremal_vertices : { false, true }) {
+                GreedySettings settings = _settings;
+                settings.use_swirl_detection = use_swirl_detection;
+                settings.use_vertex_repulsive_tracing = use_vertex_repulsive_tracing;
+                settings.prefer_extremal_vertices = prefer_extremal_vertices;
+                all_settings.push_back(settings);
+            }
+        }
+    }
+
+    std::vector<double> all_costs(all_settings.size(), std::numeric_limits<double>::infinity());
+    std::vector<GreedyResult> all_results(all_settings.size());
+
+    //#pragma omp parallel for
+    for (std::size_t i = 0; i < all_settings.size(); ++i) {
+        const auto& settings = all_settings[i];
+
+        Embedding em(_em);
+        GreedyResult result = embed_greedy(em, settings);
+        const double cost = em.total_embedded_path_length();
+        std::cout << "Embedding cost: " << cost << std::endl;
+
+        all_costs[i] = cost;
+        all_results[i] = result;
+    }
+
+    double best_cost = std::numeric_limits<double>::infinity();
+    GreedySettings best_settings = _settings;
+    GreedyResult best_result;
+    for (std::size_t i = 0; i < all_settings.size(); ++i) {
+        if (all_costs[i] < best_cost) {
+            best_cost = all_costs[i];
+            best_settings = all_settings[i];
+            best_result = all_results[i];
+        }
+    }
+
+    std::cout << "Best settings:" << std::endl;
+    std::cout << std::boolalpha;
+    std::cout << "    use_swirl_detection: " << best_settings.use_swirl_detection << std::endl;
+    std::cout << "    use_vertex_repulsive_tracing: " << best_settings.use_vertex_repulsive_tracing << std::endl;
+    std::cout << "    prefer_extremal_vertices: " << best_settings.prefer_extremal_vertices << std::endl;
+    std::cout << "Best cost: " << best_cost << std::endl;
+
+    // TODO: Don't do this redundant computation.
+    embed_greedy(_em, best_settings);
+    return best_result;
 }
 
 }
