@@ -302,7 +302,7 @@ GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _set
     std::vector<double> all_costs(all_settings.size(), std::numeric_limits<double>::infinity());
     std::vector<GreedyResult> all_results(all_settings.size());
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (std::size_t i = 0; i < all_settings.size(); ++i) {
         const auto& settings = all_settings[i];
 
