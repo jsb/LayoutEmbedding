@@ -139,6 +139,8 @@ void run_test_case(const TestCase& tc)
 
 int main()
 {
+    register_segfault_handler();
+
     glow::glfw::GlfwContext ctx;
     const std::string data_path = LE_DATA_PATH;
 

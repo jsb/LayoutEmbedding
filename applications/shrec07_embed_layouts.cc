@@ -153,6 +153,8 @@ int main()
 {
     namespace fs = std::filesystem;
 
+    register_segfault_handler();
+
     glow::glfw::GlfwContext ctx;
 
     LE_ASSERT(fs::exists(shrec_dir));

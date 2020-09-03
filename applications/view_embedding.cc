@@ -3,11 +3,13 @@
 
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
+#include <LayoutEmbedding/StackTrace.hh>
 
 using namespace LayoutEmbedding;
 
 int main(int argc, char** argv)
 {
+    register_segfault_handler();
     glow::glfw::GlfwContext ctx;
 
     EmbeddingInput input;

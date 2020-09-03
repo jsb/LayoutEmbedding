@@ -22,6 +22,8 @@ int main()
 {
     namespace fs = std::filesystem;
 
+    register_segfault_handler();
+
     const fs::path data_path = LE_DATA_PATH;
     const fs::path output_dir = LE_OUTPUT_PATH;
     const fs::path sphere_stress_test_output_dir = output_dir / "sphere_stress_test";
@@ -32,6 +34,7 @@ int main()
 
     fs::create_directories(sphere_stress_test_output_dir);
     const fs::path stats_path = sphere_stress_test_output_dir / "stats.csv";
+    if (!fs::exists(stats_path))
     {
         std::ofstream f(stats_path);
         f << "seed,algorithm,runtime,score" << std::endl;

@@ -6,6 +6,7 @@
 #if defined(__GLIBCXX__) || defined(__GLIBCPP__)
 // GCC: Implement demangling using cxxabi
 #include <cxxabi.h>
+namespace LayoutEmbedding {
 std::string demangle(const std::string& _symbol)
 {
     int status;
@@ -24,18 +25,22 @@ std::string demangle(const std::string& _symbol)
         return _symbol;
     }
 }
+}
 #else
 // Other compiler environment: no demangling
+namespace LayoutEmbedding {
 std::string demangle(const std::string& _symbol)
 {
     return _symbol;
+}
 }
 #endif
 
 #ifdef __unix__
 #include <execinfo.h>
 #include <regex>
-void stack_trace()
+namespace LayoutEmbedding {
+void print_stack_trace()
 {
     void *addresses[20];
     char **strings;
@@ -65,20 +70,30 @@ void stack_trace()
     }
     free(strings);
 }
+}
 #else
-void stack_trace()
+namespace LayoutEmbedding {
+void print_stack_trace()
 {
+}
 }
 #endif
 
 namespace LayoutEmbedding {
 
+[[noreturn]]
 void handle_segfault(int)
 {
     // Prevent infinite recursion
     std::signal(SIGSEGV, SIG_DFL);
-    stack_trace();
+    print_stack_trace();
     std::abort();
+}
+
+void register_segfault_handler()
+{
+    std::signal(SIGSEGV, handle_segfault);
+    std::cout << "Registered handler for SIGSEGV: handle_segfault" << std::endl;
 }
 
 }

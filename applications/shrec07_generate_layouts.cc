@@ -36,6 +36,8 @@ int main()
 {
     namespace fs = std::filesystem;
 
+    register_segfault_handler();
+
     LE_ASSERT(fs::exists(shrec_dir));
     LE_ASSERT(fs::exists(shrec_corrs_dir));
     LE_ASSERT(fs::exists(shrec_meshes_dir));
