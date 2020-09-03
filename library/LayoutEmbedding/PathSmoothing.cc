@@ -3,6 +3,7 @@
 #include <LayoutEmbedding/Snake.hh>
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/IGLMesh.hh>
+#include <glow-extras/timing/CpuTimer.hh>
 #include <igl/intrinsic_delaunay_cotmatrix.h>
 #include <igl/harmonic.h>
 #include <queue>
@@ -233,6 +234,8 @@ Embedding smooth_paths(
         const Embedding& _em_orig,
         const int _n_iters)
 {
+    glow::timing::CpuTimer timer;
+
     Embedding em = _em_orig; // copy
 
     for (int iter = 0; iter < _n_iters; ++iter)
@@ -240,6 +243,9 @@ Embedding smooth_paths(
         for (auto l_e : em.layout_mesh().edges())
             smooth_path(em, l_e.halfedgeA());
     }
+
+    std::cout << "Smoothing paths (" << _n_iters << " iterations ) took "
+              << timer.elapsedSecondsD() << "s" << std::endl;
 
     return em;
 }
