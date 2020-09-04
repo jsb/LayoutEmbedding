@@ -74,7 +74,10 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     // TODO: Use glow-extras timer instead?
     const auto start_time = std::chrono::steady_clock::now();
 
+    int iter = 0;
     while (!q.empty()) {
+        ++iter;
+
         // Time limit
         const auto current_time = std::chrono::steady_clock::now();
         const auto interval = current_time - start_time;
@@ -169,6 +172,44 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         std::cout << "    ";
         std::cout << "|CC|: " << es.count_connected_components();
         std::cout << std::endl;
+
+        if (iter % 50 == 0) {
+            // Memory estimate
+            double estimated_memory;
+
+            // TODO: Estimate memory of queue
+
+            // Estimate memory of state tree
+            for (const auto& [hash, state] : known_states) {
+                estimated_memory += sizeof(state); // "stack" size of state
+                for (const auto& item : state.path) {
+                    estimated_memory += sizeof(item);
+                }
+                for (const auto& path : state.candidate_paths) {
+                    for (const auto& item : path) {
+                        estimated_memory += sizeof(item);
+                    }
+                }
+                for (const auto& pair : state.candidate_conflicts) {
+                    estimated_memory += sizeof(pair);
+                }
+            }
+
+            std::cout << "State tree memory estimate: ";
+            if (estimated_memory > 1000000000.0) {
+                std::cout << (estimated_memory / 1000000000.0) << " GB";
+            }
+            else if (estimated_memory > 1000000.0) {
+                std::cout << (estimated_memory / 1000000.0) << " MB";
+            }
+            else if (estimated_memory > 1000.0) {
+                std::cout << (estimated_memory / 1000.0) << " kB";
+            }
+            else {
+                std::cout << (estimated_memory) << " B";
+            }
+            std::cout << std::endl;
+        }
 
         if (es.cost_lower_bound() < global_upper_bound) {
             // Completed layout?
