@@ -39,7 +39,7 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
             if (i > 0 && i < _path.size() - 1) {
                 const auto& el_prev = _path[i - 1];
                 const auto& el_next = _path[i + 1];
-                const auto& v = real_vertex(vv);
+                const auto& v = real_vertex(vv, t_m);
 
                 VirtualPort vh_start{v, el_prev};
                 VirtualPort vh_end{v, el_next};
@@ -66,7 +66,7 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
             LE_ASSERT(i > 0);
             LE_ASSERT(i < _path.size() - 1);
 
-            const auto& e = real_edge(vv);
+            const auto& e = real_edge(vv, t_m);
             auto he = pm::halfedge_handle::invalid;
 
             const auto& vv_next = _path[i + 1];
@@ -80,7 +80,7 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
                 }
             }
             else if (is_real_edge(vv_next)) {
-                const auto& e_next = real_edge(vv_next);
+                const auto& e_next = real_edge(vv_next, t_m);
 
                 if ((e.halfedgeA().face() == e_next.halfedgeA().face()) || (e.halfedgeA().face() == e_next.halfedgeB().face())) {
                     he = e.halfedgeA();

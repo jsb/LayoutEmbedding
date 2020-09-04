@@ -144,14 +144,11 @@ bool Embedding::is_blocked(const pm::vertex_handle& _t_v) const
 
 bool Embedding::is_blocked(const VirtualVertex& _t_vv) const
 {
-    if (const auto* v = std::get_if<pm::vertex_handle>(&_t_vv)) {
-        return is_blocked(*v);
-    }
-    else if (const auto* e = std::get_if<pm::edge_handle>(&_t_vv)) {
-        return is_blocked(*e);
+    if (is_real_vertex(_t_vv)) {
+        return is_blocked(real_vertex(_t_vv, target_mesh()));
     }
     else {
-        LE_ASSERT(false);
+        return is_blocked(real_edge(_t_vv, target_mesh()));
     }
 }
 
@@ -253,14 +250,11 @@ tg::pos3 Embedding::element_pos(const pm::vertex_handle& _t_v) const
 
 tg::pos3 Embedding::element_pos(const VirtualVertex& _t_vv) const
 {
-    if (const auto* v = std::get_if<pm::vertex_handle>(&_t_vv)) {
-        return element_pos(*v);
-    }
-    else if (const auto* e = std::get_if<pm::edge_handle>(&_t_vv)) {
-        return element_pos(*e);
+    if (is_real_vertex(_t_vv)) {
+        return element_pos(real_vertex(_t_vv, target_mesh()));
     }
     else {
-        LE_ASSERT(false);
+        return element_pos(real_edge(_t_vv, target_mesh()));
     }
 }
 
@@ -426,7 +420,7 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
 
         // Expand vertex neighborhood
         if (is_real_vertex(vv)) {
-            const auto& t_v = real_vertex(u.vv);
+            const auto& t_v = real_vertex(u.vv, target_mesh());
 
             if (t_v == t_v_end) {
                 break;
@@ -448,7 +442,7 @@ VirtualPath Embedding::find_shortest_path(const pm::halfedge_handle& _t_h_sector
         }
         // Expand edge midpoint neighborhood
         else if (is_real_edge(vv)) {
-            const auto& t_e = real_edge(vv);
+            const auto& t_e = real_edge(vv, target_mesh());
 
             const auto& t_he = t_e.halfedgeA();
             const auto& t_he_opp = t_e.halfedgeB();
@@ -532,7 +526,7 @@ void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& 
     std::vector<pm::vertex_handle> vertex_path;
     for (const auto& vv : _path) {
         if (is_real_edge(vv)) {
-            const auto& t_e = real_edge(vv);
+            const auto& t_e = real_edge(vv, target_mesh());
             const auto& t_vA = t_e.vertexA();
             const auto& t_vB = t_e.vertexB();
 
@@ -551,7 +545,7 @@ void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& 
             vertex_path.push_back(t_v_new);
         }
         else {
-            vertex_path.push_back(std::get<pm::vertex_handle>(vv));
+            vertex_path.push_back(real_vertex(vv, target_mesh()));
         }
     }
 
@@ -789,12 +783,12 @@ double Embedding::get_vertex_repulsive_energy(const VirtualVertex& _t_vv, const 
 
     if (is_real_vertex(_t_vv)) {
         // Real vertex, just return the value there
-        return get_vertex_repulsive_energy(real_vertex(_t_vv), _l_v);
+        return get_vertex_repulsive_energy(real_vertex(_t_vv, target_mesh()), _l_v);
     }
     else {
         // Vertex on an edge, return the average value at the endpoints
-        const auto& t_v_A = real_edge(_t_vv).vertexA();
-        const auto& t_v_B = real_edge(_t_vv).vertexB();
+        const auto& t_v_A = real_edge(_t_vv, target_mesh()).vertexA();
+        const auto& t_v_B = real_edge(_t_vv, target_mesh()).vertexB();
         const double vrf_A = get_vertex_repulsive_energy(t_v_A, _l_v);
         const double vrf_B = get_vertex_repulsive_energy(t_v_B, _l_v);
         return tg::mix(vrf_A, vrf_B, 0.5);

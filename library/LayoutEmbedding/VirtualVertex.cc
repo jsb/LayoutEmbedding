@@ -16,39 +16,34 @@ bool is_valid(const VirtualVertex& _vv)
 
 bool is_real_vertex(const VirtualVertex& _el)
 {
-    return std::holds_alternative<pm::vertex_handle>(_el);
+    return std::holds_alternative<pm::vertex_index>(_el);
 }
 
 bool is_real_edge(const VirtualVertex& _el)
 {
-    return std::holds_alternative<pm::edge_handle>(_el);
+    return std::holds_alternative<pm::edge_index>(_el);
 }
 
-polymesh::vertex_handle real_vertex(const VirtualVertex& _el)
+pm::vertex_index real_vertex(const VirtualVertex& _el)
 {
     LE_ASSERT(is_real_vertex(_el));
-    return std::get<pm::vertex_handle>(_el);
+    return std::get<pm::vertex_index>(_el);
 }
 
-polymesh::edge_handle real_edge(const VirtualVertex& _el)
+pm::edge_index real_edge(const VirtualVertex& _el)
 {
     LE_ASSERT(is_real_edge(_el));
-    return std::get<pm::edge_handle>(_el);
+    return std::get<pm::edge_index>(_el);
 }
 
-void set_mesh(VirtualVertex& _vv, const pm::Mesh& _m)
+pm::vertex_handle real_vertex(const VirtualVertex& _el, const pm::Mesh& _on_mesh)
 {
-    _vv = on_mesh(_vv, _m);
+    return _on_mesh[real_vertex(_el)];
 }
 
-VirtualVertex on_mesh(const VirtualVertex& _vv, const pm::Mesh& _m)
+pm::edge_handle real_edge(const VirtualVertex& _el, const pm::Mesh& _on_mesh)
 {
-    if (is_real_vertex(_vv)) {
-        return VirtualVertex(_m[real_vertex(_vv).idx]);
-    }
-    else {
-        return VirtualVertex(_m[real_edge(_vv).idx]);
-    }
+    return _on_mesh[real_edge(_el)];
 }
 
 }

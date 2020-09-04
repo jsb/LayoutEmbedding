@@ -118,7 +118,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         LE_ASSERT(insertion_sequence.size() == inserted_paths.size());
         for (size_t i = 0; i < insertion_sequence.size(); ++i) {
             const pm::edge_index& l_e = insertion_sequence[i];
-            const VirtualPath path = on_mesh(*inserted_paths[i], es.em.target_mesh());
+            const VirtualPath& path = *inserted_paths[i];
             es.extend(l_e, path);
         }
 
@@ -128,7 +128,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         const auto& state = known_states[c.state];
         es.candidate_paths.clear();
         for (const auto l_e : es.em.layout_mesh().edges()) {
-            es.candidate_paths[l_e] = on_mesh(state.candidate_paths[l_e.idx.value], es.em.target_mesh());
+            es.candidate_paths[l_e] = state.candidate_paths[l_e.idx.value];
         }
 
         // Reconstruct candidate conflicts
@@ -181,12 +181,9 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                 // Add children to the queue
                 for (const auto& l_e : es_conflicting_edges) {
                     EmbeddingState new_es(es); // Copy
-                    for (const auto l_e : new_es.em.layout_mesh().edges()) {
-                        set_mesh(new_es.candidate_paths[l_e], new_es.em.target_mesh());
-                    }
 
                     // Update new state by adding the new child halfedge
-                    new_es.extend(l_e, on_mesh(es.candidate_paths[l_e], new_es.em.target_mesh()));
+                    new_es.extend(l_e, es.candidate_paths[l_e]);
 
                     // Early-out if the resulting state is already known
                     const HashValue new_es_hash = new_es.hash();
@@ -214,7 +211,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
                     new_state.parent = c.state;
                     new_state.l_e = l_e;
                     new_state.path = es.candidate_paths[l_e];
-                    set_mesh(new_state.path, new_es.em.target_mesh());
                     new_state.candidate_paths = new_es.candidate_paths.to_vector();
                     new_state.candidate_conflicts = new_es.conflicts;
 

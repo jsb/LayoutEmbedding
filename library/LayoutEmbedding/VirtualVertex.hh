@@ -8,8 +8,8 @@
 namespace LayoutEmbedding {
 
 using VirtualVertex = std::variant<
-    pm::vertex_handle,
-    pm::edge_handle
+    pm::vertex_index,
+    pm::edge_index
 >;
 
 bool is_valid(const VirtualVertex& _vv);
@@ -18,11 +18,11 @@ bool is_real_vertex(const VirtualVertex& _el);
 bool is_real_edge(const VirtualVertex& _el);
 
 // Warning: These will throw when the contained element does not match.
-pm::vertex_handle real_vertex(const VirtualVertex& _el);
-pm::edge_handle real_edge(const VirtualVertex& _el);
+pm::vertex_index real_vertex(const VirtualVertex& _el);
+pm::edge_index real_edge(const VirtualVertex& _el);
 
-// Re-setting the mesh pointer
-void set_mesh(VirtualVertex& _vv, const pm::Mesh& _m);
-VirtualVertex on_mesh(const VirtualVertex& _vv, const pm::Mesh& _m);
+// Convenience overloads that allow providing a mesh to construct the handle on
+pm::vertex_handle real_vertex(const VirtualVertex& _el, const pm::Mesh& _on_mesh);
+pm::edge_handle real_edge(const VirtualVertex& _el, const pm::Mesh& _on_mesh);
 
 }

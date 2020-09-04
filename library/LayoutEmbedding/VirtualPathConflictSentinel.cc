@@ -45,10 +45,10 @@ void VirtualPathConflictSentinel::insert(const pm::face_handle& _f, const Virtua
 void VirtualPathConflictSentinel::insert_virtual_vertex(const VirtualVertex& _vv, const VirtualPathConflictSentinel::Label& _l)
 {
     if (is_real_vertex(_vv)) {
-        insert(real_vertex(_vv), _l);
+        insert(real_vertex(_vv, em.target_mesh()), _l);
     }
     else {
-        insert(real_edge(_vv), _l);
+        insert(real_edge(_vv, em.target_mesh()), _l);
     }
 }
 
@@ -57,10 +57,8 @@ void VirtualPathConflictSentinel::insert_segment(const VirtualVertex& _vv0, cons
     if (is_real_vertex(_vv0)) {
         if (is_real_vertex(_vv1)) {
             // (V,V) case
-            const auto& v0 = real_vertex(_vv0);
-            const auto& v1 = real_vertex(_vv1);
-            LE_ASSERT(v0.mesh == &em.target_mesh());
-            LE_ASSERT(v1.mesh == &em.target_mesh());
+            const auto& v0 = real_vertex(_vv0, em.target_mesh());
+            const auto& v1 = real_vertex(_vv1, em.target_mesh());
 
             const auto& he = pm::halfedge_from_to(v0, v1);
             LE_ASSERT(he.is_valid());
@@ -69,10 +67,8 @@ void VirtualPathConflictSentinel::insert_segment(const VirtualVertex& _vv0, cons
         }
         else {
             // (V,E) case
-            const auto& v = real_vertex(_vv0);
-            const auto& e = real_edge(_vv1);
-            LE_ASSERT(v.mesh == &em.target_mesh());
-            LE_ASSERT(e.mesh == &em.target_mesh());
+            const auto& v = real_vertex(_vv0, em.target_mesh());
+            const auto& e = real_edge(_vv1, em.target_mesh());
 
             const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
             LE_ASSERT(f.is_valid());
@@ -82,10 +78,8 @@ void VirtualPathConflictSentinel::insert_segment(const VirtualVertex& _vv0, cons
     else {
         if (is_real_vertex(_vv1)) {
             // (E,V) case
-            const auto& e = real_edge(_vv0);
-            const auto& v = real_vertex(_vv1);
-            LE_ASSERT(e.mesh == &em.target_mesh());
-            LE_ASSERT(v.mesh == &em.target_mesh());
+            const auto& e = real_edge(_vv0, em.target_mesh());
+            const auto& v = real_vertex(_vv1, em.target_mesh());
 
             const auto& f = triangle_with_edge_and_opposite_vertex(e, v);
             LE_ASSERT(f.is_valid());
@@ -93,10 +87,8 @@ void VirtualPathConflictSentinel::insert_segment(const VirtualVertex& _vv0, cons
         }
         else {
             // (E,E) case
-            const auto& e0 = real_edge(_vv0);
-            const auto& e1 = real_edge(_vv1);
-            LE_ASSERT(e0.mesh == &em.target_mesh());
-            LE_ASSERT(e1.mesh == &em.target_mesh());
+            const auto& e0 = real_edge(_vv0, em.target_mesh());
+            const auto& e1 = real_edge(_vv1, em.target_mesh());
 
             const auto& f = common_face(e0, e1);
             LE_ASSERT(f.is_valid());
@@ -129,8 +121,8 @@ void VirtualPathConflictSentinel::insert_path(const VirtualPath& _path, const Vi
     LE_ASSERT(em.matching_target_vertex(l_e.halfedgeA().vertex_from()) == real_vertex(_path.front()));
     LE_ASSERT(em.matching_target_vertex(l_e.halfedgeA().vertex_to()) == real_vertex(_path.back()));
 
-    const VirtualPort port_A(real_vertex(_path[0]), _path[1]);
-    const VirtualPort port_B(real_vertex(_path[_path.size()-1]), _path[_path.size()-2]);
+    const VirtualPort port_A(real_vertex(_path[0], em.target_mesh()), _path[1]);
+    const VirtualPort port_B(real_vertex(_path[_path.size()-1], em.target_mesh()), _path[_path.size()-2]);
     // Links from layout to target
     l_port[l_e.halfedgeA()] = port_A;
     l_port[l_e.halfedgeB()] = port_B;
@@ -184,7 +176,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
                 if (is_real_vertex(p.to)) {
                     const auto& t_v = em.matching_target_vertex(l_v);
                     LE_ASSERT(t_v.is_valid());
-                    const auto& t_v_to = real_vertex(p.to);
+                    const auto& t_v_to = real_vertex(p.to, em.target_mesh());
                     LE_ASSERT(t_v_to.is_valid());
                     const auto& t_he = pm::halfedge_from_to(t_v, t_v_to);
                     LE_ASSERT(t_he.is_valid());
@@ -244,7 +236,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
             auto port = start_port;
             do {
                 if (is_real_vertex(port.to)) {
-                    const auto& t_he = pm::halfedge_from_to(t_v, real_vertex(port.to));
+                    const auto& t_he = pm::halfedge_from_to(t_v, real_vertex(port.to, em.target_mesh()));
                     const auto& t_e = t_he.edge();
                     const auto angle = (tg::tau<float> * i) / valence;
                     const auto p0 = tg::pos3{0.0f, 0.0f, 0.0f};
@@ -318,7 +310,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
             while (_start != _end) {
                 _start = _start.rotated_ccw();
                 if (is_real_vertex(_start.to)) {
-                    auto t_he = pm::halfedge_from_to(_start.from, real_vertex(_start.to));
+                    auto t_he = pm::halfedge_from_to(_start.from, real_vertex(_start.to, em.target_mesh()));
                     if (em.is_blocked(t_he.edge())) {
                         // Reached a sector boundary!
                         return false;
@@ -333,7 +325,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
             const auto t_v = _start.from;
 
             if (is_real_vertex(_start.to)) {
-                auto t_he = pm::halfedge_from_to(t_v, real_vertex(_start.to));
+                auto t_he = pm::halfedge_from_to(t_v, real_vertex(_start.to, em.target_mesh()));
 
                 if (em.is_blocked(t_he.edge())) {
                     {
@@ -357,7 +349,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
                 }
             }
             if (is_real_vertex(_end.to)) {
-                auto t_he = pm::halfedge_from_to(t_v, real_vertex(_end.to));
+                auto t_he = pm::halfedge_from_to(t_v, real_vertex(_end.to, em.target_mesh()));
                 LE_ASSERT(!em.is_blocked(t_he.edge()));
             }
 
@@ -369,7 +361,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
             while (_start != _end) {
                 _start = _start.rotated_cw();
                 if (is_real_vertex(_start.to)) {
-                    auto t_he = pm::halfedge_from_to(_start.from, real_vertex(_start.to));
+                    auto t_he = pm::halfedge_from_to(_start.from, real_vertex(_start.to, em.target_mesh()));
                     LE_ASSERT(!em.is_blocked(t_he.edge()));
                 }
                 // Mark all encountered labels as conflicting.

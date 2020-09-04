@@ -28,13 +28,16 @@ bool VirtualPort::operator!=(const VirtualPort& _rhs) const
 
 VirtualPort VirtualPort::rotated_cw() const
 {
+    const auto& m = *from.mesh;
     if (is_real_vertex(to)) {
-        const auto he = pm::halfedge_from_to(from, real_vertex(to));
+        const auto he = pm::halfedge_from_to(from, real_vertex(to, m));
+        LE_ASSERT(he.is_valid());
         const auto e_new = he.opposite().prev().edge();
         return {from, e_new};
     }
     else { // if (is_real_edge(to)) {
-        const auto e = real_edge(to);
+        const auto e = real_edge(to, m);
+        LE_ASSERT(e.is_valid());
         auto he = pm::halfedge_handle::invalid;
         if (e.halfedgeA().next().vertex_to() == from) {
             he = e.halfedgeA();
@@ -50,13 +53,16 @@ VirtualPort VirtualPort::rotated_cw() const
 
 VirtualPort VirtualPort::rotated_ccw() const
 {
+    const auto& m = *from.mesh;
     if (is_real_vertex(to)) {
-        const auto he = pm::halfedge_from_to(from, real_vertex(to));
+        const auto he = pm::halfedge_from_to(from, real_vertex(to, m));
+        LE_ASSERT(he.is_valid());
         const auto e_new = he.next().edge();
         return {from, e_new};
     }
     else { // if (is_real_edge(to)) {
-        const auto e = real_edge(to);
+        const auto e = real_edge(to, m);
+        LE_ASSERT(e.is_valid());
         auto he = pm::halfedge_handle::invalid;
         if (e.halfedgeA().next().vertex_to() == from) {
             he = e.halfedgeA();
