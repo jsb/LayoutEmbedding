@@ -14,6 +14,7 @@
 #include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
+#include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
@@ -84,6 +85,9 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
             f << score << std::endl;
         }
 
+        // Smooth embedding
+        const auto em_smoothed = smooth_paths(em, 1);
+
         // Visualization
         auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
 
@@ -99,6 +103,11 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
                 auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string()));
                 view_target(em);
             }
+            {
+                const fs::path screenshot_path = shrec_results_dir / ("screenshot_" + _name + "_" + algorithm + "_target_smoothed.png");
+                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string()));
+                view_target(em_smoothed);
+            }
         }
         else {
             auto g = gv::grid();
@@ -108,13 +117,22 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
             {
                 view_target(em);
             }
+            {
+                view_target(em_smoothed);
+            }
         }
 
         // Save to file
         fs::path saved_embeddings_dir = shrec_results_dir / "saved_embeddings";
         fs::create_directories(saved_embeddings_dir);
-        fs::path embedding_path = saved_embeddings_dir / (_name + "_" + algorithm);
-        em.save(embedding_path);
+        {
+            fs::path embedding_path = saved_embeddings_dir / (_name + "_" + algorithm);
+            em.save(embedding_path);
+        }
+        {
+            fs::path embedding_path = saved_embeddings_dir / (_name + "_" + algorithm + "_smoothed");
+            em_smoothed.save(embedding_path);
+        }
     }
 }
 
