@@ -83,7 +83,9 @@ void run_test_case(const TestCase& tc)
         glow::timing::CpuTimer timer;
 
         if (algorithm == "bnb") {
-            branch_and_bound(em);
+            BranchAndBoundSettings settings;
+            settings.time_limit = 10 * 60;
+            branch_and_bound(em, settings);
         }
         else if (algorithm == "greedy") {
             embed_greedy(em);
