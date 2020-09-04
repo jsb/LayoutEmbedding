@@ -639,6 +639,39 @@ std::vector<pm::vertex_handle> Embedding::get_embedded_path(const pm::halfedge_h
     return result;
 }
 
+std::vector<pm::face_handle> Embedding::get_patch(const pm::face_handle& _l_f) const
+{
+    // Collect faces inside patch via flood fill
+    std::vector<pm::face_handle> patch;
+    std::queue<pm::halfedge_handle> queue;
+    queue.push(get_embedded_target_halfedge(_l_f.any_halfedge()));
+
+    auto visited = t_m.faces().make_attribute<bool>(false);
+    while (!queue.empty()) {
+        const auto t_h = queue.front();
+        LE_ASSERT(t_h.is_valid());
+        const auto t_f = t_h.face();
+        queue.pop();
+
+        // Already visited?
+        if (visited[t_f])
+            continue;
+        visited[t_f] = true;
+
+        // Add face to patch
+        patch.push_back(t_f);
+
+        // Enqueue neighbors (if not visited and not blocked)
+        for (auto t_h_inside : t_f.halfedges()) {
+            const auto t_h_outside = t_h_inside.opposite();
+            if (!visited[t_h_outside.face()] && !is_blocked(t_h_outside.edge()))
+                queue.push(t_h_outside);
+        }
+    }
+
+    return patch;
+}
+
 double Embedding::embedded_path_length(const pm::halfedge_handle& _l_he) const
 {
     LE_ASSERT(is_embedded(_l_he));

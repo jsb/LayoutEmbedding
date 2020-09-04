@@ -1,9 +1,29 @@
 #include "Visualization.hh"
 
 #include <LayoutEmbedding/Visualization/HaltonColorGenerator.hh>
+#include <LayoutEmbedding/Visualization/RWTHColorGenerator.hh>
 #include <LayoutEmbedding/Snake.hh>
 
 namespace LayoutEmbedding {
+
+namespace
+{
+
+pm::face_attribute<tg::color3> generate_patch_colors(
+        const pm::Mesh& _m)
+{
+    HaltonColorGenerator color_generator(0);
+    pm::face_attribute<tg::color3> colors(_m);
+
+    const float brightness = 0.50;
+
+    for (const auto f : _m.faces())
+        colors[f] = tg::mix(color_generator.generate_next_color(), tg::color3::white, brightness);
+
+    return colors;
+}
+
+}
 
 void view_embedding(const Embedding& _em)
 {
@@ -16,25 +36,28 @@ void view_embedding(const Embedding& _em)
     }
 }
 
-void view_layout(const Embedding& _em)
+void view_layout(const Embedding& _em, const bool patch_colors)
 {
     const pm::Mesh& l_m = _em.layout_mesh();
 
     HaltonColorGenerator color_generator;
     pm::vertex_attribute<tg::color3> l_v_color(l_m);
     pm::edge_attribute<tg::color3> l_e_color(l_m);
-    for (const auto l_v : l_m.vertices()) {
+
+    for (const auto l_v : l_m.vertices())
         l_v_color[l_v] = color_generator.generate_next_color();
-    }
-    for (const auto l_e : l_m.edges()) {
+    for (const auto l_e : l_m.edges())
         l_e_color[l_e] = color_generator.generate_next_color();
-    }
 
     auto v = gv::view();
 
     // Mesh
     auto l_pos = make_layout_mesh_positions(_em);
-    view_layout_mesh(_em);
+
+    if (patch_colors)
+        view_layout_mesh(_em, generate_patch_colors(_em.layout_mesh()));
+    else
+        view_layout(_em);
 
     // Embedded layout edges
     for (const auto l_e : l_m.edges()) {
@@ -49,7 +72,7 @@ void view_layout(const Embedding& _em)
     }
 }
 
-void view_target(const Embedding& _em)
+void view_target(const Embedding& _em, const bool patch_colors)
 {
     const pm::Mesh& l_m = _em.layout_mesh();
     const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
@@ -67,7 +90,19 @@ void view_target(const Embedding& _em)
     auto v = gv::view();
 
     // Mesh
-    view_target_mesh(_em);
+    if (patch_colors) {
+        const auto l_f_colors = generate_patch_colors(_em.layout_mesh());
+        auto t_f_colors = _em.target_mesh().faces().make_attribute<tg::color3>();
+        for (auto l_f : _em.layout_mesh().faces()) {
+            for (auto t_f : _em.get_patch(l_f)) {
+                t_f_colors[t_f] = l_f_colors[l_f];
+            }
+        }
+        view_target_mesh(_em, t_f_colors);
+    }
+    else {
+        view_target_mesh(_em);
+    }
 
     // Embedded layout edges
     for (const auto l_e : l_m.edges()) {
@@ -86,9 +121,14 @@ void view_target(const Embedding& _em)
 
 void view_layout_mesh(const Embedding& _em)
 {
-    // Mesh
+    auto l_f_color = _em.layout_mesh().faces().make_attribute(tg::color3::white);
+    view_layout_mesh(_em, l_f_color);
+}
+
+void view_layout_mesh(const Embedding& _em, const pm::face_attribute<tg::color3>& _l_f_color)
+{
     auto l_pos = make_layout_mesh_positions(_em);
-    gv::view(l_pos);
+    gv::view(l_pos, _l_f_color);
 
     // Wireframe
     //gv::view(gv::lines(l_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
@@ -96,9 +136,15 @@ void view_layout_mesh(const Embedding& _em)
 
 void view_target_mesh(const Embedding& _em)
 {
+    auto t_f_color = _em.target_mesh().faces().make_attribute(tg::color3::white);
+    view_target_mesh(_em, t_f_color);
+}
+
+void view_target_mesh(const Embedding& _em, const pm::face_attribute<tg::color3>& _t_f_color)
+{
     // Mesh
     auto t_pos = _em.target_pos();
-    gv::view(t_pos);
+    gv::view(t_pos, _t_f_color);
 
     // Wireframe
     //gv::view(gv::lines(t_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
@@ -118,7 +164,7 @@ pm::vertex_attribute<tg::pos3> make_layout_mesh_positions(const Embedding& _em)
 
 void view_path(const Embedding& _em, const std::vector<pm::vertex_handle>& _path, const tg::color3& _color)
 {
-    const float arc_width = 2.0f; // TODO: parameter?
+    const float arc_width = 2.5f; // TODO: parameter?
     const auto& t_pos = _em.target_pos();
     std::vector<tg::segment3> path_segments;
     for (int i = 0; i < _path.size() - 1; ++i) {
@@ -131,7 +177,7 @@ void view_path(const Embedding& _em, const std::vector<pm::vertex_handle>& _path
 
 void view_path(const Embedding& _em, const VirtualPath& _path, const tg::color3& _color)
 {
-    const float arc_width = 2.0f; // TODO: parameter?
+    const float arc_width = 2.5f; // TODO: parameter?
     std::vector<tg::segment3> path_segments;
     for (int i = 0; i < _path.size() - 1; ++i) {
         const auto& p_i = _em.element_pos(_path[i]);
@@ -143,7 +189,7 @@ void view_path(const Embedding& _em, const VirtualPath& _path, const tg::color3&
 
 void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _color)
 {
-    const float arc_width = 2.0f; // TODO: parameter?
+    const float arc_width = 2.5f; // TODO: parameter?
     std::vector<tg::segment3> path_segments;
     for (int i = 0; i < _snake.vertices.size() - 1; ++i) {
         const auto& p_i = _snake.vertices[i].point(_em.target_pos());

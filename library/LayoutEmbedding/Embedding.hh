@@ -69,6 +69,7 @@ public:
     void unembed_path(const pm::edge_handle& _l_e);
 
     std::vector<pm::vertex_handle> get_embedded_path(const pm::halfedge_handle& _l_he) const;
+    std::vector<pm::face_handle> get_patch(const pm::face_handle& _l_f) const;
     double embedded_path_length(const pm::halfedge_handle& _l_he) const;
     double embedded_path_length(const pm::edge_handle& _l_e) const;
     double total_embedded_path_length() const;

@@ -30,24 +30,15 @@ void extract_flap_region(
     _v_target_to_region = _em.target_mesh().vertices().make_attribute<pm::vertex_handle>();
     _h_region_to_target = _region.halfedges().make_attribute<pm::halfedge_handle>();
 
-    // Region flood fill
-    std::queue<pm::halfedge_handle> queue;
-    queue.push(_em.get_embedded_target_halfedge(_l_h));
-    queue.push(_em.get_embedded_target_halfedge(_l_h.opposite()));
+    // Get target faces inside flap
+    const auto patch_A = _em.get_patch(_l_h.face());
+    const auto patch_B = _em.get_patch(_l_h.opposite_face());
+    auto flap = patch_A;
+    flap.insert(flap.end(), patch_B.begin(), patch_B.end());
 
-    auto visited = _em.target_mesh().faces().make_attribute<bool>(false);
-    while (!queue.empty())
+    // Create region mesh
+    for (auto t_f : flap)
     {
-        const auto t_h = queue.front();
-        LE_ASSERT(t_h.is_valid());
-        const auto t_f = t_h.face();
-        queue.pop();
-
-        // Already visited?
-        if (visited[t_f])
-            continue;
-        visited[t_f] = true;
-
         // Add vertices to result mesh
         for (auto t_v : t_f.vertices())
         {
@@ -74,14 +65,6 @@ void extract_flap_region(
 
             _h_region_to_target[r_h] = t_h;
             _h_region_to_target[r_h.opposite()] = t_h.opposite();
-        }
-
-        // Enqueue neighbors (if not visited and not blocked)
-        for (auto t_h_inside : t_f.halfedges())
-        {
-            const auto t_h_outside = t_h_inside.opposite();
-            if (!visited[t_h_outside.face()] && !_em.is_blocked(t_h_outside.edge()))
-                queue.push(t_h_outside);
         }
     }
 }
@@ -245,7 +228,9 @@ Embedding smooth_paths(
     }
 
     std::cout << "Smoothing paths (" << _n_iters << " iterations ) took "
-              << timer.elapsedSecondsD() << "s" << std::endl;
+              << timer.elapsedSecondsD() << " s. "
+              << "Resulting mesh as " << em.target_mesh().vertices().size() << " vertices."
+              << std::endl;
 
     return em;
 }
