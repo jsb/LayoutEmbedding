@@ -12,29 +12,10 @@ EmbeddingState::EmbeddingState(const Embedding& _em) :
 {
 }
 
-void EmbeddingState::extend(const pm::edge_index& _l_ei)
-{
-    const auto& l_e = em.layout_mesh().edges()[_l_ei];
-    LE_ASSERT(embedded_l_edges.count(l_e) == 0);
-
-    auto l_he = l_e.halfedgeA();
-    auto path = em.find_shortest_path(l_he);
-    if (path.empty()) {
-        embedded_cost = std::numeric_limits<double>::infinity();
-        valid = false;
-        return;
-    }
-    else {
-        embedded_cost += em.path_length(path);
-        em.embed_path(l_he, path);
-        embedded_l_edges.insert(l_e);
-    }
-}
-
 void EmbeddingState::extend(const pm::edge_index& _l_ei, const VirtualPath& _path)
 {
     const auto& l_e = em.layout_mesh().edges()[_l_ei];
-    LE_ASSERT(embedded_l_edges.count(l_e) == 0);
+    LE_ASSERT(!em.is_embedded(l_e));
 
     LE_ASSERT(_path.size() >= 2);
 
@@ -44,43 +25,31 @@ void EmbeddingState::extend(const pm::edge_index& _l_ei, const VirtualPath& _pat
     LE_ASSERT(real_vertex(_path.front()) == em.matching_target_vertex(l_he.vertex_from()));
     LE_ASSERT(real_vertex(_path.back())  == em.matching_target_vertex(l_he.vertex_to()));
 
-    embedded_cost += em.path_length(_path);
     em.embed_path(l_he, _path);
-    embedded_l_edges.insert(l_e);
 }
 
-void EmbeddingState::extend(const InsertionSequence& _seq)
+void EmbeddingState::compute_candidate_path(const pm::edge_index& _l_ei)
 {
-    for (const auto& l_e : _seq) {
-        extend(l_e);
-        if (!valid) {
-            break;
-        }
-    }
+    const Embedding& c_em = em; // We don't want to modify the embedding in this method.
+    const auto& l_e = c_em.layout_mesh().edges()[_l_ei];
+
+    LE_ASSERT(&candidate_paths.mesh() == &c_em.layout_mesh());
+    LE_ASSERT(!em.is_embedded(l_e));
+
+    auto l_he = l_e.halfedgeA();
+    auto path = c_em.find_shortest_path(l_he);
+
+    candidate_paths[l_e] = path;
 }
 
-void EmbeddingState::compute_candidate_paths()
+void EmbeddingState::compute_all_candidate_paths()
 {
     const Embedding& c_em = em; // We don't want to modify the embedding in this method.
 
-    LE_ASSERT(&candidate_paths.mesh() == &em.layout_mesh());
     candidate_paths.clear();
-    unembedded_cost = 0.0;
-
     for (const auto l_e : c_em.layout_mesh().edges()) {
-        if (!embedded_l_edges.count(l_e)) {
-            auto l_he = l_e.halfedgeA();
-            auto path = c_em.find_shortest_path(l_he);
-
-            candidate_paths[l_e].path = path;
-            if (path.empty()) {
-                candidate_paths[l_e].cost = std::numeric_limits<double>::infinity();
-                valid = false;
-            }
-            else {
-                candidate_paths[l_e].cost = c_em.path_length(path);
-            }
-            unembedded_cost += candidate_paths[l_e].cost;
+        if (!c_em.is_embedded(l_e)) {
+            compute_candidate_path(l_e);
         }
     }
 }
@@ -89,34 +58,74 @@ void EmbeddingState::detect_candidate_path_conflicts()
 {
     const Embedding& c_em = em; // We don't want to modify the embedding in this method.
 
-    conflicting_l_edges.clear();
-    non_conflicting_l_edges.clear();
-
-    if (valid) {
+    if (valid()) {
         VirtualPathConflictSentinel vpcs(c_em);
         for (const auto l_e : c_em.layout_mesh().edges()) {
-            if (!embedded_l_edges.count(l_e)) {
-                const auto& path = candidate_paths[l_e].path;
-                if (!path.empty()) {
-                    vpcs.insert_path(path, l_e);
-                }
+            if (!c_em.is_embedded(l_e)) {
+                const auto& path = candidate_paths[l_e];
+                LE_ASSERT(!path.empty());
+                vpcs.insert_path(path, l_e);
             }
         }
         vpcs.check_path_ordering();
-        conflicting_l_edges = vpcs.global_conflicts;
+        conflicts = vpcs.global_conflict_relation;
     }
 
-    for (const auto l_e : c_em.layout_mesh().edges()) {
-        if (!embedded_l_edges.count(l_e) && !conflicting_l_edges.count(l_e)) {
-            non_conflicting_l_edges.insert(l_e);
+    LE_ASSERT(c_em.layout_mesh().edges().size() == embedded_edges().size() + conflicting_edges().size() + non_conflicting_edges().size());
+}
+
+std::vector<pm::edge_index> EmbeddingState::get_conflicting_candidates(const pm::edge_index& _l_ei)
+{
+    std::vector<pm::edge_index> result;
+    for (const auto& [l_ei_A, l_ei_B] : conflicts) {
+        LE_ASSERT(l_ei_A != l_ei_B);
+        if (_l_ei == l_ei_A) {
+            result.push_back(l_ei_B);
+        }
+        else if (_l_ei == l_ei_B) {
+            result.push_back(l_ei_A);
         }
     }
-    LE_ASSERT(embedded_l_edges.size() + conflicting_l_edges.size() + non_conflicting_l_edges.size() == em.layout_mesh().edges().size());
+    return result;
+}
+
+bool EmbeddingState::valid() const
+{
+    for (const auto l_e : em.layout_mesh().edges()) {
+        if (!em.is_embedded(l_e)) {
+            if (candidate_paths[l_e].empty()) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 double EmbeddingState::cost_lower_bound() const
 {
-    return embedded_cost + unembedded_cost;
+    return embedded_cost() + unembedded_cost();
+}
+
+double EmbeddingState::embedded_cost() const
+{
+    return em.total_embedded_path_length();
+}
+
+double EmbeddingState::unembedded_cost() const
+{
+    double result = 0.0;
+    for (const auto l_e : em.layout_mesh().edges()) {
+        if (!em.is_embedded(l_e)) {
+            const auto& path = candidate_paths[l_e];
+            if (path.empty()) {
+                return std::numeric_limits<double>::infinity();
+            }
+            else {
+                result += em.path_length(path);
+            }
+        }
+    }
+    return result;
 }
 
 HashValue EmbeddingState::hash() const
@@ -149,6 +158,42 @@ int EmbeddingState::count_connected_components() const
         }
     }
     return num_components;
+}
+
+std::set<pm::edge_index> EmbeddingState::embedded_edges() const
+{
+    std::set<pm::edge_index> result;
+    for (const auto l_e : em.layout_mesh().edges()) {
+        if (em.is_embedded(l_e)) {
+            result.insert(l_e);
+        }
+    }
+    return result;
+}
+
+std::set<pm::edge_index> EmbeddingState::conflicting_edges() const
+{
+    std::set<pm::edge_index> result;
+    for (const auto& [l_ei_A, l_ei_B] : conflicts) {
+        LE_ASSERT(l_ei_A != l_ei_B);
+        result.insert(l_ei_A);
+        result.insert(l_ei_B);
+    }
+    return result;
+}
+
+std::set<pm::edge_index> EmbeddingState::non_conflicting_edges() const
+{
+    std::set<pm::edge_index> result;
+    const auto& conf = conflicting_edges();
+    for (const auto l_e : em.layout_mesh().edges()) {
+        if (!em.is_embedded(l_e)) {
+            if (!conf.count(l_e)) {
+                result.insert(l_e);
+            }
+        }
+    }
+    return result;
 }
 
 }

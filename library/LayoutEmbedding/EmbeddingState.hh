@@ -12,39 +12,35 @@ namespace LayoutEmbedding {
 /// - compute candidate paths for further insertions, determine their cost and conflicts among them.
 struct EmbeddingState
 {
-    struct CandidatePath
-    {
-        VirtualPath path;
-        double cost = std::numeric_limits<double>::infinity();
-    };
-
     explicit EmbeddingState(const Embedding& _em);
     explicit EmbeddingState(const EmbeddingState& _es) = default;
 
-    void extend(const pm::edge_index& _l_ei);
     void extend(const pm::edge_index& _l_ei, const VirtualPath& _path);
-    void extend(const InsertionSequence& _seq);
+    void replace(const pm::edge_index& _l_ei, const VirtualPath& _path);
 
-    void compute_candidate_paths();
+    void compute_candidate_path(const pm::edge_index& _l_ei);
+    void compute_all_candidate_paths();
     void detect_candidate_path_conflicts();
 
+    std::vector<pm::edge_index> get_conflicting_candidates(const pm::edge_index& _l_ei);
+
+    bool valid() const;
     double cost_lower_bound() const;
+    double embedded_cost() const;
+    double unembedded_cost() const;
 
     HashValue hash() const;
 
     int count_connected_components() const;
 
     Embedding em;
-    bool valid = true;
 
-    double embedded_cost = 0.0;
-    double unembedded_cost = 0.0;
+    std::set<pm::edge_index> embedded_edges() const;
+    std::set<pm::edge_index> conflicting_edges() const;
+    std::set<pm::edge_index> non_conflicting_edges() const;
 
-    std::set<pm::edge_index> embedded_l_edges;
-    std::set<pm::edge_index> conflicting_l_edges;
-    std::set<pm::edge_index> non_conflicting_l_edges;
-
-    pm::edge_attribute<CandidatePath> candidate_paths;
+    pm::edge_attribute<VirtualPath> candidate_paths;
+    std::set<std::pair<pm::edge_index, pm::edge_index>> conflicts;
 };
 
 }

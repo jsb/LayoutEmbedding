@@ -15,6 +15,8 @@ struct State
     HashValue parent;
     pm::edge_index l_e;
     VirtualPath path;
+    std::vector<VirtualPath> candidate_paths;
+    std::set<std::pair<pm::edge_index, pm::edge_index>> candidate_conflicts;
 };
 
 struct Candidate
@@ -47,8 +49,15 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     //std::set<HashValue> known_state_hashes;
     std::map<HashValue, State> known_states;
     {
+        EmbeddingState es(_em);
+        es.compute_all_candidate_paths();
+        es.detect_candidate_path_conflicts();
+
         State root;
         root.parent = 0;
+        root.candidate_paths = es.candidate_paths.to_vector();
+        root.candidate_conflicts = es.conflicts;
+
         known_states[0] = root;
     }
 
@@ -115,10 +124,17 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         LE_ASSERT(es.hash() == c.state);
 
-        es.compute_candidate_paths();
-        es.detect_candidate_path_conflicts();
+        // Reconstruct candidate paths
+        const auto& state = known_states[c.state];
+        es.candidate_paths.clear();
+        for (const auto l_e : es.em.layout_mesh().edges()) {
+            es.candidate_paths[l_e] = on_mesh(state.candidate_paths[l_e.idx.value], es.em.target_mesh());
+        }
 
-        if (!es.valid) {
+        // Reconstruct candidate conflicts
+        es.conflicts = state.candidate_conflicts;
+
+        if (!es.valid()) {
             // The current embedding might be invalid if paths run into dead ends.
             // We ignore such states.
             continue;
@@ -128,13 +144,18 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             LE_ASSERT(es.cost_lower_bound() == c.lower_bound);
         }
 
+        // Cache classified edges
+        const auto& es_embedded_edges = es.embedded_edges();
+        const auto& es_conflicting_edges = es.conflicting_edges();
+        const auto& es_non_conflicting_edges = es.conflicting_edges();
+
         std::cout << "t: " << elapsed_seconds;
         std::cout << "    ";
-        std::cout << "|Embd|: " << es.embedded_l_edges.size();
+        std::cout << "|Embd|: " << es_embedded_edges.size();
         std::cout << "    ";
-        std::cout << "|Conf|: " << es.conflicting_l_edges.size();
+        std::cout << "|Conf|: " << es_conflicting_edges.size();
         std::cout << "    ";
-        std::cout << "|Ncnf|: " << es.non_conflicting_l_edges.size();
+        std::cout << "|Ncnf|: " << es_non_conflicting_edges.size();
         std::cout << "    ";
         std::cout << "LB: " << es.cost_lower_bound();
         std::cout << "    ";
@@ -151,42 +172,61 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
         if (es.cost_lower_bound() < global_upper_bound) {
             // Completed layout?
-            if (es.conflicting_l_edges.empty()) {
+            if (es_conflicting_edges.empty()) {
                 global_upper_bound = es.cost_lower_bound();
                 best_insertion_sequence = insertion_sequence;
                 std::cout << "New upper bound: " << global_upper_bound << std::endl;
             }
             else {
                 // Add children to the queue
-                for (const auto& l_e : es.conflicting_l_edges) {
+                for (const auto& l_e : es_conflicting_edges) {
                     EmbeddingState new_es(es); // Copy
-                    State new_state;
-                    new_state.parent = c.state;
-                    new_state.l_e = l_e;
-                    new_state.path = es.candidate_paths[l_e].path;
-                    set_mesh(new_state.path, new_es.em.target_mesh());
+                    for (const auto l_e : new_es.em.layout_mesh().edges()) {
+                        set_mesh(new_es.candidate_paths[l_e], new_es.em.target_mesh());
+                    }
 
-                    new_es.extend(l_e, new_state.path);
+                    // Update new state by adding the new child halfedge
+                    new_es.extend(l_e, on_mesh(es.candidate_paths[l_e], new_es.em.target_mesh()));
 
+                    // Early-out if the resulting state is already known
                     const HashValue new_es_hash = new_es.hash();
-                    const auto [it, inserted] = known_states.emplace(new_es_hash, new_state);
-                    if (!inserted) {
-                        //std::cout << "Skipping child state (known hash: " << new_es_hash << ")" << std::endl;
+                    if (known_states.count(new_es_hash)) {
                         continue;
                     }
 
-                    new_es.compute_candidate_paths();
-                    new_es.detect_candidate_path_conflicts();
+                    // Update candidate paths that were in conflict with the newly inserted edge
+                    for (const auto& l_e_conflicting : new_es.get_conflicting_candidates(l_e)) {
+                        new_es.compute_candidate_path(l_e_conflicting);
+                    }
 
+                    // Pruning
                     const double new_lower_bound = new_es.cost_lower_bound();
                     const double new_gap = 1.0 - new_lower_bound / global_upper_bound;
-                    if (new_gap > _settings.optimality_gap) {
-                        Candidate new_c;
-                        new_c.state = new_es_hash;
-                        new_c.lower_bound = new_lower_bound;
-                        new_c.priority = new_c.lower_bound * new_es.conflicting_l_edges.size();
-                        q.push(new_c);
+                    if (new_gap < _settings.optimality_gap) {
+                        continue;
                     }
+
+                    // Recompute all conflicts
+                    new_es.detect_candidate_path_conflicts();
+
+                    // Create a new state
+                    State new_state;
+                    new_state.parent = c.state;
+                    new_state.l_e = l_e;
+                    new_state.path = es.candidate_paths[l_e];
+                    set_mesh(new_state.path, new_es.em.target_mesh());
+                    new_state.candidate_paths = new_es.candidate_paths.to_vector();
+                    new_state.candidate_conflicts = new_es.conflicts;
+
+                    // Save the new state
+                    known_states.emplace(new_es_hash, new_state);
+
+                    // Insert a corresponding element into the queue
+                    Candidate new_c;
+                    new_c.state = new_es_hash;
+                    new_c.lower_bound = new_lower_bound;
+                    new_c.priority = new_c.lower_bound * new_es.conflicting_edges().size();
+                    q.push(new_c);
                 }
             }
         }
@@ -217,7 +257,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         l_e_embedded.insert(l_e);
     }
     // Remaining edges
-    for (const auto& l_e : _em.layout_mesh().edges()) {
+    for (const auto l_e : _em.layout_mesh().edges()) {
         if (!l_e_embedded.count(l_e)) {
             const auto l_he = l_e.halfedgeA();
             const auto path = _em.find_shortest_path(l_he);

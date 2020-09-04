@@ -27,7 +27,6 @@ struct VirtualPathConflictSentinel
     LabelSet global_conflicts; // The set of all labels that participate in a conflict
 
     pm::halfedge_attribute<VirtualPort> l_port;
-    VirtualVertexAttribute<LabelSet> t_port; // TODO: This seems wasteful. Is there a better way to store this info?
 
     explicit VirtualPathConflictSentinel(const Embedding& _em);
 
