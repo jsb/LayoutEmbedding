@@ -76,6 +76,16 @@ VirtualPort VirtualPort::rotated_ccw() const
     }
 }
 
+pm::halfedge_handle VirtualPort::real_halfedge() const
+{
+    LE_ASSERT(is_real_vertex(to));
+    const auto& v_to = real_vertex(to, *from.mesh);
+    LE_ASSERT(v_to.is_valid());
+    const auto& he = pm::halfedge_from_to(from, v_to);
+    LE_ASSERT(he.is_valid());
+    return he;
+}
+
 bool VirtualPort::is_valid() const
 {
     return from.is_valid() && LayoutEmbedding::is_valid(to);

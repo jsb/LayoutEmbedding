@@ -19,6 +19,9 @@ struct VirtualPort
     VirtualPort rotated_cw() const;
     VirtualPort rotated_ccw() const;
 
+    // Warning: Fails if 'to' is not a real vertex
+    pm::halfedge_handle real_halfedge() const;
+
     bool is_valid() const;
 
     pm::vertex_handle from;
