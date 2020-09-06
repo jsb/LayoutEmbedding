@@ -1,11 +1,8 @@
 #include "PathSmoothing.hh"
-
 #include <LayoutEmbedding/Snake.hh>
 #include <LayoutEmbedding/Assert.hh>
-#include <LayoutEmbedding/IGLMesh.hh>
+#include <LayoutEmbedding/Harmonic.hh>
 #include <glow-extras/timing/CpuTimer.hh>
-#include <igl/intrinsic_delaunay_cotmatrix.h>
-#include <igl/harmonic.h>
 #include <queue>
 
 namespace LayoutEmbedding
@@ -82,11 +79,12 @@ void flap_n_gon_boundary(
         const Embedding& _em,
         const pm::halfedge_handle& _l_h,
         const pm::vertex_attribute<pm::vertex_handle>& _v_target_to_region,
-        Eigen::MatrixXi& _b, // boundary vertex indices
-        Eigen::MatrixXd& _bc) // boundary coordinates as rows
+        const pm::Mesh& _region,
+        pm::vertex_attribute<bool>& _constrained,
+        pm::vertex_attribute<tg::dpos2>& _constraint_pos)
 {
-    _b.resize(0, 1);
-    _bc.resize(0, 2);
+    _constrained = _region.vertices().make_attribute<bool>(false);
+    _constraint_pos = _region.vertices().make_attribute<tg::dpos2>(tg::dpos2(0.0, 0.0));
 
     // Collect inner halfedges of flap boundary
     std::vector<pm::halfedge_handle> l_hs_boundary;
@@ -124,8 +122,8 @@ void flap_n_gon_boundary(
         LE_ASSERT(angle_to >= 0.0);
         LE_ASSERT(angle_to <= 2.0 * M_PI);
         LE_ASSERT(angle_from < angle_to);
-        auto p_from = Eigen::Vector2d(cos(angle_from), sin(angle_from));
-        auto p_to = Eigen::Vector2d(cos(angle_to), sin(angle_to));
+        auto p_from = tg::dpos2(cos(angle_from), sin(angle_from));
+        auto p_to = tg::dpos2(cos(angle_to), sin(angle_to));
 
         // Position all other boundary vertices on straight lines
         LE_ASSERT(t_path.front() == _em.matching_target_vertex(l_h.vertex_from()));
@@ -134,30 +132,13 @@ void flap_n_gon_boundary(
         for (int i = 0; i < t_path.size() - 1; ++i) // Last vertex is handled by next path
         {
             const double lambda = path_length_acc / path_length_total;
-            append_as_row(_b, Eigen::Matrix<int, 1, 1>(_v_target_to_region[t_path[i]].idx.value));
-            append_as_row(_bc, (1.0 - lambda) * p_from + lambda * p_to);
+            const auto r_v = _v_target_to_region[t_path[i]];
+            _constrained[r_v] = true;
+            _constraint_pos[r_v] = (1.0 - lambda) * p_from + lambda * p_to;
 
             path_length_acc += tg::length(_em.target_pos()[t_path[i + 1]] - _em.target_pos()[t_path[i]]);
         }
     }
-}
-
-Eigen::MatrixXd harmonic_param(
-        const IGLMesh& _region_igl,
-        const Eigen::MatrixXi& _b,
-        const Eigen::MatrixXd& _bc)
-{
-    // Compute harmonic parametrization using intrinsic cotan weights
-    Eigen::SparseMatrix<double> L;
-    igl::intrinsic_delaunay_cotmatrix(_region_igl.V, _region_igl.F, L);
-
-    Eigen::SparseMatrix<double> M;
-    igl::massmatrix(_region_igl.V, _region_igl.F, igl::MASSMATRIX_TYPE_VORONOI, M);
-
-    Eigen::MatrixXd param;
-    igl::harmonic(L, M, _b, _bc, 1, param);
-
-    return param;
 }
 
 Snake transfer_snake_to_target(
@@ -175,7 +156,7 @@ Snake transfer_snake_to_target(
 /**
  * Parametrize flap and straighten edge.
  */
-void smooth_path(
+bool smooth_path(
         Embedding& _em,
         const pm::halfedge_handle& _l_h)
 {
@@ -189,16 +170,17 @@ void smooth_path(
     // TODO FIXME: Split edges with two adjacent boundary edges on same path
 
     // Construct 2D n-gon
-    Eigen::MatrixXi b; // boundary vertex indices
-    Eigen::MatrixXd bc; // boundary coordinates as rows
-    flap_n_gon_boundary(_em, _l_h, v_target_to_region, b, bc);
+    pm::vertex_attribute<bool> constrained;
+    pm::vertex_attribute<tg::dpos2> constraint_pos;
+    flap_n_gon_boundary(_em, _l_h, v_target_to_region, region, constrained, constraint_pos);
 
-    // Compute harmonic parametrization using intrinsic cotan weights
-    const auto region_igl = to_igl_mesh(region_pos);
-    const Eigen::MatrixXd param_igl = harmonic_param(region_igl, b, bc);
-    pm::Mesh param_mesh;
+    // Compute harmonic parametrization
     pm::vertex_attribute<tg::dpos2> region_param;
-    to_polymesh_param(param_igl, region, region_param);
+    if (!harmonic(region_pos, constrained, constraint_pos, region_param))
+    {
+        std::cout << "WARNING: Failed to smooth a path." << std::endl;
+        return false;
+    }
 
     // Compute snake by tracing straight line in parametrization
     const auto r_v_from = v_target_to_region[_em.matching_target_vertex(_l_h.vertex_from())];
@@ -209,6 +191,8 @@ void smooth_path(
     // Embed snake in target mesh
     _em.unembed_path(_l_h);
     _em.embed_path(_l_h, t_snake);
+
+    return true;
 }
 
 }
@@ -229,7 +213,7 @@ Embedding smooth_paths(
 
     std::cout << "Smoothing paths (" << _n_iters << " iterations ) took "
               << timer.elapsedSecondsD() << " s. "
-              << "Resulting mesh as " << em.target_mesh().vertices().size() << " vertices."
+              << "Resulting mesh has " << em.target_mesh().vertices().size() << " vertices."
               << std::endl;
 
     return em;

@@ -23,7 +23,7 @@ void smooth(
         auto style = default_style();
 
         // Compare results after different numbers of iterations
-        for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < 4; ++i)
             view_target(smooth_paths(em_orig, i));
     }
 }
@@ -38,13 +38,13 @@ int main()
     { // SHREC
         const auto dir = fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings";
 
-        smooth(dir / "384_bnb"); // Wolf
-//        straighten(dir / "3_greedy"); // Human
+//        smooth(dir / "384_bnb"); // Wolf
+        smooth(dir / "3_greedy"); // Human
     }
 
     { // Sphere
         const auto dir = fs::path(LE_OUTPUT_PATH) / "sphere_stress";
 
-//        straighten(dir / "sphere_greedy");
+//        smooth(dir / "sphere_greedy");
     }
 }
