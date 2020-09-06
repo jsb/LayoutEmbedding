@@ -177,11 +177,14 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             // Memory estimate
             double estimated_memory;
 
-            // TODO: Estimate memory of queue
+            // Estimate memory of queue
+            estimated_memory += q.size() * sizeof (Candidate);
 
             // Estimate memory of state tree
             for (const auto& [hash, state] : known_states) {
-                estimated_memory += sizeof(state); // "stack" size of state
+                estimated_memory += sizeof(hash);
+                estimated_memory += sizeof(state);
+
                 for (const auto& item : state.path) {
                     estimated_memory += sizeof(item);
                 }
