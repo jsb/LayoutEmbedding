@@ -171,6 +171,11 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         std::cout << "|H|: " << known_states.size();
         std::cout << "    ";
         std::cout << "|CC|: " << es.count_connected_components();
+        std::cout << "    ";
+        std::cout << "s: ";
+        for (const auto& label : insertion_sequence) {
+            std::cout << label.value << " ";
+        }
         std::cout << std::endl;
 
         if (iter % 50 == 0) {
