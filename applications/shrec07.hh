@@ -17,7 +17,7 @@ const std::filesystem::path shrec_results_dir = shrec_output_dir / "shrec07_resu
 
 const std::vector<int> shrec_categories = {
      1, // Human     (36 points each, 14 before)          1- 20
-     2, // Cup       (11 points each, same as before)    21- 40
+//     2, // Cup       (11 points each, same as before)    21- 40
      3, // Glasses   (10 points each, same as before)    41- 60
      4, // Plane     (11 points each, 8 before)          61- 80
      5, // Ant       (21 points each, 12 before)         81-100
