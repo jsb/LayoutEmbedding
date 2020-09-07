@@ -84,8 +84,13 @@ namespace LayoutEmbedding {
 [[noreturn]]
 void handle_segfault(int)
 {
-    // Prevent infinite recursion
+    // Prevent infinite recursion by resetting all signals to their default handler (SIG_DFL)
+    std::signal(SIGTERM, SIG_DFL);
     std::signal(SIGSEGV, SIG_DFL);
+    std::signal(SIGINT,  SIG_DFL);
+    std::signal(SIGILL,  SIG_DFL);
+    std::signal(SIGABRT, SIG_DFL);
+    std::signal(SIGFPE,  SIG_DFL);
     print_stack_trace();
     std::abort();
 }
@@ -93,7 +98,10 @@ void handle_segfault(int)
 void register_segfault_handler()
 {
     std::signal(SIGSEGV, handle_segfault);
-    std::cout << "Registered handler for SIGSEGV: handle_segfault" << std::endl;
+    std::signal(SIGILL,  handle_segfault);
+    std::signal(SIGABRT, handle_segfault);
+    std::signal(SIGFPE,  handle_segfault);
+    std::cout << "Registered handler for SIGSEGV, SIGILL, SIGABRT, SIGFPE: handle_segfault" << std::endl;
 }
 
 }
