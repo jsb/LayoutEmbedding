@@ -35,6 +35,9 @@ struct Candidate
 
 void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 {
+    // TODO: Use glow-extras timer instead?
+    const auto start_time = std::chrono::steady_clock::now();
+
     InsertionSequence best_insertion_sequence;
     double global_upper_bound = std::numeric_limits<double>::infinity();
 
@@ -70,9 +73,6 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         c.state = 0;
         q.push(c);
     }
-
-    // TODO: Use glow-extras timer instead?
-    const auto start_time = std::chrono::steady_clock::now();
 
     int iter = 0;
     while (!q.empty()) {
