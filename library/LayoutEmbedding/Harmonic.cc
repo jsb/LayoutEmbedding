@@ -42,13 +42,14 @@ double mean_value_weight(
 bool harmonic(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
-        const pm::vertex_attribute<Eigen::VectorXd>& _constraint_value,
+        const Eigen::MatrixXd& _constraint_values,
         Eigen::MatrixXd& _res)
 {
     LE_ASSERT(_pos.mesh().is_compact());
 
     const int n = _pos.mesh().vertices().size();
-    const int d = _constraint_value.first().size();
+    const int d = _constraint_values.cols();
+    LE_ASSERT(_constraint_values.rows() == n);
 
     // Set up Laplace matrix and rhs
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(n, d);
@@ -59,11 +60,8 @@ bool harmonic(
 
         if (_constrained[v])
         {
-            LE_ASSERT(_constraint_value[v].size() == d);
-
             triplets.push_back(Eigen::Triplet<double>(i, i, 1.0));
-            rhs(i, 0) = _constraint_value[v][0];
-            rhs(i, 1) = _constraint_value[v][1];
+            rhs.row(i) = _constraint_values.row(i);
         }
         else
         {
@@ -97,14 +95,23 @@ bool harmonic(
 bool harmonic(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
-        const pm::vertex_attribute<tg::dpos2>& _constraint_value,
+        const pm::vertex_attribute<tg::dpos2>& _constraint_values,
         pm::vertex_attribute<tg::dpos2>& _res)
 {
-    auto to_eigen = [] (auto p) { Eigen::VectorXd v(2); v[0] = p[0]; v[1] = p[1]; return v; };
+    const int n = _pos.mesh().vertices().size();
+    const int d = 2;
+
+    // Convert constraints
+    Eigen::MatrixXd constraint_values = Eigen::MatrixXd::Zero(n, d);
+    for (auto v : _pos.mesh().vertices())
+        constraint_values.row(v.idx.value) = Eigen::Vector2d(_constraint_values[v].x, _constraint_values[v].y);
+
+    // Compute
     Eigen::MatrixXd res_mat;
-    if (!harmonic(_pos, _constrained, _constraint_value.map(to_eigen), res_mat))
+    if (!harmonic(_pos, _constrained, constraint_values, res_mat))
         return false;
 
+    // Convert result
     _res = _pos.mesh().vertices().make_attribute<tg::dpos2>();
     for (auto v : _pos.mesh().vertices())
         _res[v] = tg::dpos2(res_mat(v.idx.value, 0), res_mat(v.idx.value, 1));

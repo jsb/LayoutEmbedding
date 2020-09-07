@@ -1,37 +1,29 @@
 #include "VertexRepulsiveEnergy.hh"
 
-#include <LayoutEmbedding/IGLMesh.hh>
-
-#include <igl/intrinsic_delaunay_cotmatrix.h>
-#include <igl/massmatrix.h>
-#include <igl/harmonic.h>
+#include <LayoutEmbedding/Harmonic.hh>
 
 namespace LayoutEmbedding {
 
 Eigen::MatrixXd compute_vertex_repulsive_energy(const Embedding& _em)
 {
     const int l_num_v = _em.layout_mesh().vertices().size();
-    IGLMesh t_igl = to_igl_mesh(_em.target_pos());
+    const int t_num_v = _em.target_mesh().vertices().size();
 
-    Eigen::VectorXi b(l_num_v); // Boundary indices into t_igl.V
+    // Set up boundary conditions
+    auto constrained = _em.target_mesh().vertices().make_attribute<bool>(false);
+    Eigen::MatrixXd constraint_values = Eigen::MatrixXd::Zero(t_num_v, l_num_v);
+
+    for (const auto l_v : _em.layout_mesh().vertices())
     {
-        int b_row = 0;
-        for (const auto l_v : _em.layout_mesh().vertices()) {
-            b[b_row] = _em.matching_target_vertex(l_v).idx.value;
-            ++b_row;
-        }
+        const auto t_v = _em.matching_target_vertex(l_v);
+        constrained[t_v] = true;
+        constraint_values(t_v.idx.value, l_v.idx.value) = 1.0;
     }
-    Eigen::MatrixXd bc(l_num_v, l_num_v);
-    bc.setIdentity();
 
-    Eigen::SparseMatrix<double> L;
-    igl::intrinsic_delaunay_cotmatrix(t_igl.V, t_igl.F, L);
-
-    Eigen::SparseMatrix<double> M;
-    igl::massmatrix(t_igl.V, t_igl.F, igl::MASSMATRIX_TYPE_VORONOI, M);
-
+    // Compute l_num_v many harmonic fields
     Eigen::MatrixXd W;
-    igl::harmonic(L, M, b, bc, 1, W);
+    LE_ASSERT(harmonic(_em.target_pos(), constrained, constraint_values, W));
+
     return W;
 }
 

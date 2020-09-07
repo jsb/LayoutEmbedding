@@ -11,13 +11,13 @@ namespace LayoutEmbedding
 bool harmonic(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
-        const pm::vertex_attribute<Eigen::VectorXd>& _constraint_value,
+        const Eigen::MatrixXd& _constraint_values,
         Eigen::MatrixXd& _res);
 
 bool harmonic(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
-        const pm::vertex_attribute<tg::dpos2>& _constraint_value,
+        const pm::vertex_attribute<tg::dpos2>& _constraint_values,
         pm::vertex_attribute<tg::dpos2>& _res);
 
 }
