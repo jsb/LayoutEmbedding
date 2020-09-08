@@ -13,10 +13,12 @@ namespace LayoutEmbedding {
 struct State
 {
     HashValue parent;
+    std::vector<HashValue> children;
     pm::edge_index l_e;
     VirtualPath path;
     std::vector<VirtualPath> candidate_paths;
     std::set<std::pair<pm::edge_index, pm::edge_index>> candidate_conflicts;
+    std::set<pm::edge_index> forbidden_children;
 };
 
 struct Candidate
@@ -25,7 +27,7 @@ struct Candidate
     double priority = 0.0;
 
     //InsertionSequence insertions;
-    HashValue state;
+    HashValue state_hash;
 
     bool operator<(const Candidate& _rhs) const
     {
@@ -70,7 +72,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         Candidate c;
         c.lower_bound = 0.0;
         c.priority = 0.0;
-        c.state = 0;
+        c.state_hash = 0;
         q.push(c);
     }
 
@@ -105,13 +107,25 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         // Reconstruct the embedding sequence and inserted paths by traversing the state graph
         InsertionSequence insertion_sequence;
         std::vector<const VirtualPath*> inserted_paths;
-        HashValue current_state_hash = c.state;
+        HashValue current_state_hash = c.state_hash;
+        bool pruned = false;
         while (current_state_hash != 0) {
             LE_ASSERT(known_states.count(current_state_hash) > 0);
             const State& state = known_states[current_state_hash];
             insertion_sequence.push_back(state.l_e);
             inserted_paths.push_back(&state.path);
+
+            if (state.parent != 0) {
+                const auto& parent = known_states[state.parent];
+                if (parent.forbidden_children.count(state.l_e) > 0) {
+                    pruned = true;
+                }
+            }
+
             current_state_hash = state.parent;
+        }
+        if (pruned) {
+            continue;
         }
         std::reverse(insertion_sequence.begin(), insertion_sequence.end());
         std::reverse(inserted_paths.begin(), inserted_paths.end());
@@ -125,10 +139,10 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             es.extend(l_e, path);
         }
 
-        LE_ASSERT(es.hash() == c.state);
+        LE_ASSERT(es.hash() == c.state_hash);
 
         // Reconstruct candidate paths
-        const auto& state = known_states[c.state];
+        auto& state = known_states[c.state_hash];
         es.candidate_paths.clear();
         for (const auto l_e : es.em.layout_mesh().edges()) {
             es.candidate_paths[l_e] = state.candidate_paths[l_e.idx.value];
@@ -229,6 +243,10 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             else {
                 // Add children to the queue
                 for (const auto& l_e : es_conflicting_edges) {
+                    if (state.forbidden_children.count(l_e) > 0) {
+                        continue;
+                    }
+
                     EmbeddingState new_es(es); // Copy
 
                     // Update new state by adding the new child halfedge
@@ -257,7 +275,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
                     // Create a new state
                     State new_state;
-                    new_state.parent = c.state;
+                    new_state.parent = c.state_hash;
                     new_state.l_e = l_e;
                     new_state.path = es.candidate_paths[l_e];
                     new_state.candidate_paths = new_es.candidate_paths.to_vector();
@@ -265,10 +283,41 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
 
                     // Save the new state
                     known_states.emplace(new_es_hash, new_state);
+                    state.children.push_back(new_es_hash);
+
+                    // Walk up the state tree to find states where the newly inserted edge path is identical.
+                    {
+                        int num_pruned = 0;
+                        std::vector<pm::edge_index> w; // Reversed
+                        const State* current_state = &known_states[c.state_hash];
+                        while (current_state->parent != 0) {
+                            w.push_back(current_state->l_e);
+
+                            const auto& parent = known_states[current_state->parent];
+                            LE_ASSERT(l_e != current_state->l_e);
+                            const auto conflict_pair = std::minmax({l_e, current_state->l_e});
+                            if (parent.candidate_conflicts.count(conflict_pair) > 0) {
+                                break;
+                            }
+
+                            for (const auto& sibling_hash : parent.children) {
+                                auto& sibling = known_states[sibling_hash];
+                                if (sibling.l_e == l_e) {
+                                    for (const auto& forbidden_ei : w) {
+                                        sibling.forbidden_children.insert(forbidden_ei);
+                                        ++num_pruned;
+                                    }
+                                    break;
+                                }
+                            }
+
+                            current_state = &parent;
+                        }
+                    }
 
                     // Insert a corresponding element into the queue
                     Candidate new_c;
-                    new_c.state = new_es_hash;
+                    new_c.state_hash = new_es_hash;
                     new_c.lower_bound = new_lower_bound;
                     new_c.priority = new_c.lower_bound * new_es.conflicting_edges().size();
                     q.push(new_c);
