@@ -28,6 +28,10 @@ struct GreedySettings
 
 struct GreedyResult
 {
+    GreedyResult(const GreedySettings& _settings)
+        : settings(_settings) { }
+
+    GreedySettings settings;
     InsertionSequence insertion_sequence;
 };
 

@@ -60,7 +60,7 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         else if (algorithm == "greedy") {
             embed_greedy(em);
         }
-         else if (algorithm == "greedy_brute_force") {
+        else if (algorithm == "greedy_brute_force") {
             embed_greedy_brute_force(em);
         }
         else {
