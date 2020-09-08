@@ -170,6 +170,12 @@ GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings, const
 {
     GreedyResult result(_name, _settings);
 
+    // If vertex-repulsive tracing is enabled, copy input embedding.
+    // Used to re-trace paths as shortest paths.
+    std::optional<Embedding> em_copy;
+    if (_settings.use_vertex_repulsive_tracing)
+        em_copy = _em;
+
     const pm::Mesh& l_m = _em.layout_mesh();
 
     auto l_extremal_vertex = l_m.vertices().make_attribute<bool>(false);
@@ -286,6 +292,19 @@ GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings, const
         ++l_num_embedded_edges;
     }
 
+    // If vertex-repulsive tracing was used,
+    // re-trace the insertion sequence as shortest paths
+    if (_settings.use_vertex_repulsive_tracing) {
+        LE_ASSERT(em_copy);
+        for (auto l_e_idx : result.insertion_sequence) {
+            const auto l_h = em_copy.value().layout_mesh().edges()[l_e_idx].halfedgeA();
+            const VirtualPath path = em_copy.value().find_shortest_path(l_h, Embedding::ShortestPathMetric::Geodesic);
+            em_copy.value().embed_path(l_h, path);
+        }
+        _em = em_copy.value();
+    }
+
+    LE_ASSERT(_em.is_complete());
     result.cost = _em.total_embedded_path_length();
 
     return result;
@@ -347,18 +366,7 @@ std::vector<GreedyResult> embed_greedy(Embedding& _em, const std::vector<GreedyS
     std::cout << "    prefer_extremal_vertices: " << best_result.settings.prefer_extremal_vertices << std::endl;
     std::cout << "Best cost: " << best_result.cost << std::endl;
 
-    if (best_result.settings.use_vertex_repulsive_tracing) {
-        // Re-trace insertion sequence as shortest paths
-        const auto metric = Embedding::ShortestPathMetric::Geodesic;
-        for (auto l_e_idx : best_result.insertion_sequence) {
-            const auto l_h = _em.layout_mesh().edges()[l_e_idx].halfedgeA();
-            const VirtualPath path = _em.find_shortest_path(l_h, metric);
-            _em.embed_path(l_h, path);
-        }
-    }
-    else {
-        _em = all_embeddings[best_idx]; // copy
-    }
+    _em = all_embeddings[best_idx]; // copy
 
     return all_results;
 }
