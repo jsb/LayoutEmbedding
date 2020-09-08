@@ -212,15 +212,22 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         }
         std::cout << std::endl;
 
-        if (_settings.record_lower_bound_events) {
+        if (_settings.record_lower_bound_events && !q.empty()) {
             double min_lower_bound = std::numeric_limits<double>::infinity();
             for (const auto& q_item : get_container(q)) {
                 min_lower_bound = std::min(min_lower_bound, q_item.lower_bound);
             }
-            BranchAndBoundResult::LowerBoundEvent event;
-            event.t = timer.elapsedSecondsD();
-            event.lower_bound = min_lower_bound;
-            result.lower_bound_events.push_back(event);
+
+            // Only record this event if it's an update
+            if (!result.lower_bound_events.empty()) {
+                const auto& last_lower_bound = result.lower_bound_events.back();
+                if (min_lower_bound > last_lower_bound.lower_bound) { // Don't save redundant lower bound updates
+                    BranchAndBoundResult::LowerBoundEvent event;
+                    event.t = timer.elapsedSecondsD();
+                    event.lower_bound = min_lower_bound;
+                    result.lower_bound_events.push_back(event);
+                }
+            }
         }
 
         if (iter % 50 == 0) {
