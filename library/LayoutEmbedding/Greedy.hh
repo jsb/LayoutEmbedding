@@ -28,15 +28,29 @@ struct GreedySettings
 
 struct GreedyResult
 {
-    GreedyResult(const GreedySettings& _settings)
-        : settings(_settings) { }
+    GreedyResult() = default;
 
+    GreedyResult(const std::string& _algorithm, const GreedySettings& _settings)
+        : algorithm(_algorithm), settings(_settings) { }
+
+    std::string algorithm;
     GreedySettings settings;
     InsertionSequence insertion_sequence;
+    double cost = std::numeric_limits<double>::infinity();
 };
 
 GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 
-GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings = GreedySettings());
+// Run multiple greedy variants
+std::vector<GreedyResult> embed_greedy(Embedding& _em, const std::vector<GreedySettings>& _all_settings);
+
+// Run plain, [Praun2001] and [Schreiner2004] greedy variants
+std::vector<GreedyResult> embed_greedy_competitors(Embedding& _em, const GreedySettings& _settings = GreedySettings());
+
+// Run all greedy variants
+std::vector<GreedyResult> embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings = GreedySettings());
+
+const GreedyResult& best(const std::vector<GreedyResult>& _results);
+const GreedyResult& best(const std::vector<GreedyResult>& _results, int& best_idx);
 
 }

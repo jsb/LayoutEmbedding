@@ -44,9 +44,9 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     // Run heuristic algorithm to find a tighter initial upper bound.
     {
         Embedding em(_em);
-        auto result = embed_greedy_brute_force(em);
+        const auto results = embed_greedy_competitors(em);
         global_upper_bound = em.total_embedded_path_length();
-        best_insertion_sequence = result.insertion_sequence;
+        best_insertion_sequence = best(results).insertion_sequence;
     }
 
     //std::set<HashValue> known_state_hashes;

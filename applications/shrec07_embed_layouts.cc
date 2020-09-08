@@ -32,8 +32,9 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
     namespace fs = std::filesystem;
 
     const std::vector<std::string> algorithms = {
-        "greedy",
-        "greedy_brute_force",
+//        "greedy",
+        "greedy_competitors",
+//        "greedy_brute_force",
         "bnb",
     };
 
@@ -52,16 +53,19 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
 
         glow::timing::CpuTimer timer;
 
-        if (algorithm == "bnb") {
-            BranchAndBoundSettings settings;
-            settings.time_limit = 10 * 60;
-            branch_and_bound(em, settings);
-        }
-        else if (algorithm == "greedy") {
+        if (algorithm == "greedy") {
             embed_greedy(em);
+        }
+        else if (algorithm == "greedy_competitors") {
+            embed_greedy_competitors(em);
         }
         else if (algorithm == "greedy_brute_force") {
             embed_greedy_brute_force(em);
+        }
+        else if (algorithm == "bnb") {
+            BranchAndBoundSettings settings;
+            settings.time_limit = 10 * 60;
+            branch_and_bound(em, settings);
         }
         else {
             LE_ASSERT(false);

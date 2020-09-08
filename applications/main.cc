@@ -42,7 +42,9 @@ struct TestCase
 void run_test_case(const TestCase& tc)
 {
     const std::vector<std::string> algorithms = {
-        "greedy",
+//        "greedy",
+        "greedy_competitors",
+//        "greedy_brute_force",
         "bnb",
     };
 
@@ -82,13 +84,19 @@ void run_test_case(const TestCase& tc)
 
         glow::timing::CpuTimer timer;
 
-        if (algorithm == "bnb") {
+        if (algorithm == "greedy") {
+            embed_greedy(em);
+        }
+        else if (algorithm == "greedy_competitors") {
+            embed_greedy_competitors(em);
+        }
+        else if (algorithm == "greedy_brute_force") {
+            embed_greedy_brute_force(em);
+        }
+        else if (algorithm == "bnb") {
             BranchAndBoundSettings settings;
             settings.time_limit = 10 * 60;
             branch_and_bound(em, settings);
-        }
-        else if (algorithm == "greedy") {
-            embed_greedy(em);
         }
         else {
             LE_ASSERT(false);

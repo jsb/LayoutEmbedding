@@ -11,6 +11,8 @@
 
 namespace LayoutEmbedding {
 
+namespace {
+
 /// Heuristic detection of paths that might introduce swirls after insertion.
 /// For each vertex around the face that is incident to _l_he on the left,
 /// a shortest path towards the given path is traced.
@@ -162,9 +164,11 @@ bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l
     }
 }
 
+}
+
 GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings)
 {
-    GreedyResult result(_settings);
+    GreedyResult result("greedy", _settings);
 
     const pm::Mesh& l_m = _em.layout_mesh();
 
@@ -281,10 +285,93 @@ GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings)
         l_is_embedded[best_l_e] = true;
         ++l_num_embedded_edges;
     }
+
+    result.cost = _em.total_embedded_path_length();
+
     return result;
 }
 
-GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings)
+std::vector<GreedyResult> embed_greedy(Embedding& _em, const std::vector<GreedySettings>& _all_settings)
+{
+    const int n = _all_settings.size();
+    std::vector<Embedding> all_embeddings(n, _em); // n copies
+    std::vector<GreedyResult> all_results(n);
+
+    //#pragma omp parallel for
+    for (std::size_t i = 0; i < n; ++i) {
+        const auto& settings = _all_settings[i];
+
+        auto& em = all_embeddings[i];
+        auto& result = all_results[i];
+
+        em = _em; // copy
+        result = embed_greedy(em, settings);
+
+        if (result.settings.use_swirl_detection)
+            result.algorithm += "_swirl";
+        if (result.settings.use_vertex_repulsive_tracing)
+            result.algorithm += "_repulsive";
+        if (result.settings.prefer_extremal_vertices)
+            result.algorithm += "_extremal";
+
+        std::cout << "Embedding cost: " << result.cost << std::endl;
+    }
+
+    int best_idx;
+    const auto& best_result = best(all_results, best_idx);
+
+    std::cout << "Best settings:" << std::endl;
+    std::cout << std::boolalpha;
+    std::cout << "    use_swirl_detection: " << best_result.settings.use_swirl_detection << std::endl;
+    std::cout << "    use_vertex_repulsive_tracing: " << best_result.settings.use_vertex_repulsive_tracing << std::endl;
+    std::cout << "    prefer_extremal_vertices: " << best_result.settings.prefer_extremal_vertices << std::endl;
+    std::cout << "Best cost: " << best_result.cost << std::endl;
+
+    if (best_result.settings.use_vertex_repulsive_tracing) {
+        // Re-trace insertion sequence as shortest paths
+        const auto metric = Embedding::ShortestPathMetric::Geodesic;
+        for (auto l_e_idx : best_result.insertion_sequence) {
+            const auto l_h = _em.layout_mesh().edges()[l_e_idx].halfedgeA();
+            const VirtualPath path = _em.find_shortest_path(l_h, metric);
+            _em.embed_path(l_h, path);
+        }
+    }
+    else {
+        _em = all_embeddings[best_idx]; // copy
+    }
+
+    return all_results;
+}
+
+std::vector<GreedyResult> embed_greedy_competitors(Embedding& _em, const GreedySettings& _settings)
+{
+    std::vector<GreedySettings> all_settings;
+    { // Plain
+        GreedySettings settings = _settings;
+        settings.use_swirl_detection = false;
+        settings.use_vertex_repulsive_tracing = false;
+        settings.prefer_extremal_vertices = false;
+        all_settings.push_back(settings);
+    }
+    { // [Praun2001]
+        GreedySettings settings = _settings;
+        settings.use_swirl_detection = true;
+        settings.use_vertex_repulsive_tracing = true;
+        settings.prefer_extremal_vertices = false;
+        all_settings.push_back(settings);
+    }
+    { // [Schreiner2004]
+        GreedySettings settings = _settings;
+        settings.use_swirl_detection = true;
+        settings.use_vertex_repulsive_tracing = false;
+        settings.prefer_extremal_vertices = true;
+        all_settings.push_back(settings);
+    }
+
+    return embed_greedy(_em, all_settings);
+}
+
+std::vector<GreedyResult> embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings)
 {
     std::vector<GreedySettings> all_settings;
     for (bool use_swirl_detection : { false, true }) {
@@ -299,42 +386,28 @@ GreedyResult embed_greedy_brute_force(Embedding& _em, const GreedySettings& _set
         }
     }
 
-    std::vector<double> all_costs(all_settings.size(), std::numeric_limits<double>::infinity());
-    std::vector<GreedyResult> all_results(all_settings.size(), _settings);
+    return embed_greedy(_em, all_settings);
+}
 
-    //#pragma omp parallel for
-    for (std::size_t i = 0; i < all_settings.size(); ++i) {
-        const auto& settings = all_settings[i];
+const GreedyResult& best(const std::vector<GreedyResult>& _results)
+{
+    int best_idx;
+    return best(_results, best_idx);
+}
 
-        Embedding em(_em);
-        GreedyResult result = embed_greedy(em, settings);
-        const double cost = em.total_embedded_path_length();
-        std::cout << "Embedding cost: " << cost << std::endl;
-
-        all_costs[i] = cost;
-        all_results[i] = result;
-    }
-
+const GreedyResult& best(const std::vector<GreedyResult>& _results, int& best_idx)
+{
     double best_cost = std::numeric_limits<double>::infinity();
-    int best_i = -1;
-    for (std::size_t i = 0; i < all_settings.size(); ++i) {
-        if (all_costs[i] < best_cost) {
-            best_cost = all_costs[i];
-            best_i = i;
+    best_idx = -1;
+    for (std::size_t i = 0; i < _results.size(); ++i) {
+        if (_results[i].cost < best_cost) {
+            best_cost = _results[i].cost;
+            best_idx = i;
         }
     }
-    GreedyResult best_result = all_results[best_i];
+    LE_ASSERT(best_idx >= 0);
 
-    std::cout << "Best settings:" << std::endl;
-    std::cout << std::boolalpha;
-    std::cout << "    use_swirl_detection: " << best_result.settings.use_swirl_detection << std::endl;
-    std::cout << "    use_vertex_repulsive_tracing: " << best_result.settings.use_vertex_repulsive_tracing << std::endl;
-    std::cout << "    prefer_extremal_vertices: " << best_result.settings.prefer_extremal_vertices << std::endl;
-    std::cout << "Best cost: " << best_cost << std::endl;
-
-    // TODO: Don't do this redundant computation.
-    embed_greedy(_em, best_result.settings);
-    return best_result;
+    return _results[best_idx];
 }
 
 }
