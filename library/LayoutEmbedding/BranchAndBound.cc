@@ -3,7 +3,10 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 #include <LayoutEmbedding/EmbeddingState.hh>
+#include <LayoutEmbedding/GetQueueContainer.hh>
 #include <LayoutEmbedding/Greedy.hh>
+
+#include <glow-extras/timing/CpuTimer.hh>
 
 #include <chrono>
 #include <queue>
@@ -26,7 +29,6 @@ struct Candidate
     double lower_bound = std::numeric_limits<double>::infinity();
     double priority = 0.0;
 
-    //InsertionSequence insertions;
     HashValue state_hash;
 
     bool operator<(const Candidate& _rhs) const
@@ -37,13 +39,26 @@ struct Candidate
 
 BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings, const std::string& _name)
 {
-    BranchAndBoundResult result(_name, _settings);
+    glow::timing::CpuTimer timer;
 
-    // TODO: Use glow-extras timer instead?
-    const auto start_time = std::chrono::steady_clock::now();
+    BranchAndBoundResult result(_name, _settings);
 
     InsertionSequence best_insertion_sequence;
     double global_upper_bound = std::numeric_limits<double>::infinity();
+
+    if (_settings.record_lower_bound_events) {
+        BranchAndBoundResult::LowerBoundEvent event;
+        event.t = 0.0;
+        event.lower_bound = 0.0;
+        result.lower_bound_events.push_back(event);
+    }
+
+    if (_settings.record_upper_bound_events) {
+        BranchAndBoundResult::UpperBoundEvent event;
+        event.t = 0.0;
+        event.upper_bound = std::numeric_limits<double>::infinity();
+        result.upper_bound_events.push_back(event);
+    }
 
     // Run heuristic algorithm to find a tighter initial upper bound.
     {
@@ -51,6 +66,13 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         const auto results = embed_competitors(em);
         global_upper_bound = em.total_embedded_path_length();
         best_insertion_sequence = best(results).insertion_sequence;
+
+        if (_settings.record_upper_bound_events) {
+            BranchAndBoundResult::UpperBoundEvent event;
+            event.t = timer.elapsedSecondsD();
+            event.upper_bound = global_upper_bound;
+            result.upper_bound_events.push_back(event);
+        }
     }
 
     //std::set<HashValue> known_state_hashes;
@@ -83,12 +105,8 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         ++iter;
 
         // Time limit
-        const auto current_time = std::chrono::steady_clock::now();
-        const auto interval = current_time - start_time;
-        using seconds_double = std::chrono::duration<double>;
-        const double elapsed_seconds = std::chrono::duration_cast<seconds_double>(interval).count();
         if (_settings.time_limit > 0.0) {
-            if (elapsed_seconds >= _settings.time_limit) {
+            if (timer.elapsedSecondsD() >= _settings.time_limit) {
                 std::cout << "Reached time limit of " << _settings.time_limit << " s. Terminating." << std::endl;
                 if (std::isinf(global_upper_bound)) {
                     std::cout << "Warning: No valid solution was found within that time." << std::endl;
@@ -168,7 +186,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         const auto& es_conflicting_edges = es.conflicting_edges();
         const auto& es_non_conflicting_edges = es.conflicting_edges();
 
-        std::cout << "t: " << elapsed_seconds;
+        std::cout << "t: " << timer.elapsedSecondsD();
         std::cout << "    ";
         std::cout << "|Embd|: " << es_embedded_edges.size();
         std::cout << "    ";
@@ -193,6 +211,17 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
             std::cout << label.value << " ";
         }
         std::cout << std::endl;
+
+        if (_settings.record_lower_bound_events) {
+            double min_lower_bound = std::numeric_limits<double>::infinity();
+            for (const auto& q_item : get_container(q)) {
+                min_lower_bound = std::min(min_lower_bound, q_item.lower_bound);
+            }
+            BranchAndBoundResult::LowerBoundEvent event;
+            event.t = timer.elapsedSecondsD();
+            event.lower_bound = min_lower_bound;
+            result.lower_bound_events.push_back(event);
+        }
 
         if (iter % 50 == 0) {
             // Memory estimate
@@ -241,6 +270,12 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                 global_upper_bound = es.cost_lower_bound();
                 best_insertion_sequence = insertion_sequence;
                 std::cout << "New upper bound: " << global_upper_bound << std::endl;
+                if (_settings.record_upper_bound_events) {
+                    BranchAndBoundResult::UpperBoundEvent event;
+                    event.t = timer.elapsedSecondsD();
+                    event.upper_bound = global_upper_bound;
+                    result.upper_bound_events.push_back(event);
+                }
             }
             else {
                 // Add children to the queue

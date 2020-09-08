@@ -9,6 +9,9 @@ struct BranchAndBoundSettings
 {
     double optimality_gap = 0.01;
     double time_limit = 1 * 60 * 60; // Seconds. Set to <= 0 to disable.
+
+    bool record_upper_bound_events = true;
+    bool record_lower_bound_events = false;
 };
 
 struct BranchAndBoundResult
@@ -28,6 +31,20 @@ struct BranchAndBoundResult
     double cost = std::numeric_limits<double>::infinity();
     double lower_bound = std::numeric_limits<double>::infinity();
     double gap = 1.0;
+
+    struct UpperBoundEvent
+    {
+        double t;
+        double upper_bound;
+    };
+    std::vector<UpperBoundEvent> upper_bound_events;
+
+    struct LowerBoundEvent
+    {
+        double t;
+        double lower_bound;
+    };
+    std::vector<LowerBoundEvent> lower_bound_events;
 };
 
 BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings = BranchAndBoundSettings(), const std::string& _name = "bnb");
