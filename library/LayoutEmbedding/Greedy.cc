@@ -166,9 +166,9 @@ bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l
 
 }
 
-GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings)
+GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings, const std::string& _name)
 {
-    GreedyResult result("greedy", _settings);
+    GreedyResult result(_name, _settings);
 
     const pm::Mesh& l_m = _em.layout_mesh();
 
@@ -291,6 +291,26 @@ GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings)
     return result;
 }
 
+GreedyResult embed_praun(Embedding& _em, const GreedySettings& _settings)
+{
+    GreedySettings settings = _settings;
+    settings.use_swirl_detection = true;
+    settings.use_vertex_repulsive_tracing = true;
+    settings.prefer_extremal_vertices = false;
+
+    return embed_greedy(_em, settings, "praun");
+}
+
+GreedyResult embed_schreiner(Embedding& _em, const GreedySettings& _settings)
+{
+    GreedySettings settings = _settings;
+    settings.use_swirl_detection = true;
+    settings.use_vertex_repulsive_tracing = false;
+    settings.prefer_extremal_vertices = true;
+
+    return embed_greedy(_em, settings, "schreiner");
+}
+
 std::vector<GreedyResult> embed_greedy(Embedding& _em, const std::vector<GreedySettings>& _all_settings)
 {
     const int n = _all_settings.size();
@@ -343,7 +363,7 @@ std::vector<GreedyResult> embed_greedy(Embedding& _em, const std::vector<GreedyS
     return all_results;
 }
 
-std::vector<GreedyResult> embed_greedy_competitors(Embedding& _em, const GreedySettings& _settings)
+std::vector<GreedyResult> embed_competitors(Embedding& _em, const GreedySettings& _settings)
 {
     std::vector<GreedySettings> all_settings;
     { // Plain

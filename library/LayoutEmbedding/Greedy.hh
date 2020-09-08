@@ -39,15 +39,14 @@ struct GreedyResult
     double cost = std::numeric_limits<double>::infinity();
 };
 
-GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings = GreedySettings());
+// Run a single greedy variant
+GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings = GreedySettings(), const std::string& _name = "greedy");
+GreedyResult embed_praun(Embedding& _em, const GreedySettings& _settings = GreedySettings());
+GreedyResult embed_schreiner(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 
 // Run multiple greedy variants
 std::vector<GreedyResult> embed_greedy(Embedding& _em, const std::vector<GreedySettings>& _all_settings);
-
-// Run plain, [Praun2001] and [Schreiner2004] greedy variants
-std::vector<GreedyResult> embed_greedy_competitors(Embedding& _em, const GreedySettings& _settings = GreedySettings());
-
-// Run all greedy variants
+std::vector<GreedyResult> embed_competitors(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 std::vector<GreedyResult> embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 
 const GreedyResult& best(const std::vector<GreedyResult>& _results);

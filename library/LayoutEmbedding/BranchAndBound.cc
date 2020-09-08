@@ -44,7 +44,7 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
     // Run heuristic algorithm to find a tighter initial upper bound.
     {
         Embedding em(_em);
-        const auto results = embed_greedy_competitors(em);
+        const auto results = embed_competitors(em);
         global_upper_bound = em.total_embedded_path_length();
         best_insertion_sequence = best(results).insertion_sequence;
     }

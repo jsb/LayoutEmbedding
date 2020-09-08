@@ -32,8 +32,9 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
     namespace fs = std::filesystem;
 
     const std::vector<std::string> algorithms = {
-//        "greedy",
-        "greedy_competitors",
+        "greedy",
+        "praun",
+        "schreiner",
 //        "greedy_brute_force",
         "bnb",
     };
@@ -56,8 +57,11 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         if (algorithm == "greedy") {
             embed_greedy(em);
         }
-        else if (algorithm == "greedy_competitors") {
-            embed_greedy_competitors(em);
+        else if (algorithm == "praun") {
+            embed_praun(em);
+        }
+        else if (algorithm == "schreiner") {
+            embed_schreiner(em);
         }
         else if (algorithm == "greedy_brute_force") {
             embed_greedy_brute_force(em);
