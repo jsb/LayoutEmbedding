@@ -35,8 +35,10 @@ struct Candidate
     }
 };
 
-void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
+BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings, const std::string& _name)
 {
+    BranchAndBoundResult result(_name, _settings);
+
     // TODO: Use glow-extras timer instead?
     const auto start_time = std::chrono::steady_clock::now();
 
@@ -326,17 +328,21 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
         }
     }
     std::cout << "Branch-and-bound optimization completed." << std::endl;
+    result.insertion_sequence = best_insertion_sequence;
 
     {
         // Drain the rest of the queue to find the maximum optimality gap
-        auto largest_gap = _settings.optimality_gap;
+        auto final_lower_bound = std::numeric_limits<double>::infinity();
         while (!q.empty()) {
             auto c = q.top();
-            const double gap = 1.0 - c.lower_bound / global_upper_bound;
-            largest_gap = std::max(largest_gap, gap);
+            final_lower_bound = std::min(final_lower_bound, c.lower_bound);
             q.pop();
         }
-        std::cout << "The optimal solution is at most " << (largest_gap * 100.0) << " % better than the found solution." << std::endl;
+        const double final_gap = std::max(_settings.optimality_gap, 1.0 - final_lower_bound / global_upper_bound);
+        std::cout << "The optimal solution is at most " << (final_gap * 100.0) << " % better than the found solution." << std::endl;
+
+        result.lower_bound = final_lower_bound;
+        result.gap = final_gap;
     }
 
     // Apply the victorious embedding sequence to the input embedding
@@ -359,6 +365,8 @@ void branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings)
             l_e_embedded.insert(l_e);
         }
     }
+    result.cost = _em.total_embedded_path_length();
+    return result;
 }
 
 }
