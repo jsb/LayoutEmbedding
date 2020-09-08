@@ -21,6 +21,7 @@ public:
     explicit Embedding(EmbeddingInput& _input);
 
     Embedding(const Embedding& _em);
+    Embedding& operator=(const Embedding& _em);
 
     /// If the layout halfedge _l_h has an embedding, returns the target halfedge at the start of the corresponding embedded path.
     /// Otherwise, returns an invalid halfedge.

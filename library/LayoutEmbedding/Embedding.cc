@@ -32,30 +32,41 @@ Embedding::Embedding(EmbeddingInput& _input) :
     }
 }
 
-Embedding::Embedding(const Embedding& _em) :
-    path_length_norm(_em.path_length_norm),
-    input(_em.input),
-    t_m(),
-    t_pos(t_m),
-    l_matching_vertex(layout_mesh()),
-    t_matching_vertex(target_mesh()),
-    t_matching_halfedge(target_mesh())
+Embedding::Embedding(const Embedding& _em)
 {
+    *this = _em;
+}
+
+Embedding& Embedding::operator=(const Embedding& _em) {
+
+    path_length_norm = _em.path_length_norm;
+    input = _em.input;
     t_m.copy_from(_em.t_m);
+
+    t_pos = t_m.vertices().make_attribute<tg::pos3>();
     t_pos.copy_from(_em.t_pos);
+
+    l_matching_vertex = input->l_m.vertices().make_attribute<pm::vertex_handle>();
     for (const auto l_v : layout_mesh().vertices()) {
         l_matching_vertex[l_v] = target_mesh()[_em.l_matching_vertex[l_v.idx].idx];
     }
+
+    t_matching_vertex = t_m.vertices().make_attribute<pm::vertex_handle>();
     for (const auto t_v : target_mesh().vertices()) {
         t_matching_vertex[t_v] = layout_mesh()[_em.t_matching_vertex[t_v.idx].idx];
     }
+
+    t_matching_halfedge = t_m.halfedges().make_attribute<pm::halfedge_handle>();
     for (const auto t_he : target_mesh().halfedges()) {
         t_matching_halfedge[t_he] = layout_mesh()[_em.t_matching_halfedge[t_he.idx].idx];
     }
+
     if (_em.vertex_repulsive_energy.has_value()) {
         vertex_repulsive_energy = target_mesh().vertices().make_attribute<Eigen::VectorXd>();
         vertex_repulsive_energy->copy_from(*_em.vertex_repulsive_energy);
     }
+
+    return *this;
 }
 
 //Embedding::Embedding(std::string file_name, std::string file_directory,
