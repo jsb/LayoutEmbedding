@@ -62,7 +62,6 @@ int main()
             else if (algorithm == "bnb") {
                 BranchAndBoundSettings settings;
                 settings.time_limit = 30 * 60;
-                settings.use_hashing = true;
                 branch_and_bound(em, settings);
             }
             else {
