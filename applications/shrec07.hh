@@ -13,7 +13,7 @@ const std::filesystem::path shrec_meshes_dir = shrec_dir / "Meshes";
 // Output directories for generated layout and results of the embedding experiments.
 const std::filesystem::path shrec_output_dir = LE_OUTPUT_PATH;
 const std::filesystem::path shrec_layouts_dir = shrec_output_dir / "shrec07_layouts";
-const std::filesystem::path shrec_results_dir = shrec_output_dir / "shrec07_results_competitors";
+const std::filesystem::path shrec_results_dir = shrec_output_dir / "shrec07_results";
 
 const std::vector<int> shrec_categories = {
      1, // Human     (36 points each, 14 before)          1- 20
