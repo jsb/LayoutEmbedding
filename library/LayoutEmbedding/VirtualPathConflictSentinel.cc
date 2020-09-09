@@ -219,7 +219,73 @@ void VirtualPathConflictSentinel::check_path_ordering()
         }
 
         if (!vertex_has_sectors) {
-            // No conflicts
+            // Save back references -- from VirtualPorts around this vertex to corresponding layout halfedges.
+            std::map<VirtualPort, std::set<Label>> labels_at_port;
+            for (const auto l_he : l_v.outgoing_halfedges()) {
+                LE_ASSERT(!em.is_embedded(l_he));
+                const auto& port = l_port[l_he];
+                const auto& label = l_he.edge();
+                labels_at_port[port].insert(label);
+            }
+
+            // Detect local violations of cyclic order
+            for (const pm::halfedge_handle l_he : l_v.outgoing_halfedges()) {
+                const pm::halfedge_handle& l_he_prev = rotated_cw(l_he);
+                const pm::halfedge_handle& l_he_next = rotated_ccw(l_he);
+
+                const Label& l_prev = l_he_prev.edge();
+                const Label& l      = l_he.edge();
+                const Label& l_next = l_he_next.edge();
+
+                const VirtualPort& port_prev = l_port[l_he_prev];
+                const VirtualPort& port      = l_port[l_he];
+                const VirtualPort& port_next = l_port[l_he_next];
+
+                LE_ASSERT(port_prev.is_valid());
+                LE_ASSERT(port.is_valid());
+                LE_ASSERT(port_next.is_valid());
+
+                // We check that port lies between port_prev and port_next.
+                // To do this, we start at port_prev, and rotate CCW until port is found.
+                // If any other embedded edge is encountered first, we have detected a conflict.
+                // We then repeat the same thing starting from port, trying to reach port_next.
+
+                bool valid = true;
+                auto port_current = port_prev;
+
+                // Check the sector from port_prev to port
+                while (port_current != port) {
+                    for (const auto& l_at_port : labels_at_port[port_current]) {
+                        // Any other labels at port_current?
+                        if (l_at_port != l_prev) {
+                            // --> Conflict
+                            valid = false;
+                            break;
+                        }
+                    }
+                    port_current = port_current.rotated_ccw();
+                }
+
+                // Check the sector from port to port_next
+                while (port_current != port_next) {
+                    for (const auto& l_at_port : labels_at_port[port_current]) {
+                        // Any other labels at port_current?
+                        if (l_at_port != l) {
+                            // --> Conflict
+                            valid = false;
+                            break;
+                        }
+                    }
+                    port_current = port_current.rotated_ccw();
+                }
+
+                if (!valid) {
+                    // The current label (l) is marked as conflicting with all other incident labels around the vertex
+                    for (const auto other_l : l_v.edges()) {
+                        mark_conflicting(l, other_l);
+                    }
+                }
+            }
         }
     }
 }
