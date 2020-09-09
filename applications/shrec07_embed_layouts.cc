@@ -69,7 +69,12 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         else if (algorithm == "bnb") {
             BranchAndBoundSettings settings;
             settings.time_limit = 10 * 60;
-            branch_and_bound(em, settings);
+            auto result = branch_and_bound(em, settings);
+
+            const fs::path bnb_stats_path = shrec_results_dir / ("stats_" + _name + "_bnb.csv");
+            std::ofstream f{bnb_stats_path};
+            f << "gap,lower_bound" << std::endl;
+            f << result.gap << "," << result.lower_bound << std::endl;
         }
         else {
             LE_ASSERT(false);
