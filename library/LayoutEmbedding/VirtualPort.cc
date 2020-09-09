@@ -26,6 +26,11 @@ bool VirtualPort::operator!=(const VirtualPort& _rhs) const
     return !(*this == _rhs);
 }
 
+bool VirtualPort::operator<(const VirtualPort& _rhs) const
+{
+    return std::tuple<int, int>(from.idx.value, to.index()) < std::tuple<int, int>(_rhs.from.idx.value, _rhs.to.index());
+}
+
 VirtualPort VirtualPort::rotated_cw() const
 {
     const auto& m = *from.mesh;

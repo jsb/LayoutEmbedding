@@ -15,6 +15,7 @@ struct VirtualPort
 
     bool operator==(const VirtualPort& _rhs) const;
     bool operator!=(const VirtualPort& _rhs) const;
+    bool operator<(const VirtualPort& _rhs) const; // Provided so this can be used as a map key
 
     VirtualPort rotated_cw() const;
     VirtualPort rotated_ccw() const;
