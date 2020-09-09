@@ -258,6 +258,8 @@ int main()
                 input.l_matching_vertex[l_v] = t_v;
             }
 
+            input.normalize_surface_area();
+            input.center_translation();
             compute_embeddings(std::to_string(mesh_id), input);
         }
     }

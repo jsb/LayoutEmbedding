@@ -47,6 +47,12 @@ struct EmbeddingInput
               bool write_target_input_mesh=true) const;
 
     bool load(std::string filename);
+
+    /**
+     * Normalize surface area of target mesh
+     */
+    void normalize_surface_area();
+    void center_translation();
 };
 
 // TODO: Find elegant way to cast vertex-attribute position from pos3 to std::array<float,3>

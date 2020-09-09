@@ -1,13 +1,16 @@
 #include "EmbeddingInput.hh"
 
-LayoutEmbedding::EmbeddingInput::EmbeddingInput() :
+namespace LayoutEmbedding
+{
+
+EmbeddingInput::EmbeddingInput() :
     l_pos(l_m),
     l_matching_vertex(l_m),
     t_pos(t_m)
 {
 }
 
-bool LayoutEmbedding::EmbeddingInput::save(std::string filename,
+bool EmbeddingInput::save(std::string filename,
                                            bool write_layout_mesh, bool write_target_input_mesh) const
 {
     // Names (including paths) of files to be stored
@@ -40,13 +43,13 @@ bool LayoutEmbedding::EmbeddingInput::save(std::string filename,
 
     if(write_target_input_mesh) // default argument: true
     {
-        bool success = LayoutEmbedding::write_obj_file(t_m_write_file_name, t_m, t_pos);
+        bool success = write_obj_file(t_m_write_file_name, t_m, t_pos);
         LE_ASSERT(success == true);
     }
 
     if(write_layout_mesh) // default argument: true
     {
-        bool success = LayoutEmbedding::write_obj_file(l_m_write_file_name, l_m, l_pos);
+        bool success = write_obj_file(l_m_write_file_name, l_m, l_pos);
         LE_ASSERT(success == true);
     }
 
@@ -94,7 +97,7 @@ bool LayoutEmbedding::EmbeddingInput::save(std::string filename,
 // Adopted from obj_writer::write_mesh from polymesh.
 // Currently, the Pos3-based vertex-attributes used in LayoutEmbedding are incompatible with
 //            the obj_writer
-bool LayoutEmbedding::write_obj_file(std::string file_name, const pm::Mesh& mesh,
+bool write_obj_file(std::string file_name, const pm::Mesh& mesh,
                                      const pm::vertex_attribute<tg::pos3>& position)
 {
     std::ofstream file_stream(file_name);
@@ -127,7 +130,7 @@ bool LayoutEmbedding::write_obj_file(std::string file_name, const pm::Mesh& mesh
 
     return true;
 }
-bool LayoutEmbedding::EmbeddingInput::load(std::string filename)
+bool EmbeddingInput::load(std::string filename)
 {
     std::string inp_file_name = filename;
     std::cout << "Input file name: " << inp_file_name << std::endl;
@@ -226,4 +229,26 @@ bool LayoutEmbedding::EmbeddingInput::load(std::string filename)
         l_matching_vertex[l_m[pm::vertex_index(matching_pair.first)]] = t_m[pm::vertex_index(matching_pair.second)];
     }
     return true;
+}
+
+void EmbeddingInput::normalize_surface_area()
+{
+    auto area = [] (const pm::vertex_attribute<tg::pos3>& pos)
+    {
+        return pos.mesh().faces().sum([&] (auto f) { return pm::face_area(f, pos); });
+    };
+
+    const double new_area = 1.0;
+    const double scale = std::sqrt(new_area) / std::sqrt(area(t_pos));
+    t_pos.apply([&] (auto& p) { p *= scale; });
+    std::cout << "Normalized surface area of target mesh." << std::endl;
+}
+
+void EmbeddingInput::center_translation()
+{
+    // Move center of gravity to origin
+    const auto cog = t_pos.sum() / t_pos.mesh().vertices().size();
+    t_pos.apply([&] (auto& p) { p - cog; });
+}
+
 }
