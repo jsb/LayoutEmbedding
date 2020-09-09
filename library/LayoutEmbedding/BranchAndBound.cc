@@ -184,7 +184,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         // Cache classified edges
         const auto& es_embedded_edges = es.embedded_edges();
         const auto& es_conflicting_edges = es.conflicting_edges();
-        const auto& es_non_conflicting_edges = es.conflicting_edges();
+        const auto& es_non_conflicting_edges = es.non_conflicting_edges();
 
         std::cout << "t: " << timer.elapsedSecondsD();
         std::cout << "    ";
