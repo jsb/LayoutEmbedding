@@ -34,10 +34,12 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
     const std::vector<std::string> algorithms = {
         "greedy",
         "praun",
+        "kraevoy",
         "schreiner",
 //        "greedy_brute_force",
         "bnb",
     };
+
 
     fs::create_directories(shrec_results_dir);
     const fs::path stats_path = shrec_results_dir / ("stats_" + _name + ".csv");
@@ -59,6 +61,9 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         }
         else if (algorithm == "praun") {
             embed_praun(em);
+        }
+        else if (algorithm == "kraevoy") {
+            embed_kraevoy(em);
         }
         else if (algorithm == "schreiner") {
             embed_schreiner(em);

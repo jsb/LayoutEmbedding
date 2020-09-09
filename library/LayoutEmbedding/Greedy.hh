@@ -21,6 +21,9 @@ struct GreedySettings
     // Use path tracing using a harmonic field that tries to avoid layout vertices [Praun2001]
     bool use_vertex_repulsive_tracing = false;
 
+    // Instead of building a spanning tree first, use the paths-blocking condition from [Kraevoy2003] / [Kraevoy2004]
+    bool use_blocking_condition = false;
+
     // Prefer insertion of edges that connect extremal vertices (with large average distance to neighbors) [Schreiner2004]
     bool prefer_extremal_vertices = false;
     double extremal_vertex_ratio = 0.25;
@@ -42,6 +45,7 @@ struct GreedyResult
 // Run a single greedy variant
 GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings = GreedySettings(), const std::string& _name = "greedy");
 GreedyResult embed_praun(Embedding& _em, const GreedySettings& _settings = GreedySettings());
+GreedyResult embed_kraevoy(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 GreedyResult embed_schreiner(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 
 // Run multiple greedy variants

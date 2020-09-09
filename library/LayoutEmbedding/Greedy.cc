@@ -164,6 +164,93 @@ bool swirl_detection_bidirectional(Embedding& _em, const pm::halfedge_handle& _l
     }
 }
 
+/// [Kraevoy2003] / [Kraevoy2004] blocking condition.
+/// _l_h_seed is already (temporarily) embedded.
+bool is_blocking(const Embedding& _em, const pm::halfedge_handle& _l_h_seed)
+{
+    LE_ASSERT(_em.is_embedded(_l_h_seed));
+
+    // Find sets of layout vertices in patch defined by _l_h.
+    // Both in layout and target mesh.
+    std::set<pm::vertex_index> l_vertices;
+    std::set<pm::vertex_index> t_vertices;
+
+    { // Collect vertices in layout
+        std::queue<pm::halfedge_handle> queue;
+        queue.push(_l_h_seed);
+
+        auto visited = _em.layout_mesh().faces().make_attribute<bool>(false);
+        while (!queue.empty()) {
+            const auto h = queue.front();
+            const auto f = h.face();
+            queue.pop();
+
+            if (visited[f])
+                continue;
+            visited[f] = true;
+
+            // Collect layout vertices
+            for (auto l_v : f.vertices())
+                l_vertices.insert(l_v.idx);
+
+            // Enqueue neighbors
+            for (auto l_h_f : f.halfedges()) {
+                const auto l_h_opp = l_h_f.opposite();
+                if (!_em.is_embedded(l_h_opp) && !visited[l_h_opp.face()]) {
+                    queue.push(l_h_opp);
+                }
+            }
+        }
+    }
+
+    { // Collect vertices in target mesh
+        std::queue<pm::halfedge_handle> queue;
+        queue.push(_em.get_embedded_target_halfedge(_l_h_seed));
+
+        auto visited = _em.target_mesh().faces().make_attribute<bool>(false);
+        while (!queue.empty()) {
+            const auto h = queue.front();
+            const auto f = h.face();
+            queue.pop();
+
+            if (visited[f])
+                continue;
+            visited[f] = true;
+
+            // Collect layout vertices
+            for (auto t_v : f.vertices()) {
+                const auto l_v = _em.matching_layout_vertex(t_v);
+                if (l_v.is_valid())
+                    t_vertices.insert(l_v.idx);
+            }
+
+            // Enqueue neighbors
+            for (auto t_h_f : f.halfedges()) {
+                const auto t_h_opp = t_h_f.opposite();
+                if (!_em.is_blocked(t_h_opp.edge()) && !visited[t_h_opp.face()]) {
+                    queue.push(t_h_opp);
+                }
+            }
+        }
+    }
+
+    return l_vertices != t_vertices;
+}
+
+/// [Kraevoy2003] / [Kraevoy2004] blocking condition.
+/// Check if sets of layout vertices left and right of path match between layout and target mesh.
+/// _l_e is not yet embedded.
+bool is_blocking(const Embedding& _em, const pm::edge_handle& _l_e, const VirtualPath& _path)
+{
+    LE_ASSERT(!_em.is_embedded(_l_e));
+
+    // Copy embedding to temporarily embed the path
+    Embedding em_copy = _em;
+    em_copy.embed_path(_l_e.halfedgeA(), _path);
+
+    return is_blocking(em_copy, _l_e.halfedgeA()) || is_blocking(em_copy, _l_e.halfedgeB());
+}
+
 }
 
 GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings, const std::string& _name)
@@ -238,16 +325,14 @@ GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings, const
                 continue;
             }
 
-            if (incident_to_extremal_vertex(best_l_e) && !incident_to_extremal_vertex(l_e)) {
-                continue;
-            }
-
             int l_vi_a = l_e.vertexA().idx.value;
             int l_vi_b = l_e.vertexB().idx.value;
 
-            if (!is_spanning_tree) {
-                if (l_v_components.equivalent(l_vi_a, l_vi_b)) {
-                    continue;
+            if (!_settings.use_blocking_condition) {
+                if (!is_spanning_tree) {
+                    if (l_v_components.equivalent(l_vi_a, l_vi_b)) {
+                        continue;
+                    }
                 }
             }
 
@@ -258,6 +343,16 @@ GreedyResult embed_greedy(Embedding& _em, const GreedySettings& _settings, const
 
             VirtualPath path = _em.find_shortest_path(l_e.halfedgeA(), metric);
             double path_cost = _em.path_length(path);
+
+            // If we use the blocking condition, we have to discard the path if
+            // the vertices enclosed in new patches differ between the layout and the embedding.
+            if (_settings.use_blocking_condition) {
+                if (l_v_components.equivalent(l_vi_a, l_vi_b)) {
+                    if (is_blocking(_em, l_e, path)) {
+                        continue;
+                    }
+                }
+            }
 
             // If we use an arbitrary insertion order, we can early-out after the first path is found
             if (_settings.insertion_order == GreedySettings::InsertionOrder::Arbitrary) {
@@ -315,9 +410,21 @@ GreedyResult embed_praun(Embedding& _em, const GreedySettings& _settings)
     GreedySettings settings = _settings;
     settings.use_swirl_detection = true;
     settings.use_vertex_repulsive_tracing = true;
+    settings.use_blocking_condition = false;
     settings.prefer_extremal_vertices = false;
 
     return embed_greedy(_em, settings, "praun");
+}
+
+GreedyResult embed_kraevoy(Embedding& _em, const GreedySettings& _settings)
+{
+    GreedySettings settings = _settings;
+    settings.use_swirl_detection = false;
+    settings.use_vertex_repulsive_tracing = false;
+    settings.use_blocking_condition = true;
+    settings.prefer_extremal_vertices = false;
+
+    return embed_greedy(_em, settings, "kraevoy");
 }
 
 GreedyResult embed_schreiner(Embedding& _em, const GreedySettings& _settings)
@@ -325,6 +432,7 @@ GreedyResult embed_schreiner(Embedding& _em, const GreedySettings& _settings)
     GreedySettings settings = _settings;
     settings.use_swirl_detection = true;
     settings.use_vertex_repulsive_tracing = false;
+    settings.use_blocking_condition = false;
     settings.prefer_extremal_vertices = true;
 
     return embed_greedy(_em, settings, "schreiner");
@@ -378,6 +486,7 @@ std::vector<GreedyResult> embed_competitors(Embedding& _em, const GreedySettings
         GreedySettings settings = _settings;
         settings.use_swirl_detection = false;
         settings.use_vertex_repulsive_tracing = false;
+        settings.use_blocking_condition = false;
         settings.prefer_extremal_vertices = false;
         all_settings.push_back(settings);
     }
@@ -385,6 +494,15 @@ std::vector<GreedyResult> embed_competitors(Embedding& _em, const GreedySettings
         GreedySettings settings = _settings;
         settings.use_swirl_detection = true;
         settings.use_vertex_repulsive_tracing = true;
+        settings.use_blocking_condition = false;
+        settings.prefer_extremal_vertices = false;
+        all_settings.push_back(settings);
+    }
+    { // [Kraevoy2003] / [Kraevoy2004]
+        GreedySettings settings = _settings;
+        settings.use_swirl_detection = false;
+        settings.use_vertex_repulsive_tracing = false;
+        settings.use_blocking_condition = true;
         settings.prefer_extremal_vertices = false;
         all_settings.push_back(settings);
     }
@@ -392,6 +510,7 @@ std::vector<GreedyResult> embed_competitors(Embedding& _em, const GreedySettings
         GreedySettings settings = _settings;
         settings.use_swirl_detection = true;
         settings.use_vertex_repulsive_tracing = false;
+        settings.use_blocking_condition = false;
         settings.prefer_extremal_vertices = true;
         all_settings.push_back(settings);
     }

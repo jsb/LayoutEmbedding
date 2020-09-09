@@ -90,7 +90,7 @@ void view_target(const Embedding& _em, const bool patch_colors)
     auto v = gv::view();
 
     // Mesh
-    if (patch_colors) {
+    if (patch_colors && _em.is_complete()) {
         const auto l_f_colors = generate_patch_colors(_em.layout_mesh());
         auto t_f_colors = _em.target_mesh().faces().make_attribute<tg::color3>();
         for (auto l_f : _em.layout_mesh().faces()) {

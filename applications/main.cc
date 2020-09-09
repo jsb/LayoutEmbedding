@@ -44,6 +44,7 @@ void run_test_case(const TestCase& tc)
     const std::vector<std::string> algorithms = {
         "greedy",
         "praun",
+        "kraevoy",
         "schreiner",
 //        "greedy_brute_force",
         "bnb",
@@ -90,6 +91,9 @@ void run_test_case(const TestCase& tc)
         }
         else if (algorithm == "praun") {
             embed_praun(em);
+        }
+        else if (algorithm == "kraevoy") {
+            embed_kraevoy(em);
         }
         else if (algorithm == "schreiner") {
             embed_schreiner(em);
