@@ -379,6 +379,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         while (!q.empty()) {
             auto c = q.top();
             final_lower_bound = std::min(final_lower_bound, c.lower_bound);
+            final_gap = 1.0 - final_lower_bound / global_upper_bound;
             q.pop();
         }
         if (std::isinf(final_lower_bound)) {
