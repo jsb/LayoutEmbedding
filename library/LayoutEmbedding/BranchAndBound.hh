@@ -12,6 +12,16 @@ struct BranchAndBoundSettings
 
     bool record_upper_bound_events = true;
     bool record_lower_bound_events = false;
+
+    enum class Priority
+    {
+        LowerBoundNonConflicting, // Priority: lower_bound * num_non_conflicting_paths
+        LowerBound,               // Priority: lower_bound
+    };
+    Priority priority = Priority::LowerBoundNonConflicting;
+
+    double lower_bound_priority_time_limit = 0.0; // Seconds. Set to <= 0 to disable.
+    // After this time, the solver will switch to a different queue priority that focuses on improving the lower bound.
 };
 
 struct BranchAndBoundResult
