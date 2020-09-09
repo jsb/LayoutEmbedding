@@ -375,12 +375,16 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
     {
         // Drain the rest of the queue to find the maximum optimality gap
         auto final_lower_bound = std::numeric_limits<double>::infinity();
+        auto final_gap = 1.0;
         while (!q.empty()) {
             auto c = q.top();
             final_lower_bound = std::min(final_lower_bound, c.lower_bound);
             q.pop();
         }
-        const double final_gap = std::max(_settings.optimality_gap, 1.0 - final_lower_bound / global_upper_bound);
+        if (std::isinf(final_lower_bound)) {
+            final_lower_bound = global_upper_bound * (1.0 - _settings.optimality_gap);
+            final_gap = _settings.optimality_gap;
+        }
         std::cout << "The optimal solution is at most " << (final_gap * 100.0) << " % better than the found solution." << std::endl;
 
         result.lower_bound = final_lower_bound;
