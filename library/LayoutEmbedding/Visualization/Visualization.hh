@@ -3,6 +3,7 @@
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
+#include <glow-extras/glfw/GlfwContext.hh>
 #include <glow-extras/viewer/view.hh>
 
 namespace LayoutEmbedding {
@@ -32,6 +33,10 @@ void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _col
 void view_edge(const pm::vertex_attribute<tg::pos3>& _pos, const pm::edge_handle& _e, const tg::color3& _color);
 void view_vertex(const pm::vertex_attribute<tg::pos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color);
 void view_vertex(const pm::vertex_attribute<tg::dpos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color);
+
+void view_param(const pm::vertex_attribute<tg::dpos2> _param);
+
+glow::SharedTexture2D read_texture(const fs::path &_file_path);
 
 inline auto default_style()
 {

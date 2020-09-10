@@ -243,4 +243,14 @@ void view_vertex(const pm::vertex_attribute<tg::dpos3> &_pos, const polymesh::ve
     view_vertex(_pos.map([] (auto p) { return tg::pos3(p[0], p[1], p[2]); }), _v, _color);
 }
 
+void view_param(const pm::vertex_attribute<tg::dpos2> _param)
+{
+    gv::view(gv::lines(_param.map([] (auto p) { return tg::pos3(p.x, p.y, 0.0); })));
+}
+
+glow::SharedTexture2D read_texture(const fs::path &_file_path)
+{
+    return glow::Texture2D::createFromFile(_file_path, glow::ColorSpace::sRGB);
+}
+
 }
