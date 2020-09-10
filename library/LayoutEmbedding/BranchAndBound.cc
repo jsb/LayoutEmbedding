@@ -42,6 +42,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
     glow::timing::CpuTimer timer;
 
     BranchAndBoundResult result(_name, _settings);
+    BranchAndBoundSettings::Priority priority = _settings.priority;
 
     InsertionSequence best_insertion_sequence;
     double global_upper_bound = std::numeric_limits<double>::infinity();
@@ -112,6 +113,26 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     std::cout << "Warning: No valid solution was found within that time." << std::endl;
                 }
                 break;
+            }
+        }
+
+        // Priority switch time limit
+        if (_settings.lower_bound_priority_time_limit > 0.0) {
+            if (timer.elapsedSecondsD() >= _settings.time_limit) {
+                if (priority != BranchAndBoundSettings::Priority::LowerBound) {
+                    std::cout << "Switching queue priority to LowerBound." << std::endl;
+                    priority = BranchAndBoundSettings::Priority::LowerBound;
+
+                    // Reorder the current queue
+                    std::priority_queue<Candidate> new_q;
+                    while (!q.empty()) {
+                        auto new_c = q.top();
+                        new_c.priority = new_c.lower_bound;
+                        new_q.push(new_c);
+                        q.pop();
+                    }
+                    q = new_q;
+                }
             }
         }
 
@@ -217,6 +238,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
             for (const auto& q_item : get_container(q)) {
                 min_lower_bound = std::min(min_lower_bound, q_item.lower_bound);
             }
+            min_lower_bound = std::min(min_lower_bound, global_upper_bound);
 
             // Only record this event if it's an update
             if (!result.lower_bound_events.empty()) {
@@ -363,7 +385,15 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     Candidate new_c;
                     new_c.state_hash = new_es_hash;
                     new_c.lower_bound = new_lower_bound;
-                    new_c.priority = new_c.lower_bound * new_es.conflicting_edges().size();
+                    if (priority == BranchAndBoundSettings::Priority::LowerBoundNonConflicting) {
+                        new_c.priority = new_c.lower_bound * new_es.conflicting_edges().size();
+                    }
+                    else if (priority == BranchAndBoundSettings::Priority::LowerBound) {
+                        new_c.priority = new_c.lower_bound;
+                    }
+                    else {
+                        LE_ASSERT(false);
+                    }
                     q.push(new_c);
                 }
             }
