@@ -220,42 +220,13 @@ int main()
             }
 
             EmbeddingInput input;
-
-            pm::load(layout_mesh_path, input.l_m, input.l_pos);
-            std::cout << "Layout Mesh: ";
-            std::cout << input.l_m.vertices().size() << " vertices, ";
-            std::cout << input.l_m.edges().size() << " edges, ";
-            std::cout << input.l_m.faces().size() << " faces. ";
-            std::cout << "χ = " << pm::euler_characteristic(input.l_m) << std::endl;
+            if (!input.load(layout_mesh_path, target_mesh_path, corrs_path, LandmarkFormat::id_x_y_z)) {
+                continue;
+            }
 
             if (shrec_flipped_landmarks.count(mesh_id)) {
                 std::cout << "This object is flipped. Inverting layout mesh." << std::endl;
                 invert_mesh(input.l_m);
-            }
-
-            pm::load(target_mesh_path, input.t_m, input.t_pos);
-            std::cout << "Target Mesh: ";
-            std::cout << input.t_m.vertices().size() << " vertices, ";
-            std::cout << input.t_m.edges().size() << " edges, ";
-            std::cout << input.t_m.faces().size() << " faces. ";
-            std::cout << "χ = " << pm::euler_characteristic(input.t_m) << std::endl;
-
-            if (pm::euler_characteristic(input.l_m) != pm::euler_characteristic(input.t_m)) {
-                std::cout << "Euler characteristic does not match. Skipping." << std::endl;
-                continue;
-            }
-
-            // Load landmarks
-            const auto landmark_ids = load_landmarks(corrs_path);
-            std::cout << landmark_ids.size() << " landmarks." << std::endl;
-            if (landmark_ids.size() != input.l_m.vertices().size()) {
-                std::cout << "Wrong number of landmarks. Skipping." << std::endl;
-                continue;
-            }
-            for (size_t i = 0; i < landmark_ids.size(); ++i) {
-                const auto l_v = input.l_m.vertices()[i];
-                const auto t_v = input.t_m.vertices()[landmark_ids[i]];
-                input.l_matching_vertex[l_v] = t_v;
             }
 
             input.normalize_surface_area();

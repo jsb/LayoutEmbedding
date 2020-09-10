@@ -80,7 +80,7 @@ int main()
             }
 
             // Load landmarks
-            const auto landmarks = load_landmarks(corrs_path);
+            const auto landmarks = load_landmarks(corrs_path, LandmarkFormat::id_x_y_z);
             std::cout << landmarks.size() << " landmarks." << std::endl;
 
             // Create Layout mesh

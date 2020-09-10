@@ -10,6 +10,13 @@
 
 namespace LayoutEmbedding {
 
+namespace fs = std::filesystem;
+
+enum class LandmarkFormat {
+    id_x_y_z,
+    id,
+};
+
 struct EmbeddingInput
 {
     pm::Mesh l_m;
@@ -46,7 +53,15 @@ struct EmbeddingInput
               bool write_layout_mesh=true,
               bool write_target_input_mesh=true) const;
 
-    bool load(std::string filename);
+    bool load(const std::string& _path_prefix);
+    bool load(
+            const fs::path& _layout_path,
+            const fs::path& _target_path);
+    bool load(
+            const fs::path& _layout_path,
+            const fs::path& _target_path,
+            const fs::path& _landmarks_path,
+            const LandmarkFormat& _format);
 
     /**
      * Normalize surface area of target mesh
@@ -58,5 +73,7 @@ struct EmbeddingInput
 // TODO: Find elegant way to cast vertex-attribute position from pos3 to std::array<float,3>
 bool write_obj_file(std::string file_name, const pm::Mesh & mesh,
                     const pm::vertex_attribute<tg::pos3>& t_pos);
+
+std::vector<int> load_landmarks(const fs::path& _file_path, const LandmarkFormat& _format);
 
 }

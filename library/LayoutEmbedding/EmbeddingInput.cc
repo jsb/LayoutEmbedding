@@ -1,5 +1,7 @@
 #include "EmbeddingInput.hh"
 
+#include <LayoutEmbedding/LayoutGeneration.hh>
+
 namespace LayoutEmbedding
 {
 
@@ -94,56 +96,20 @@ bool EmbeddingInput::save(std::string filename,
     return true;
 }
 
-// Adopted from obj_writer::write_mesh from polymesh.
-// Currently, the Pos3-based vertex-attributes used in LayoutEmbedding are incompatible with
-//            the obj_writer
-bool write_obj_file(std::string file_name, const pm::Mesh& mesh,
-                                     const pm::vertex_attribute<tg::pos3>& position)
+bool EmbeddingInput::load(const std::string& _path_prefix)
 {
-    std::ofstream file_stream(file_name);
-
-    int vertex_idx = 1;
-    auto base_v = vertex_idx;
-
-    // Only write vertex positions
-    for (auto v : mesh.all_vertices())
-    {
-        auto pos = v[position];
-        file_stream << "v " << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
-        ++vertex_idx;
-    }
-
-    // Write connectivity (faces)
-    for (auto f : mesh.faces())
-    {
-        file_stream << "f";
-        for (auto v : f.vertices())
-        {
-            auto i = v.idx.value;
-            file_stream << " ";
-            file_stream << base_v + i;
-        }
-        file_stream << "\n";
-    }
-
-    file_stream.close();
-
-    return true;
-}
-bool EmbeddingInput::load(std::string filename)
-{
-    std::string inp_file_name = filename;
+    std::string inp_file_name = _path_prefix;
     std::cout << "Input file name: " << inp_file_name << std::endl;
     std::string lm_file_name;
     std::string tim_file_name;
     // Extract (relative) path of embedding file (relative to current working directory)
-    auto last_slash_position = filename.find_last_of("/");
+    auto last_slash_position = _path_prefix.find_last_of("/");
     std::string directory_of_inp_file = "";
     // If relative path hints to subdirectory, check whether subdirectory exists
     if(last_slash_position != std::string::npos)
     {
         // Only add relative path, if it is not . (same directory)
-        directory_of_inp_file = filename.substr(0, last_slash_position+1);
+        directory_of_inp_file = _path_prefix.substr(0, last_slash_position+1);
         // Check, whether directory exists
         LE_ASSERT(std::filesystem::exists(directory_of_inp_file));
     }
@@ -231,6 +197,62 @@ bool EmbeddingInput::load(std::string filename)
     return true;
 }
 
+bool EmbeddingInput::load(
+        const fs::path& _layout_path,
+        const fs::path& _target_path)
+{
+    // Load layout
+    LE_ASSERT(pm::load(_layout_path, l_m, l_pos));
+    std::cout << "Layout Mesh: ";
+    std::cout << l_m.vertices().size() << " vertices, ";
+    std::cout << l_m.edges().size() << " edges, ";
+    std::cout << l_m.faces().size() << " faces. ";
+    std::cout << "χ = " << pm::euler_characteristic(l_m) << std::endl;
+
+    // Load target mesh
+    LE_ASSERT(pm::load(_target_path, t_m, t_pos));
+    std::cout << "Target Mesh: ";
+    std::cout << t_m.vertices().size() << " vertices, ";
+    std::cout << t_m.edges().size() << " edges, ";
+    std::cout << t_m.faces().size() << " faces. ";
+    std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
+
+    if (pm::euler_characteristic(l_m) != pm::euler_characteristic(t_m)) {
+        std::cout << "Euler characteristic does not match. Skipping." << std::endl;
+        return false;
+    }
+
+    find_matching_vertices_by_proximity(*this);
+
+    return true;
+}
+
+bool EmbeddingInput::load(
+        const fs::path& _layout_path,
+        const fs::path& _target_path,
+        const fs::path& _landmarks_path,
+        const LandmarkFormat& _format)
+{
+    if (!load(_layout_path, _target_path)) {
+        return false;
+    }
+
+    // Load landmarks from file
+    const auto landmark_ids = load_landmarks(_landmarks_path, _format);
+    std::cout << landmark_ids.size() << " landmarks." << std::endl;
+    if (landmark_ids.size() != l_m.vertices().size()) {
+        std::cout << "Wrong number of landmarks. Skipping." << std::endl;
+        return false;
+    }
+    for (size_t i = 0; i < landmark_ids.size(); ++i) {
+        const auto l_v = l_m.vertices()[i];
+        const auto t_v = t_m.vertices()[landmark_ids[i]];
+        l_matching_vertex[l_v] = t_v;
+    }
+
+    return true;
+}
+
 void EmbeddingInput::normalize_surface_area()
 {
     auto area = [] (const pm::vertex_attribute<tg::pos3>& pos)
@@ -249,6 +271,76 @@ void EmbeddingInput::center_translation()
     // Move center of gravity to origin
     const auto cog = t_pos.sum() / t_pos.mesh().vertices().size();
     t_pos.apply([&] (auto& p) { p - cog; });
+}
+
+// Adopted from obj_writer::write_mesh from polymesh.
+// Currently, the Pos3-based vertex-attributes used in LayoutEmbedding are incompatible with
+//            the obj_writer
+bool write_obj_file(std::string file_name, const pm::Mesh& mesh,
+                                     const pm::vertex_attribute<tg::pos3>& position)
+{
+    std::ofstream file_stream(file_name);
+
+    int vertex_idx = 1;
+    auto base_v = vertex_idx;
+
+    // Only write vertex positions
+    for (auto v : mesh.all_vertices())
+    {
+        auto pos = v[position];
+        file_stream << "v " << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
+        ++vertex_idx;
+    }
+
+    // Write connectivity (faces)
+    for (auto f : mesh.faces())
+    {
+        file_stream << "f";
+        for (auto v : f.vertices())
+        {
+            auto i = v.idx.value;
+            file_stream << " ";
+            file_stream << base_v + i;
+        }
+        file_stream << "\n";
+    }
+
+    file_stream.close();
+
+    return true;
+}
+
+std::vector<int> load_landmarks(const fs::path& _file_path, const LandmarkFormat& _format)
+{
+    std::ifstream f { _file_path };
+    std::vector<int> result;
+
+    switch (_format) {
+        case LandmarkFormat::id_x_y_z:
+        {
+            while (f.good()) {
+                int id;
+                float x, y, z; // Unused
+                f >> id >> x >> y >> z;
+                if (f.good()) {
+                    result.push_back(id);
+                }
+            }
+            break;
+        }
+        case LandmarkFormat::id:
+        {
+            while (f.good()) {
+                int id;
+                f >> id;
+            }
+            break;
+        }
+        default:
+            LE_ERROR_THROW("");
+    }
+
+    return result;
 }
 
 }

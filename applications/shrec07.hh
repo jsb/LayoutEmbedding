@@ -67,18 +67,3 @@ const std::set<int> shrec_flipped_landmarks = {
 };
 
 const int shrec_meshes_per_category = 20;
-
-inline std::vector<int> load_landmarks(const std::string& _fn)
-{
-    std::ifstream f{_fn};
-    std::vector<int> result;
-    while (f.good()) {
-        int id;
-        float x, y, z; // Unused
-        f >> id >> x >> y >> z;
-        if (f.good()) {
-            result.push_back(id);
-        }
-    }
-    return result;
-}

@@ -46,6 +46,7 @@ void find_matching_vertices_by_proximity(EmbeddingInput& _input)
                 best_distance_sqr = distance_sqr;
             }
         }
+        LE_ASSERT(best_t_v.is_valid());
         _input.l_matching_vertex[l_v] = best_t_v;
         t_matched_v_ids.insert(best_t_v.idx);
     }
