@@ -766,10 +766,10 @@ const pm::vertex_handle Embedding::matching_layout_vertex(const pm::vertex_handl
     return t_matching_vertex[_t_v];
 }
 
-const pm::halfedge_handle Embedding::matching_layout_halfedge(const pm::halfedge_handle& _t_v) const
+const pm::halfedge_handle Embedding::matching_layout_halfedge(const pm::halfedge_handle& _t_h) const
 {
-    LE_ASSERT(_t_v.mesh == &target_mesh());
-    return t_matching_halfedge[_t_v];
+    LE_ASSERT(_t_h.mesh == &target_mesh());
+    return t_matching_halfedge[_t_h];
 }
 
 double Embedding::get_vertex_repulsive_energy(const pm::vertex_handle& _t_v, const pm::vertex_handle& _l_v) const

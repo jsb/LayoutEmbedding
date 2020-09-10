@@ -77,16 +77,6 @@ void view_target(const Embedding& _em, const bool patch_colors)
     const pm::Mesh& l_m = _em.layout_mesh();
     const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
 
-    HaltonColorGenerator color_generator;
-    pm::vertex_attribute<tg::color3> l_v_color(l_m);
-    pm::edge_attribute<tg::color3> l_e_color(l_m);
-    for (const auto l_v : l_m.vertices()) {
-        l_v_color[l_v] = color_generator.generate_next_color();
-    }
-    for (const auto l_e : l_m.edges()) {
-        l_e_color[l_e] = color_generator.generate_next_color();
-    }
-
     auto v = gv::view();
 
     // Mesh
@@ -104,12 +94,46 @@ void view_target(const Embedding& _em, const bool patch_colors)
         view_target_mesh(_em);
     }
 
-    // Embedded layout edges
+    view_vertices_and_paths(_em);
+}
+
+void view_vertices_and_paths(const Embedding& _em)
+{
+    const pm::Mesh& l_m = _em.layout_mesh();
+    const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
+
+    HaltonColorGenerator color_generator;
+    pm::vertex_attribute<tg::color3> l_v_color(l_m);
+    pm::edge_attribute<tg::color3> l_e_color(l_m);
+    for (const auto l_v : l_m.vertices()) {
+        l_v_color[l_v] = color_generator.generate_next_color();
+    }
     for (const auto l_e : l_m.edges()) {
-        if (_em.is_embedded(l_e)) {
-            std::vector<pm::vertex_handle> t_v_path = _em.get_embedded_path(l_e.halfedgeA());
-            view_path(_em, t_v_path, l_e_color[l_e]);
+        l_e_color[l_e] = color_generator.generate_next_color();
+    }
+
+    auto v = gv::view();
+
+    // Embedded layout edges
+    {
+        const float arc_width = 2.5f; // TODO: parameter?
+        pm::Mesh path_mesh;
+        auto path_pos = path_mesh.vertices().make_attribute<tg::pos3>();
+        auto path_color = path_mesh.edges().make_attribute<tg::color3>();
+        for (const auto t_e : t_pos.mesh().edges()) {
+            const auto l_h = _em.matching_layout_halfedge(t_e.halfedgeA());
+            if (l_h.is_invalid()) {
+                continue;
+            }
+
+            const auto v1 = path_mesh.vertices().add();
+            const auto v2 = path_mesh.vertices().add();
+            const auto e = path_mesh.edges().add_or_get(v1, v2);
+            path_pos[v1] = t_pos[t_e.vertexA()];
+            path_pos[v2] = t_pos[t_e.vertexB()];
+            path_color[e] = l_e_color[l_h.edge()];
         }
+        gv::view(gv::lines(path_pos).line_width_px(arc_width), path_color, gv::no_shading);
     }
 
     // Layout nodes

@@ -14,6 +14,57 @@ namespace fs = std::filesystem;
 namespace
 {
 
+pm::edge_attribute<int> choose_loop_subdivisions(
+        const Embedding& _em,
+        const double _target_edge_length)
+{
+    // Assert embedded quad layout
+    LE_ASSERT(_em.is_complete());
+    for (auto f : _em.layout_mesh().faces())
+        LE_ASSERT(f.vertices().size() == 4);
+
+    auto subdivisions = _em.layout_mesh().edges().make_attribute<int>(0);
+
+    // Iterate over loops
+    auto visited = _em.layout_mesh().edges().make_attribute<bool>(false);
+    for (auto l_e : _em.layout_mesh().edges())
+    {
+        if (visited[l_e])
+            continue;
+
+        // Trace loop and sum objective function
+        auto calc_loop_objective = [&] (auto h_seed, int subdiv_add)
+        {
+            auto h = h_seed;
+            auto obj = 0.0;
+            do
+            {
+                const double length_sub = _em.embedded_path_length(h) / (subdivisions[h.edge()] + subdiv_add + 1);
+                obj += pow(length_sub - _target_edge_length, 2);
+
+                visited[h.edge()] = true;
+                h = h.next().next().opposite();
+            }
+            while (h != h_seed);
+            return obj;
+        };
+
+        // Increase subdivision as long as it reduces objective
+        while (calc_loop_objective(l_e.halfedgeA(), 1) < calc_loop_objective(l_e.halfedgeA(), 0))
+        {
+            auto h = l_e.halfedgeA();
+            do
+            {
+                subdivisions[h.edge()] += 1;
+                h = h.next().next().opposite();
+            }
+            while (h != l_e.halfedgeA());
+        }
+    }
+
+    return subdivisions;
+}
+
 void extract_patch(
         const Embedding& _em,
         const pm::face_handle& _l_f,
@@ -75,14 +126,17 @@ glow::SharedTexture2D read_texture(
     return glow::Texture2D::createFromFile(_file_path, glow::ColorSpace::sRGB);
 }
 
-pm::halfedge_attribute<tg::dpos2> parametrize(
-        const Embedding& _em)
+pm::halfedge_attribute<tg::dpos2> parametrize_patches(
+        const Embedding& _em,
+        const pm::edge_attribute<int>& _l_subdivisions)
 {
     LE_ASSERT(_em.is_complete());
     auto param = _em.target_mesh().halfedges().make_attribute<tg::dpos2>();
 
     for (auto l_f : _em.layout_mesh().faces())
     {
+        LE_ASSERT(l_f.vertices().size() == 4);
+
         // Extract patch mesh
         pm::Mesh p_m;
         pm::vertex_attribute<tg::pos3> p_pos;
@@ -90,11 +144,15 @@ pm::halfedge_attribute<tg::dpos2> parametrize(
         pm::halfedge_attribute<pm::halfedge_handle> h_patch_to_target;
         extract_patch(_em, l_f, p_m, p_pos, v_target_to_patch, h_patch_to_target);
 
-        // Constrain patch boundary
+        // Constrain patch boundary to rectangle
         auto p_constrained = p_m.vertices().make_attribute<bool>(false);
         auto p_constraint_value = p_m.vertices().make_attribute<tg::dpos2>();
-        tg::dpos2 corner_from(0.5, -0.5);
-        tg::dpos2 corner_to(0.5, 0.5);
+
+        const double texture_scale = 0.5;
+        const double width = texture_scale * (_l_subdivisions[l_f.halfedges().first().edge()] + 1.0);
+        const double height = texture_scale * (_l_subdivisions[l_f.halfedges().last().edge()] + 1.0);
+        const std::vector<tg::dpos2> corners = { {0.0, 0.0}, {width, 0.0}, {width, height}, {0.0, height} };
+        int corner_idx = 0;
         for (auto l_h : l_f.halfedges())
         {
             const double length_total = _em.embedded_path_length(l_h);
@@ -109,11 +167,10 @@ pm::halfedge_attribute<tg::dpos2> parametrize(
 
                 const auto p_vi = v_target_to_patch[t_vi];
                 p_constrained[p_vi] = true;
-                p_constraint_value[p_vi] = (1.0 - lambda_i) * corner_from + lambda_i * corner_to;
+                p_constraint_value[p_vi] = (1.0 - lambda_i) * corners[corner_idx] + lambda_i * corners[(corner_idx + 1) % 4];
             }
 
-            corner_from = tg::dpos2(-corner_from.y, corner_from.x);
-            corner_to = tg::dpos2(-corner_to.y, corner_to.x);
+            ++corner_idx;
         }
 
         // Compute Tutte embedding
@@ -122,7 +179,10 @@ pm::halfedge_attribute<tg::dpos2> parametrize(
 
         // Transfer parametrization to target mesh
         for (auto p_h : p_m.halfedges())
-            param[h_patch_to_target[p_h]] = p_param[p_h.vertex_to()];
+        {
+            if (!p_h.is_boundary())
+                param[h_patch_to_target[p_h]] = p_param[p_h.vertex_to()];
+        }
     }
 
     return param;
@@ -135,20 +195,15 @@ void run(
     embed_greedy(em);
     em = smooth_paths(em);
 
-    auto param = parametrize(em);
+    auto l_subdivisions = choose_loop_subdivisions(em, 0.1);
+    auto param = parametrize_patches(em, l_subdivisions);
 
     {   // View checkerboard
+        auto style = default_style();
         auto texture = read_texture(fs::path(LE_DATA_PATH) / "textures/param_blue.png");
         auto v = gv::view(em.target_pos(), gv::textured(param.map([] (auto p) { return tg::pos2(p.x, p.y); }), texture));
-//        view_param(param);
+        view_vertices_and_paths(em);
     }
-
-//    {
-//        auto g = gv::grid();
-//        auto style = default_style();
-
-//        view_embedding(em);
-//    }
 }
 
 }
