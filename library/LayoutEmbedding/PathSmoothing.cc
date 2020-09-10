@@ -1,4 +1,5 @@
 #include "PathSmoothing.hh"
+
 #include <LayoutEmbedding/Snake.hh>
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Harmonic.hh>

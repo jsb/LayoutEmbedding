@@ -1,6 +1,7 @@
-#include "Harmonic.hh"
+#include "QuadMeshing.hh"
 
 #include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/Harmonic.hh>
 #include <LayoutEmbedding/Embedding.hh>
 
 namespace LayoutEmbedding
