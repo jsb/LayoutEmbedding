@@ -238,6 +238,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
             for (const auto& q_item : get_container(q)) {
                 min_lower_bound = std::min(min_lower_bound, q_item.lower_bound);
             }
+            min_lower_bound = std::min(min_lower_bound, global_upper_bound);
 
             // Only record this event if it's an update
             if (!result.lower_bound_events.empty()) {
