@@ -226,10 +226,12 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         std::cout << "|H|: " << known_states.size();
         std::cout << "    ";
         std::cout << "|CC|: " << es.count_connected_components();
-        std::cout << "    ";
-        std::cout << "s: ";
-        for (const auto& label : insertion_sequence) {
-            std::cout << label.value << " ";
+        if (_settings.print_current_insertion_sequence) {
+            std::cout << "    ";
+            std::cout << "s: ";
+            for (const auto& label : insertion_sequence) {
+                std::cout << label.value << " ";
+            }
         }
         std::cout << std::endl;
 
@@ -252,45 +254,53 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
             }
         }
 
-        if (iter % 50 == 0) {
-            // Memory estimate
-            double estimated_memory;
+        if (_settings.print_memory_footprint_estimate) {
+            if (iter % 50 == 0) {
+                // Memory estimate
+                double estimated_memory;
 
-            // Estimate memory of queue
-            estimated_memory += q.size() * sizeof (Candidate);
+                // Estimate memory of queue
+                estimated_memory += q.size() * sizeof (Candidate);
 
-            // Estimate memory of state tree
-            for (const auto& [hash, state] : known_states) {
-                estimated_memory += sizeof(hash);
-                estimated_memory += sizeof(state);
+                // Estimate memory of state tree
+                for (const auto& [hash, state] : known_states) {
+                    estimated_memory += sizeof(hash);
+                    estimated_memory += sizeof(state);
 
-                for (const auto& item : state.path) {
-                    estimated_memory += sizeof(item);
-                }
-                for (const auto& path : state.candidate_paths) {
-                    for (const auto& item : path) {
+                    for (const auto& item : state.children) {
+                        estimated_memory += sizeof(item);
+                    }
+                    for (const auto& item : state.path) {
+                        estimated_memory += sizeof(item);
+                    }
+                    for (const auto& path : state.candidate_paths) {
+                        for (const auto& item : path) {
+                            estimated_memory += sizeof(item);
+                        }
+                    }
+                    for (const auto& pair : state.candidate_conflicts) {
+                        estimated_memory += sizeof(pair);
+                    }
+                    for (const auto& item : state.forbidden_children) {
                         estimated_memory += sizeof(item);
                     }
                 }
-                for (const auto& pair : state.candidate_conflicts) {
-                    estimated_memory += sizeof(pair);
-                }
-            }
 
-            std::cout << "State tree memory estimate: ";
-            if (estimated_memory > 1000000000.0) {
-                std::cout << (estimated_memory / 1000000000.0) << " GB";
+                std::cout << "State tree memory estimate: ";
+                if (estimated_memory > 1000000000.0) {
+                    std::cout << (estimated_memory / 1000000000.0) << " GB";
+                }
+                else if (estimated_memory > 1000000.0) {
+                    std::cout << (estimated_memory / 1000000.0) << " MB";
+                }
+                else if (estimated_memory > 1000.0) {
+                    std::cout << (estimated_memory / 1000.0) << " kB";
+                }
+                else {
+                    std::cout << (estimated_memory) << " B";
+                }
+                std::cout << std::endl;
             }
-            else if (estimated_memory > 1000000.0) {
-                std::cout << (estimated_memory / 1000000.0) << " MB";
-            }
-            else if (estimated_memory > 1000.0) {
-                std::cout << (estimated_memory / 1000.0) << " kB";
-            }
-            else {
-                std::cout << (estimated_memory) << " B";
-            }
-            std::cout << std::endl;
         }
 
         if (es.cost_lower_bound() < global_upper_bound) {

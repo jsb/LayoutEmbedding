@@ -22,6 +22,9 @@ struct BranchAndBoundSettings
 
     double lower_bound_priority_time_limit = 0.0; // Seconds. Set to <= 0 to disable.
     // After this time, the solver will switch to a different queue priority that focuses on improving the lower bound.
+
+    bool print_current_insertion_sequence = true;
+    bool print_memory_footprint_estimate = true;
 };
 
 struct BranchAndBoundResult
