@@ -5,6 +5,8 @@
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/StackTrace.hh>
 
+#include <tinyfiledialogs.h>
+
 using namespace LayoutEmbedding;
 
 int main(int argc, char** argv)
