@@ -28,3 +28,6 @@
 [submodule "extern/googletest"]
 	path = extern/googletest
 	url = https://github.com/google/googletest.git
+[submodule "extern/tinyfiledialogs"]
+	path = extern/tinyfiledialogs
+	url = https://github.com/native-toolkit/tinyfiledialogs.git
