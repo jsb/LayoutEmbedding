@@ -63,7 +63,7 @@ const std::vector<int> shrec_num_landmarks_bim = {
 
 const std::set<int> shrec_flipped_landmarks = {
     // TODO: Table?
-    183, 184, 185, 186, 190, 191, 192, 193, 194, 195, 196, 197, 200, // Hands
+    183, 184, 185, 186, 190, 191, 193, 194, 195, 196, 197, 200, // Hands
 };
 
 const int shrec_meshes_per_category = 20;
