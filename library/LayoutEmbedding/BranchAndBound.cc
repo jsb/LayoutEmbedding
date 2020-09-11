@@ -118,7 +118,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
 
         // Priority switch time limit
         if (_settings.lower_bound_priority_time_limit > 0.0) {
-            if (timer.elapsedSecondsD() >= _settings.time_limit) {
+            if (timer.elapsedSecondsD() >= _settings.lower_bound_priority_time_limit) {
                 if (priority != BranchAndBoundSettings::Priority::LowerBound) {
                     std::cout << "Switching queue priority to LowerBound." << std::endl;
                     priority = BranchAndBoundSettings::Priority::LowerBound;
