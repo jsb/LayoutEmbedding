@@ -12,6 +12,30 @@ namespace LayoutEmbedding
 namespace
 {
 
+void preprocess_split_edges(
+        Embedding& _em)
+{
+    // Split non-boundary edges with both end vertices on the same path
+    int n_splits = 0;
+    const auto t_hes_orig = _em.target_mesh().halfedges();
+    for (auto t_h : t_hes_orig)
+    {
+        if (_em.matching_layout_halfedge(t_h).is_invalid() &&
+            _em.matching_layout_halfedge(t_h.next()).is_valid() &&
+            _em.matching_layout_halfedge(t_h.prev()).is_valid() &&
+            _em.matching_layout_halfedge(t_h.next()) == _em.matching_layout_halfedge(t_h.prev()))
+        {
+            const auto p = tg::mix(_em.target_pos()[t_h.vertex_from()], _em.target_pos()[t_h.vertex_to()], 0.5);
+            const auto t_v = _em.target_mesh().edges().split_and_triangulate(t_h.edge());
+            _em.target_pos()[t_v] = p;
+            ++n_splits;
+        }
+    }
+
+    if (n_splits > 0)
+        std::cerr << "Split " << n_splits << " edges during path smoothing preprocess." << std::endl;
+}
+
 void extract_flap_region(
         const Embedding& _em,
         const pm::halfedge_handle& _l_h,
@@ -76,68 +100,121 @@ void append_as_row(
     _M.row(_M.rows() - 1) = _v.transpose();
 }
 
-void flap_n_gon_boundary(
+void constrain_flap_boundary(
         const Embedding& _em,
         const pm::halfedge_handle& _l_h,
         const pm::vertex_attribute<pm::vertex_handle>& _v_target_to_region,
         const pm::Mesh& _region,
+        const bool _quad_patch_on_rectangle,
         pm::vertex_attribute<bool>& _constrained,
         pm::vertex_attribute<tg::dpos2>& _constraint_pos)
 {
     _constrained = _region.vertices().make_attribute<bool>(false);
     _constraint_pos = _region.vertices().make_attribute<tg::dpos2>(tg::dpos2(0.0, 0.0));
 
-    // Collect inner halfedges of flap boundary
-    std::vector<pm::halfedge_handle> l_hs_boundary;
+    if (_quad_patch_on_rectangle &&
+        _l_h.face().vertices().size() == 4 &&
+        _l_h.opposite_face().vertices().size() == 4)
     {
-        auto h = _l_h.next();
-        while (h != _l_h)
+        // Quad patches: Constrain flap boundary to rectangle.
+
+        auto constrain_side = [&] (std::vector<pm::halfedge_handle> lhs, tg::dpos2 p_from, tg::dpos2 p_to)
         {
-            l_hs_boundary.push_back(h);
-            h = h.next();
-        }
-        h = _l_h.opposite().next();
-        while (h != _l_h.opposite())
-        {
-            l_hs_boundary.push_back(h);
-            h = h.next();
-        }
+            std::vector<pm::vertex_handle> t_side;
+            double length_total = 0.0;
+            for (auto lh : lhs)
+            {
+                const auto t_path = _em.get_embedded_path(lh);
+                if (t_side.empty())
+                    t_side.insert(t_side.end(), t_path.begin(), t_path.end());
+                else
+                {
+                    LE_ASSERT(t_side.back() == t_path.front());
+                    t_side.insert(t_side.end(), t_path.begin() + 1, t_path.end());
+                }
+                length_total += _em.embedded_path_length(lh);
+            }
+
+            double length_acc = 0.0;
+            for (int i = 0; i < t_side.size() - 1; ++i) // Last vertex is handled by next path
+            {
+                const double lambda = length_acc / length_total;
+                const auto r_v = _v_target_to_region[t_side[i]];
+                LE_ASSERT(_constrained[r_v] == false);
+                _constrained[r_v] = true;
+                _constraint_pos[r_v] = (1.0 - lambda) * p_from + lambda * p_to;
+
+                length_acc += tg::length(_em.target_pos()[t_side[i + 1]] - _em.target_pos()[t_side[i]]);
+            }
+        };
+
+        // Constrain flap to rectangle ((-1, 0), (1, 1))
+        auto lh = _l_h;
+        lh = lh.prev();
+        constrain_side({ lh, lh.next().opposite().next() }, tg::dpos2(-1, 0), tg::dpos2(1, 0));
+        lh = lh.next().opposite().next().next();
+        constrain_side({ lh }, tg::dpos2(1, 0), tg::dpos2(1, 1));
+        lh = lh.next();
+        constrain_side({ lh, lh.next().opposite().next() }, tg::dpos2(1, 1), tg::dpos2(-1, 1));
+        lh = lh.next().opposite().next().next();
+        constrain_side({ lh }, tg::dpos2(-1, 1), tg::dpos2(-1, 0));
     }
-
-    double boundary_length_total = 0.0;
-    for (auto l_h : l_hs_boundary)
-         boundary_length_total += _em.embedded_path_length(l_h);
-
-    double boundary_length_acc = 0.0;
-    for (auto l_h : l_hs_boundary)
+    else
     {
-        const auto t_path = _em.get_embedded_path(l_h);
-        const double path_length_total = _em.embedded_path_length(l_h);
+        // Non-quad patches: Constrain flap boundary to circle inscrcribed polyon.
 
-        // Position one-ring layout vertices on unit circle
-        auto angle_from = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
-        boundary_length_acc += path_length_total;
-        auto angle_to = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
-        LE_ASSERT(angle_from >= 0.0);
-        LE_ASSERT(angle_from < 2.0 * M_PI);
-        LE_ASSERT(angle_to >= 0.0);
-        LE_ASSERT(angle_to <= 2.0 * M_PI);
-        LE_ASSERT(angle_from < angle_to);
-        auto p_from = tg::dpos2(cos(angle_from), sin(angle_from));
-        auto p_to = tg::dpos2(cos(angle_to), sin(angle_to));
-
-        // Position all other boundary vertices on straight lines
-        LE_ASSERT(t_path.front() == _em.matching_target_vertex(l_h.vertex_from()));
-        LE_ASSERT(t_path.back() == _em.matching_target_vertex(l_h.vertex_to()));
-        double path_length_acc = 0.0;
-        for (int i = 0; i < t_path.size() - 1; ++i) // Last vertex is handled by next path
+        // Collect inner halfedges of flap boundary
+        std::vector<pm::halfedge_handle> l_hs_boundary;
         {
-            const double lambda = path_length_acc / path_length_total;
-            const auto r_v = _v_target_to_region[t_path[i]];
-            _constrained[r_v] = true;
-            _constraint_pos[r_v] = (1.0 - lambda) * p_from + lambda * p_to;
+            auto h = _l_h.next();
+            while (h != _l_h)
+            {
+                l_hs_boundary.push_back(h);
+                h = h.next();
+            }
+            h = _l_h.opposite().next();
+            while (h != _l_h.opposite())
+            {
+                l_hs_boundary.push_back(h);
+                h = h.next();
+            }
+        }
 
-            path_length_acc += tg::length(_em.target_pos()[t_path[i + 1]] - _em.target_pos()[t_path[i]]);
+        double boundary_length_total = 0.0;
+        for (auto l_h : l_hs_boundary)
+             boundary_length_total += _em.embedded_path_length(l_h);
+
+        double boundary_length_acc = 0.0;
+        for (auto l_h : l_hs_boundary)
+        {
+            const auto t_path = _em.get_embedded_path(l_h);
+            const double path_length_total = _em.embedded_path_length(l_h);
+
+            // Position one-ring layout vertices on unit circle
+            auto angle_from = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
+            boundary_length_acc += path_length_total;
+            auto angle_to = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
+            LE_ASSERT(angle_from >= 0.0);
+            LE_ASSERT(angle_from < 2.0 * M_PI);
+            LE_ASSERT(angle_to >= 0.0);
+            LE_ASSERT(angle_to <= 2.0 * M_PI);
+            LE_ASSERT(angle_from < angle_to);
+            auto p_from = tg::dpos2(cos(angle_from), sin(angle_from));
+            auto p_to = tg::dpos2(cos(angle_to), sin(angle_to));
+
+            // Position all other boundary vertices on straight lines
+            LE_ASSERT(t_path.front() == _em.matching_target_vertex(l_h.vertex_from()));
+            LE_ASSERT(t_path.back() == _em.matching_target_vertex(l_h.vertex_to()));
+            double path_length_acc = 0.0;
+            for (int i = 0; i < t_path.size() - 1; ++i) // Last vertex is handled by next path
+            {
+                const double lambda = path_length_acc / path_length_total;
+                const auto r_v = _v_target_to_region[t_path[i]];
+                _constrained[r_v] = true;
+                _constraint_pos[r_v] = (1.0 - lambda) * p_from + lambda * p_to;
+
+                path_length_acc += tg::length(_em.target_pos()[t_path[i + 1]] - _em.target_pos()[t_path[i]]);
+            }
         }
     }
 }
@@ -168,12 +245,10 @@ bool smooth_path(
     pm::halfedge_attribute<pm::halfedge_handle> h_region_to_target;
     extract_flap_region(_em, _l_h, region, region_pos, v_target_to_region, h_region_to_target);
 
-    // TODO FIXME: Split edges with two adjacent boundary edges on same path
-
     // Construct 2D n-gon
     pm::vertex_attribute<bool> constrained;
     pm::vertex_attribute<tg::dpos2> constraint_pos;
-    flap_n_gon_boundary(_em, _l_h, v_target_to_region, region, constrained, constraint_pos);
+    constrain_flap_boundary(_em, _l_h, v_target_to_region, region, false, constrained, constraint_pos);
 
     // Compute harmonic parametrization
     pm::vertex_attribute<tg::dpos2> region_param;
@@ -205,6 +280,9 @@ Embedding smooth_paths(
     glow::timing::CpuTimer timer;
 
     Embedding em = _em_orig; // copy
+
+    // Split non-boundary edges with both end vertices on the same path
+    preprocess_split_edges(em);
 
     for (int iter = 0; iter < _n_iters; ++iter)
     {
