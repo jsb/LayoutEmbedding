@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 namespace
 {
 
-void run(EmbeddingInput& _input)
+void parametrize(EmbeddingInput& _input)
 {
     // Compute embedding
     Embedding em(_input);
@@ -18,7 +18,7 @@ void run(EmbeddingInput& _input)
     em = smooth_paths(em);
 
     // Compute integer-grid map
-    auto l_subdivisions = choose_loop_subdivisions(em, 0.1);
+    auto l_subdivisions = choose_loop_subdivisions(em, 0.05);
     auto param = parametrize_patches(em, l_subdivisions);
 
     {   // View checkerboard
@@ -42,6 +42,7 @@ int main()
         input.load(dir / "layouts/horse_layout.obj",
                    dir / "target-meshes/horse_8078.obj");
 
-        run(input);
+        parametrize(input);
     }
+
 }
