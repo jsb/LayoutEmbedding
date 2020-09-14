@@ -15,7 +15,7 @@ void find_matching_vertices_by_proximity(EmbeddingInput& _input);
 
 /// Modifies existing matching vertices by moving each one to a random neighboring vertex.
 /// This will modify the l_matching_vertex attribute stored in _input.
-void jitter_matching_vertices(EmbeddingInput& _input, int _steps = 1);
+void jitter_matching_vertices(EmbeddingInput& _input, int _steps = 1, int _seed = 0);
 
 /// Sets matching vertices by assigning each layout vertex to a random target vertex.
 /// This will modify the l_matching_vertex attribute stored in _input.

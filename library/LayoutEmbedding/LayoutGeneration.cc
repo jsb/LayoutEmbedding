@@ -52,9 +52,10 @@ void find_matching_vertices_by_proximity(EmbeddingInput& _input)
     }
 }
 
-void jitter_matching_vertices(EmbeddingInput& _input, int _steps)
+void jitter_matching_vertices(EmbeddingInput& _input, int _steps, int _seed)
 {
     tg::rng rng;
+    rng.seed(_seed);
 
     pm::vertex_attribute<bool> t_v_occupied(_input.t_m);
     for (const auto l_v : _input.l_m.vertices()) {
