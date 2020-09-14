@@ -44,4 +44,28 @@ inline auto default_style()
     return gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE), gv::ssao_power(0.5f));
 }
 
+inline auto render_shadows_only()
+{
+    // Implemented inline so we can use 'auto' because the returned type is an implementation detail.
+    return gv::config(
+        gv::background_color(tg::color3(0.0f,0.0f,0.0f)),
+        [](gv::SceneConfig& cfg) {
+            cfg.enableForwardRendering = false;
+            cfg.enableShadows = true;
+        }
+    );
+}
+
+inline auto render_objects_only()
+{
+    // Implemented inline so we can use 'auto' because the returned type is an implementation detail.
+    return gv::config(
+        gv::background_color(tg::color3(0.0f,0.0f,0.0f)),
+        [](gv::SceneConfig& cfg) {
+            cfg.enableForwardRendering = true;
+            cfg.enableShadows = false;
+        }
+    );
+}
+
 }
