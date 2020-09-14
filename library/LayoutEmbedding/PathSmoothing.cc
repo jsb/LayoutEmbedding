@@ -22,8 +22,7 @@ void preprocess_split_edges(
     {
         if (_em.matching_layout_halfedge(t_h).is_invalid() &&
             _em.matching_layout_halfedge(t_h.next()).is_valid() &&
-            _em.matching_layout_halfedge(t_h.prev()).is_valid() &&
-            _em.matching_layout_halfedge(t_h.next()) == _em.matching_layout_halfedge(t_h.prev()))
+            _em.matching_layout_halfedge(t_h.prev()).is_valid())
         {
             const auto p = tg::mix(_em.target_pos()[t_h.vertex_from()], _em.target_pos()[t_h.vertex_to()], 0.5);
             const auto t_v = _em.target_mesh().edges().split_and_triangulate(t_h.edge());
