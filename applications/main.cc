@@ -131,13 +131,27 @@ void run_test_case(const TestCase& tc)
 
         if (screenshots_only) {
             {
-                const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_layout.png";
-                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename));
+                const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_layout_shadow.png";
+                auto cfg_shadows_only = render_shadows_only();
+                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename, GL_RGBA8));
                 view_layout(em);
             }
             {
+                const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_layout.png";
+                auto cfg_objects_only = render_objects_only();
+                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename, GL_RGBA8));
+                view_layout(em);
+            }
+            {
+                const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_target_shadow.png";
+                auto cfg_shadows_only = render_shadows_only();
+                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename, GL_RGBA8));
+                view_target(em);
+            }
+            {
                 const std::string filename = "screenshot_" + tc.name + "_" + algorithm + "_target.png";
-                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename));
+                auto cfg_objects_only = render_objects_only();
+                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, filename, GL_RGBA8));
                 view_target(em);
             }
         }
