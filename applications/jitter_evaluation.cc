@@ -11,7 +11,10 @@
 #include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
+#include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/StackTrace.hh>
+#include <LayoutEmbedding/Visualization/Visualization.hh>
+#include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
 #include <algorithm>
 #include <filesystem>
@@ -25,9 +28,13 @@ int main()
 
     register_segfault_handler();
 
+    glow::glfw::GlfwContext ctx;
+
     const fs::path data_path = LE_DATA_PATH;
     const fs::path output_dir = LE_OUTPUT_PATH;
     const fs::path jitter_evaluation_output_dir = output_dir / "jitter_evaluation";
+    const fs::path jitter_evaluation_screenshots_dir = jitter_evaluation_output_dir / "screenshots";
+    const fs::path jitter_evaluation_embeddings_dir = jitter_evaluation_output_dir / "embeddings";
 
     EmbeddingInput input;
     load(data_path / "models/layouts/horse_layout.obj", input.l_m, input.l_pos);
@@ -115,35 +122,46 @@ int main()
                     f << cost << ",";
                     f << runtime << "\n";
                 }
-            }
 
-            /*
-            const fs::path lb_path = jitter_evaluation_output_dir / (std::to_string(seed) + "_lower_bound.csv");
-            const fs::path ub_path = jitter_evaluation_output_dir / (std::to_string(seed) + "_upper_bound.csv");
-            Embedding em(jittered_input);
+                // Smooth embedding
+                const auto em_smoothed = smooth_paths(em, 1);
 
-            BranchAndBoundSettings settings;
-            settings.record_lower_bound_events = true;
-            settings.record_upper_bound_events = true;
-            settings.time_limit = 10 * 60;
-            auto result = branch_and_bound(em, settings);
+                // Visualization
+                auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
+                auto cfg_view = gv::config(glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f)));
 
-            fs::create_directories(jitter_evaluation_output_dir);
-            {
-                std::ofstream f{lb_path};
-                f << "t,lower_bound" << '\n';
-                for (const auto& record : result.lower_bound_events) {
-                    f << record.t << "," << record.lower_bound << '\n';
+                std::string filename_prefix = std::to_string(jitter_iters) + "_" + std::to_string(seed) + "_" + algo;
+
+                // Screenshots
+                {
+                    const auto screenshot_size = tg::ivec2(1920, 1080);
+                    const int screenshot_samples = 64;
+
+                    fs::create_directories(jitter_evaluation_screenshots_dir);
+                    {
+                        const fs::path screenshot_path = jitter_evaluation_screenshots_dir / (filename_prefix + "_target.png");
+                        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string()));
+                        view_target(em);
+                    }
+                    {
+                        const fs::path screenshot_path = jitter_evaluation_screenshots_dir / (filename_prefix + "_target_smoothed.png");
+                        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string()));
+                        view_target(em_smoothed);
+                    }
+                }
+
+                // Save to file
+                fs::create_directories(jitter_evaluation_embeddings_dir);
+                {
+                    fs::path embedding_path = jitter_evaluation_embeddings_dir / filename_prefix;
+                    em.save(embedding_path);
+                }
+                {
+                    fs::path embedding_path = jitter_evaluation_embeddings_dir / (filename_prefix + "_smoothed");
+                    em_smoothed.save(embedding_path);
                 }
             }
-            {
-                std::ofstream f{ub_path};
-                f << "t,upper_bound" << '\n';
-                for (const auto& record : result.upper_bound_events) {
-                    f << record.t << "," << record.upper_bound << '\n';
-                }
-            }
-            */
+
         }
     }
 }
