@@ -1,6 +1,8 @@
 #include "Harmonic.hh"
 
 #include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/ExactPredicates.h>
+
 #include <Eigen/SparseLU>
 
 namespace LayoutEmbedding
@@ -43,13 +45,17 @@ bool harmonic(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
         const Eigen::MatrixXd& _constraint_values,
-        Eigen::MatrixXd& _res)
+        Eigen::MatrixXd& _res,
+        const double _lambda_uniform)
 {
     LE_ASSERT(_pos.mesh().is_compact());
 
     const int n = _pos.mesh().vertices().size();
     const int d = _constraint_values.cols();
     LE_ASSERT(_constraint_values.rows() == n);
+
+    if (_lambda_uniform > 0.0)
+        std::cout << "Trying harmonic parametrization with " << _lambda_uniform * 100.0 << "% uniform weights." << std::endl;
 
     // Set up Laplace matrix and rhs
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(n, d);
@@ -70,7 +76,7 @@ bool harmonic(
             for (auto h : v.outgoing_halfedges())
             {
                 const int j = h.vertex_to().idx.value;
-                const double w_ij = mean_value_weight(_pos, h);
+                const double w_ij = (1.0 - _lambda_uniform) * mean_value_weight(_pos, h) + _lambda_uniform * 1.0;
                 triplets.push_back(Eigen::Triplet<double>(i, j, w_ij));
                 triplets.push_back(Eigen::Triplet<double>(i, i, -w_ij));
             }
@@ -96,7 +102,8 @@ bool harmonic(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
         const pm::vertex_attribute<tg::dpos2>& _constraint_values,
-        pm::vertex_attribute<tg::dpos2>& _res)
+        pm::vertex_attribute<tg::dpos2>& _res,
+        const double _lambda_uniform)
 {
     const int n = _pos.mesh().vertices().size();
     const int d = 2;
@@ -108,13 +115,46 @@ bool harmonic(
 
     // Compute
     Eigen::MatrixXd res_mat;
-    if (!harmonic(_pos, _constrained, constraint_values, res_mat))
+    if (!harmonic(_pos, _constrained, constraint_values, res_mat, _lambda_uniform))
         return false;
 
     // Convert result
     _res = _pos.mesh().vertices().make_attribute<tg::dpos2>();
     for (auto v : _pos.mesh().vertices())
         _res[v] = tg::dpos2(res_mat(v.idx.value, 0), res_mat(v.idx.value, 1));
+
+    return true;
+}
+
+namespace
+{
+
+const double* ptr(
+        const tg::dpos2& _p)
+{
+    return &_p.x;
+}
+
+}
+
+bool injective(
+        const Parametrization& _param)
+{
+    exactinit();
+
+    for (auto f : _param.mesh().faces())
+    {
+        LE_ASSERT(f.vertices().size() == 3);
+        auto it = f.vertices().begin();
+        const auto a = _param[*it];
+        ++it;
+        const auto b = _param[*it];
+        ++it;
+        const auto c = _param[*it];
+
+        if (orient2d(ptr(a), ptr(b), ptr(c)) <= 0.0)
+            return false;
+    }
 
     return true;
 }

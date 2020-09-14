@@ -32,7 +32,7 @@ void preprocess_split_edges(
     }
 
     if (n_splits > 0)
-        std::cerr << "Split " << n_splits << " edges during path smoothing preprocess." << std::endl;
+        std::cout << "Split " << n_splits << " edges during path smoothing preprocess." << std::endl;
 }
 
 void extract_flap_region(
@@ -104,116 +104,100 @@ void constrain_flap_boundary(
         const pm::halfedge_handle& _l_h,
         const pm::vertex_attribute<pm::vertex_handle>& _v_target_to_region,
         const pm::Mesh& _region,
-        const bool _quad_patch_on_rectangle,
         pm::vertex_attribute<bool>& _constrained,
         pm::vertex_attribute<tg::dpos2>& _constraint_pos)
 {
     _constrained = _region.vertices().make_attribute<bool>(false);
     _constraint_pos = _region.vertices().make_attribute<tg::dpos2>(tg::dpos2(0.0, 0.0));
 
-    if (_quad_patch_on_rectangle &&
-        _l_h.face().vertices().size() == 4 &&
+    // Collect sides of circle-inscribed n-gon
+    std::vector<std::vector<pm::halfedge_handle>> l_sides;
+    std::vector<std::vector<pm::vertex_handle>> t_sides;
+    std::vector<double> side_lengths;
+    double boundary_length_total = 0.0;
+    auto add_side = [&] (const std::vector<pm::halfedge_handle>& lhs)
+    {
+        l_sides.push_back(lhs);
+        t_sides.push_back(std::vector<pm::vertex_handle>());
+        auto& t_side = t_sides.back();
+        side_lengths.push_back(0.0);
+        auto& length = side_lengths.back();
+
+        for (auto lh : lhs)
+        {
+            const auto t_path = _em.get_embedded_path(lh);
+            if (t_side.empty())
+                t_side.insert(t_side.end(), t_path.begin(), t_path.end());
+            else
+            {
+                LE_ASSERT(t_side.back() == t_path.front());
+                t_side.insert(t_side.end(), t_path.begin() + 1, t_path.end());
+            }
+            length += _em.embedded_path_length(lh);
+        }
+        boundary_length_total += length;
+    };
+
+    if (_l_h.face().vertices().size() == 4 &&
         _l_h.opposite_face().vertices().size() == 4)
     {
-        // Quad patches: Constrain flap boundary to rectangle.
-
-        auto constrain_side = [&] (std::vector<pm::halfedge_handle> lhs, tg::dpos2 p_from, tg::dpos2 p_to)
-        {
-            std::vector<pm::vertex_handle> t_side;
-            double length_total = 0.0;
-            for (auto lh : lhs)
-            {
-                const auto t_path = _em.get_embedded_path(lh);
-                if (t_side.empty())
-                    t_side.insert(t_side.end(), t_path.begin(), t_path.end());
-                else
-                {
-                    LE_ASSERT(t_side.back() == t_path.front());
-                    t_side.insert(t_side.end(), t_path.begin() + 1, t_path.end());
-                }
-                length_total += _em.embedded_path_length(lh);
-            }
-
-            double length_acc = 0.0;
-            for (int i = 0; i < t_side.size() - 1; ++i) // Last vertex is handled by next path
-            {
-                const double lambda = length_acc / length_total;
-                const auto r_v = _v_target_to_region[t_side[i]];
-                LE_ASSERT(_constrained[r_v] == false);
-                _constrained[r_v] = true;
-                _constraint_pos[r_v] = (1.0 - lambda) * p_from + lambda * p_to;
-
-                length_acc += tg::length(_em.target_pos()[t_side[i + 1]] - _em.target_pos()[t_side[i]]);
-            }
-        };
-
-        // Constrain flap to rectangle ((-1, 0), (1, 1))
+        // Quad patch: merge flap to a single 4-gon
         auto lh = _l_h;
         lh = lh.prev();
-        constrain_side({ lh, lh.next().opposite().next() }, tg::dpos2(-1, 0), tg::dpos2(1, 0));
+        add_side({ lh, lh.next().opposite().next() });
         lh = lh.next().opposite().next().next();
-        constrain_side({ lh }, tg::dpos2(1, 0), tg::dpos2(1, 1));
+        add_side({ lh });
         lh = lh.next();
-        constrain_side({ lh, lh.next().opposite().next() }, tg::dpos2(1, 1), tg::dpos2(-1, 1));
+        add_side({ lh, lh.next().opposite().next() });
         lh = lh.next().opposite().next().next();
-        constrain_side({ lh }, tg::dpos2(-1, 1), tg::dpos2(-1, 0));
+        add_side({ lh });
     }
     else
     {
-        // Non-quad patches: Constrain flap boundary to circle inscrcribed polyon.
-
-        // Collect inner halfedges of flap boundary
-        std::vector<pm::halfedge_handle> l_hs_boundary;
+        // Non-quad patches: Constrain all flap vertices
+        auto lh = _l_h.next();
+        while (lh != _l_h)
         {
-            auto h = _l_h.next();
-            while (h != _l_h)
-            {
-                l_hs_boundary.push_back(h);
-                h = h.next();
-            }
-            h = _l_h.opposite().next();
-            while (h != _l_h.opposite())
-            {
-                l_hs_boundary.push_back(h);
-                h = h.next();
-            }
+            add_side({ lh });
+            lh = lh.next();
         }
-
-        double boundary_length_total = 0.0;
-        for (auto l_h : l_hs_boundary)
-             boundary_length_total += _em.embedded_path_length(l_h);
-
-        double boundary_length_acc = 0.0;
-        for (auto l_h : l_hs_boundary)
+        lh = _l_h.opposite().next();
+        while (lh != _l_h.opposite())
         {
-            const auto t_path = _em.get_embedded_path(l_h);
-            const double path_length_total = _em.embedded_path_length(l_h);
+            add_side({ lh });
+            lh = lh.next();
+        }
+    }
 
-            // Position one-ring layout vertices on unit circle
-            auto angle_from = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
-            boundary_length_acc += path_length_total;
-            auto angle_to = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
-            LE_ASSERT(angle_from >= 0.0);
-            LE_ASSERT(angle_from < 2.0 * M_PI);
-            LE_ASSERT(angle_to >= 0.0);
-            LE_ASSERT(angle_to <= 2.0 * M_PI);
-            LE_ASSERT(angle_from < angle_to);
-            auto p_from = tg::dpos2(cos(angle_from), sin(angle_from));
-            auto p_to = tg::dpos2(cos(angle_to), sin(angle_to));
+    // Constrain n-gon to circle-inscribed polygon.
+    // Distribute target boundary vertices via unit-speed parametrization
+    double boundary_length_acc = 0.0;
+    for (int i_side = 0; i_side < l_sides.size(); ++i_side)
+    {
+        // Position one-ring layout vertices on unit circle
+        auto angle_from = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
+        boundary_length_acc += side_lengths[i_side];
+        auto angle_to = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
+        LE_ASSERT(angle_from >= 0.0);
+        LE_ASSERT(angle_from < 2.0 * M_PI);
+        LE_ASSERT(angle_to >= 0.0);
+        LE_ASSERT(angle_to <= 2.0 * M_PI);
+        LE_ASSERT(angle_from < angle_to);
+        auto p_from = tg::dpos2(cos(angle_from), sin(angle_from));
+        auto p_to = tg::dpos2(cos(angle_to), sin(angle_to));
 
-            // Position all other boundary vertices on straight lines
-            LE_ASSERT(t_path.front() == _em.matching_target_vertex(l_h.vertex_from()));
-            LE_ASSERT(t_path.back() == _em.matching_target_vertex(l_h.vertex_to()));
-            double path_length_acc = 0.0;
-            for (int i = 0; i < t_path.size() - 1; ++i) // Last vertex is handled by next path
-            {
-                const double lambda = path_length_acc / path_length_total;
-                const auto r_v = _v_target_to_region[t_path[i]];
-                _constrained[r_v] = true;
-                _constraint_pos[r_v] = (1.0 - lambda) * p_from + lambda * p_to;
+        // Position target boundary vertices on straight line
+        LE_ASSERT(t_sides[i_side].front() == _em.matching_target_vertex(l_sides[i_side].front().vertex_from()));
+        LE_ASSERT(t_sides[i_side].back() == _em.matching_target_vertex(l_sides[i_side].back().vertex_to()));
+        double side_length_acc = 0.0;
+        for (int i_vertex = 0; i_vertex < t_sides[i_side].size() - 1; ++i_vertex) // Last vertex is handled by next path
+        {
+            const double lambda = side_length_acc / side_lengths[i_side];
+            const auto r_v = _v_target_to_region[t_sides[i_side][i_vertex]];
+            _constrained[r_v] = true;
+            _constraint_pos[r_v] = (1.0 - lambda) * p_from + lambda * p_to;
 
-                path_length_acc += tg::length(_em.target_pos()[t_path[i + 1]] - _em.target_pos()[t_path[i]]);
-            }
+            side_length_acc += tg::length(_em.target_pos()[t_sides[i_side][i_vertex + 1]] - _em.target_pos()[t_sides[i_side][i_vertex]]);
         }
     }
 }
@@ -247,13 +231,28 @@ bool smooth_path(
     // Construct 2D n-gon
     pm::vertex_attribute<bool> constrained;
     pm::vertex_attribute<tg::dpos2> constraint_pos;
-    constrain_flap_boundary(_em, _l_h, v_target_to_region, region, false, constrained, constraint_pos);
+    constrain_flap_boundary(_em, _l_h, v_target_to_region, region, constrained, constraint_pos);
 
     // Compute harmonic parametrization
+    // Try a few times with successively more uniform weights
     pm::vertex_attribute<tg::dpos2> region_param;
-    if (!harmonic(region_pos, constrained, constraint_pos, region_param))
+    const int n_attempts = 3;
+    bool success = false;
+    for (int i = 0; i < n_attempts; ++i)
     {
-        std::cout << "WARNING: Failed to smooth a path." << std::endl;
+        const double lambda_uniform = (double)i / (n_attempts - 1);
+        if (!harmonic(region_pos, constrained, constraint_pos, region_param, lambda_uniform))
+            continue;
+
+        if (!injective(region_param))
+            continue;
+
+        success = true;
+        break;
+    }
+    if (!success)
+    {
+        std::cout << "Could not smooth a path." << std::endl;
         return false;
     }
 
