@@ -12,6 +12,30 @@ EmbeddingInput::EmbeddingInput() :
 {
 }
 
+EmbeddingInput::EmbeddingInput(const EmbeddingInput& _ei)
+{
+    (*this) = _ei;
+}
+
+EmbeddingInput& EmbeddingInput::operator=(const EmbeddingInput& _ei)
+{
+    l_m.copy_from(_ei.l_m);
+    t_m.copy_from(_ei.t_m);
+
+    l_pos = l_m.vertices().make_attribute<tg::pos3>();
+    l_pos.copy_from(_ei.l_pos);
+
+    t_pos = t_m.vertices().make_attribute<tg::pos3>();
+    t_pos.copy_from(_ei.t_pos);
+
+    l_matching_vertex = l_m.vertices().make_attribute<pm::vertex_handle>();
+    for (const auto& l_v : l_m.vertices()) {
+        l_matching_vertex[l_v] = t_m[_ei.l_matching_vertex[l_v.idx].idx];
+    }
+
+    return *this;
+}
+
 bool EmbeddingInput::save(std::string filename,
                                            bool write_layout_mesh, bool write_target_input_mesh) const
 {

@@ -28,6 +28,8 @@ struct EmbeddingInput
     pm::vertex_attribute<tg::pos3> t_pos;
 
     EmbeddingInput();
+    EmbeddingInput(const EmbeddingInput& _ei);
+    EmbeddingInput& operator=(const EmbeddingInput& _ei);
 
     // Methods
     /** \brief Saves embedding input in .inp file and optionally .obj files
