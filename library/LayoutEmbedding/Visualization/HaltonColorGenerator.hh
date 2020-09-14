@@ -18,7 +18,7 @@ public:
 private:
     double halton(int _index);
     double random_interval(int _index, double _min, double _max);
-    tg::color3 HSL2RGB(double _h, double _sl, double _l);
+    tg::color3 hsl2rgb(double _h, double _sl, double _l);
 
     int current[3]; // current Halton index
     int bases[3]; // Halton prime bases
