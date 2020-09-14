@@ -55,6 +55,30 @@ int main()
         f << "jitter_iters,seed,avg_d,max_d,algo,cost,t" << '\n';
     }
 
+    // Shadow Screenshots
+    const auto screenshot_size = tg::ivec2(1920, 1080);
+    const int screenshot_samples = 64;
+    const auto screenshot_view_transform = glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f));
+    {
+        auto cfg_style = default_style();
+        auto cfg_shadows_only = render_shadows_only();
+        auto cfg_view = gv::config(screenshot_view_transform);
+
+        Embedding em(input);
+
+        fs::create_directories(jitter_evaluation_screenshots_dir);
+        {
+            const fs::path screenshot_path = jitter_evaluation_screenshots_dir / "layout_shadow.png";
+            auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+            view_layout(em);
+        }
+        {
+            const fs::path screenshot_path = jitter_evaluation_screenshots_dir / "target_shadow.png";
+            auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+            view_target(em);
+        }
+    }
+
     for (int jitter_iters = 0; jitter_iters < 40; ++jitter_iters) {
         int num_seeds = 1;
         if (jitter_iters == 0) {
@@ -126,26 +150,22 @@ int main()
                 // Smooth embedding
                 const auto em_smoothed = smooth_paths(em, 1);
 
-                // Visualization
-                auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
-                auto cfg_view = gv::config(glow::viewer::camera_transform(tg::pos3(1.659233f, 0.582366f, 0.573250f), tg::pos3(1.007779f, 0.359270f, 0.402972f)));
-
-                std::string filename_prefix = std::to_string(jitter_iters) + "_" + std::to_string(seed) + "_" + algo;
-
                 // Screenshots
+                std::string filename_prefix = std::to_string(jitter_iters) + "_" + std::to_string(seed) + "_" + algo;
                 {
-                    const auto screenshot_size = tg::ivec2(1920, 1080);
-                    const int screenshot_samples = 64;
+                    auto cfg_style = default_style();
+                    auto cfg_objects_only = render_objects_only();
+                    auto cfg_view = gv::config(screenshot_view_transform);
 
                     fs::create_directories(jitter_evaluation_screenshots_dir);
                     {
                         const fs::path screenshot_path = jitter_evaluation_screenshots_dir / (filename_prefix + "_target.png");
-                        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string()));
+                        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
                         view_target(em);
                     }
                     {
                         const fs::path screenshot_path = jitter_evaluation_screenshots_dir / (filename_prefix + "_target_smoothed.png");
-                        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string()));
+                        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
                         view_target(em_smoothed);
                     }
                 }
