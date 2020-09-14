@@ -15,7 +15,7 @@ pm::face_attribute<tg::color3> generate_patch_colors(
     HaltonColorGenerator color_generator(0);
     pm::face_attribute<tg::color3> colors(_m);
 
-    const float brightness = 0.50;
+    const float brightness = 0.75;
 
     for (const auto f : _m.faces())
         colors[f] = tg::mix(color_generator.generate_next_color(), tg::color3::white, brightness);
@@ -116,7 +116,7 @@ void view_vertices_and_paths(const Embedding& _em)
 
     // Embedded layout edges
     {
-        const float arc_width = 2.5f; // TODO: parameter?
+        const float arc_width = 5.0f; // TODO: parameter?
         pm::Mesh path_mesh;
         auto path_pos = path_mesh.vertices().make_attribute<tg::pos3>();
         auto path_color = path_mesh.edges().make_attribute<tg::color3>();
@@ -188,7 +188,7 @@ pm::vertex_attribute<tg::pos3> make_layout_mesh_positions(const Embedding& _em)
 
 void view_path(const Embedding& _em, const std::vector<pm::vertex_handle>& _path, const tg::color3& _color)
 {
-    const float arc_width = 2.5f; // TODO: parameter?
+    const float arc_width = 5.0f; // TODO: parameter?
     const auto& t_pos = _em.target_pos();
     std::vector<tg::segment3> path_segments;
     for (int i = 0; i < _path.size() - 1; ++i) {
@@ -201,7 +201,7 @@ void view_path(const Embedding& _em, const std::vector<pm::vertex_handle>& _path
 
 void view_path(const Embedding& _em, const VirtualPath& _path, const tg::color3& _color)
 {
-    const float arc_width = 2.5f; // TODO: parameter?
+    const float arc_width = 5.0f; // TODO: parameter?
     std::vector<tg::segment3> path_segments;
     for (int i = 0; i < _path.size() - 1; ++i) {
         const auto& p_i = _em.element_pos(_path[i]);
@@ -213,7 +213,7 @@ void view_path(const Embedding& _em, const VirtualPath& _path, const tg::color3&
 
 void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _color)
 {
-    const float arc_width = 2.5f; // TODO: parameter?
+    const float arc_width = 5.0f; // TODO: parameter?
     std::vector<tg::segment3> path_segments;
     for (int i = 0; i < _snake.vertices.size() - 1; ++i) {
         const auto& p_i = _snake.vertices[i].point(_em.target_pos());
@@ -225,7 +225,7 @@ void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _col
 
 void view_edge(const pm::vertex_attribute<tg::pos3>& _pos, const pm::edge_handle& _e, const tg::color3& _color)
 {
-    const float arc_width = 2.0f; // TODO: parameter?
+    const float arc_width = 5.0f; // TODO: parameter?
     const auto& p_i = _pos[_e.vertexA()];
     const auto& p_j = _pos[_e.vertexB()];
     gv::view(gv::lines(tg::segment3{p_i, p_j}).line_width_px(arc_width), _color, gv::no_shading);
@@ -233,7 +233,7 @@ void view_edge(const pm::vertex_attribute<tg::pos3>& _pos, const pm::edge_handle
 
 void view_vertex(const pm::vertex_attribute<tg::pos3> &_pos, const polymesh::vertex_handle &_v, const tg::color3 &_color)
 {
-    const float node_size = 5.0f; // TODO: parameter?
+    const float node_size = 12.0f; // TODO: parameter?
     const auto& p = _pos[_v];
     gv::view(glow::viewer::points(p).point_size_px(node_size), _color, gv::no_shading);
 }
