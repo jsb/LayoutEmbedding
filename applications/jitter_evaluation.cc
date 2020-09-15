@@ -36,6 +36,8 @@ int main()
     const fs::path jitter_evaluation_screenshots_dir = jitter_evaluation_output_dir / "screenshots";
     const fs::path jitter_evaluation_embeddings_dir = jitter_evaluation_output_dir / "embeddings";
 
+    const bool render_jitter_trajectory = false;
+
     EmbeddingInput input;
     load(data_path / "models/layouts/horse_layout.obj", input.l_m, input.l_pos);
     load(data_path / "models/target-meshes/horse_8078.obj", input.t_m, input.t_pos);
@@ -88,7 +90,22 @@ int main()
             EmbeddingInput jittered_input = input; // Copy
             jitter_matching_vertices(jittered_input, jitter_iters, seed);
 
-            //std::vector<double> sampled_geodesic_distances;
+            if (render_jitter_trajectory) {
+                auto cfg_style = default_style();
+                auto cfg_view = gv::config(glow::viewer::camera_transform(tg::pos3(0.493576f, 0.350499f, 0.702366f), tg::pos3(-0.141555f, 0.088053f, 0.878121f)));
+                Embedding em(jittered_input);
+
+                const fs::path screenshot_path = jitter_evaluation_screenshots_dir / ("jitter_" + std::to_string(jitter_iters) + ".png");
+                auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+                {
+                    auto v = gv::view();
+                    view_target_mesh(em);
+                    auto l_v = em.layout_mesh().vertices()[50]; // One of the layout vertices on the horse's nose
+                    auto t_v = em.matching_target_vertex(l_v);
+                    view_vertex(em.target_pos(), t_v, RWTH_RED, 20.0f);
+                }
+            }
+
             double max_d = 0.0;
             double sum_d = 0.0;
             for (const auto l_v : jittered_input.l_m.vertices()) {
