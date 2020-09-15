@@ -9,6 +9,9 @@
 
 namespace LayoutEmbedding {
 
+constexpr float default_line_width = 5.0f;
+constexpr float default_point_size = 10.0f;
+
 /// Layout and Embedding side-by-side in a grid view
 void view_embedding(const Embedding& _em);
 
@@ -27,13 +30,13 @@ void view_layout_mesh(const Embedding& _em, const pm::face_attribute<tg::color3>
 void view_target_mesh(const Embedding& _em);
 void view_target_mesh(const Embedding& _em, const pm::face_attribute<tg::color3>& _t_f_color);
 
-void view_path(const Embedding& _em, const std::vector<pm::vertex_handle>& _path, const tg::color3& _color);
-void view_path(const Embedding& _em, const VirtualPath& _path, const tg::color3& _color);
-void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _color);
+void view_path(const Embedding& _em, const std::vector<pm::vertex_handle>& _path, const tg::color3& _color, float _width = default_line_width);
+void view_path(const Embedding& _em, const VirtualPath& _path, const tg::color3& _color, float _width = default_line_width);
+void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _color, float _width = default_line_width);
 
-void view_edge(const pm::vertex_attribute<tg::pos3>& _pos, const pm::edge_handle& _e, const tg::color3& _color);
-void view_vertex(const pm::vertex_attribute<tg::pos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color);
-void view_vertex(const pm::vertex_attribute<tg::dpos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color);
+void view_edge(const pm::vertex_attribute<tg::pos3>& _pos, const pm::edge_handle& _e, const tg::color3& _color, float _width = default_line_width);
+void view_vertex(const pm::vertex_attribute<tg::pos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color, float _size = default_point_size);
+void view_vertex(const pm::vertex_attribute<tg::dpos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color, float _size = default_point_size);
 
 void view_param(const VertexParam& _param);
 void view_param(const std::vector<pm::face_handle>& _fs, const HalfedgeParam& _param);
