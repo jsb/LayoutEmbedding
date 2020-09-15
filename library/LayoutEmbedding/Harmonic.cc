@@ -1,8 +1,6 @@
 #include "Harmonic.hh"
 
 #include <LayoutEmbedding/Assert.hh>
-#include <LayoutEmbedding/ExactPredicates.h>
-
 #include <Eigen/SparseLU>
 
 namespace LayoutEmbedding
@@ -122,39 +120,6 @@ bool harmonic(
     _res = _pos.mesh().vertices().make_attribute<tg::dpos2>();
     for (auto v : _pos.mesh().vertices())
         _res[v] = tg::dpos2(res_mat(v.idx.value, 0), res_mat(v.idx.value, 1));
-
-    return true;
-}
-
-namespace
-{
-
-const double* ptr(
-        const tg::dpos2& _p)
-{
-    return &_p.x;
-}
-
-}
-
-bool injective(
-        const Parametrization& _param)
-{
-    exactinit();
-
-    for (auto f : _param.mesh().faces())
-    {
-        LE_ASSERT(f.vertices().size() == 3);
-        auto it = f.vertices().begin();
-        const auto a = _param[*it];
-        ++it;
-        const auto b = _param[*it];
-        ++it;
-        const auto c = _param[*it];
-
-        if (orient2d(ptr(a), ptr(b), ptr(c)) <= 0.0)
-            return false;
-    }
 
     return true;
 }

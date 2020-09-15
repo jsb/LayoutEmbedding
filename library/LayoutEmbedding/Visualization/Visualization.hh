@@ -2,6 +2,7 @@
 
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
+#include <LayoutEmbedding/Parametrization.hh>
 
 #include <glow-extras/glfw/GlfwContext.hh>
 #include <glow-extras/viewer/view.hh>
@@ -34,7 +35,10 @@ void view_edge(const pm::vertex_attribute<tg::pos3>& _pos, const pm::edge_handle
 void view_vertex(const pm::vertex_attribute<tg::pos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color);
 void view_vertex(const pm::vertex_attribute<tg::dpos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color);
 
-void view_param(const pm::vertex_attribute<tg::dpos2> _param);
+void view_param(const VertexParam& _param);
+void view_param(const std::vector<pm::face_handle>& _fs, const HalfedgeParam& _param);
+
+void view_quad_mesh(const pm::vertex_attribute<tg::pos3>& _q_pos, const pm::face_attribute<pm::face_handle>& _q_matching_layout_face);
 
 glow::SharedTexture2D read_texture(const fs::path &_file_path);
 

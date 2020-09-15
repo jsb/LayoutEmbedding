@@ -1,7 +1,6 @@
 #pragma once
 
-#include <polymesh/pm.hh>
-#include <typed-geometry/tg.hh>
+#include <LayoutEmbedding/Parametrization.hh>
 
 namespace LayoutEmbedding
 {
@@ -16,8 +15,16 @@ pm::edge_attribute<int> choose_loop_subdivisions(
 
 /// Takes an embedded quad layout and a valid number of subdivisions
 /// per edge. Returns an integer-grid map.
-pm::halfedge_attribute<tg::dpos2> parametrize_patches(
+HalfedgeParam parametrize_patches(
         const Embedding& _em,
         const pm::edge_attribute<int>& _l_subdivisions);
+
+/// Takes an integer-grid map and extracts a quad mesh.
+pm::vertex_attribute<tg::pos3> extract_quad_mesh(
+        const Embedding& _em,
+        HalfedgeParam _param, // copy
+        const double _param_scale,
+        pm::Mesh& _q,
+        pm::face_attribute<pm::face_handle>& _q_matching_layout_face);
 
 }

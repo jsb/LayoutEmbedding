@@ -243,9 +243,38 @@ void view_vertex(const pm::vertex_attribute<tg::dpos3> &_pos, const polymesh::ve
     view_vertex(_pos.map([] (auto p) { return tg::pos3(p[0], p[1], p[2]); }), _v, _color);
 }
 
-void view_param(const pm::vertex_attribute<tg::dpos2> _param)
+void view_param(const VertexParam& _param)
 {
     gv::view(gv::lines(_param.map([] (auto p) { return tg::pos3(p.x, p.y, 0.0); })));
+}
+
+void view_param(const std::vector<pm::face_handle>& _fs, const HalfedgeParam& _param)
+{
+    auto seg = [&] (pm::halfedge_handle h)
+    {
+        const auto from = _param[h];
+        const auto to = _param[h.next()];
+
+        return tg::segment3(tg::pos3(from.x, from.y, 0.0), tg::pos3(to.x, to.y, 0.0));
+    };
+
+    std::vector<tg::segment3> segments;
+    for (auto f : _fs)
+    {
+        for (auto h : f.halfedges())
+            segments.push_back(seg(h));
+    }
+
+    gv::view(gv::lines(segments));
+}
+
+void view_quad_mesh(const pm::vertex_attribute<tg::pos3>& _q_pos, const pm::face_attribute<pm::face_handle>& _q_matching_layout_face)
+{
+    const auto l_colors = generate_patch_colors(*_q_matching_layout_face.first().mesh);
+    const auto q_colors = _q_pos.mesh().faces().map([&] (auto q_f) { return l_colors[_q_matching_layout_face[q_f]]; });
+
+    gv::view(_q_pos, q_colors);
+    gv::view(gv::lines(_q_pos).line_width_px(1));
 }
 
 glow::SharedTexture2D read_texture(const fs::path &_file_path)

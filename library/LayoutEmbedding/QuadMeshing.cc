@@ -3,6 +3,9 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Harmonic.hh>
 #include <LayoutEmbedding/Embedding.hh>
+#include <LayoutEmbedding/ExactPredicates.h>
+
+#include <LayoutEmbedding/Visualization/Visualization.hh>
 
 namespace LayoutEmbedding
 {
@@ -112,7 +115,7 @@ pm::edge_attribute<int> choose_loop_subdivisions(
     return subdivisions;
 }
 
-pm::halfedge_attribute<tg::dpos2> parametrize_patches(
+HalfedgeParam parametrize_patches(
         const Embedding& _em,
         const pm::edge_attribute<int>& _l_subdivisions)
 {
@@ -172,6 +175,219 @@ pm::halfedge_attribute<tg::dpos2> parametrize_patches(
     }
 
     return param;
+}
+
+namespace
+{
+
+tg::ipos2 snap(
+        const tg::dpos2& uv)
+{
+    const auto res = tg::ipos2(lround(uv.x), lround(uv.y));
+    LE_ASSERT(fabs(res.x - uv.x) < 1e-6);
+    LE_ASSERT(fabs(res.y - uv.y) < 1e-6);
+
+    return res;
+}
+
+int count_subdiv(
+        const Embedding& _em,
+        const pm::halfedge_handle& l_h,
+        const HalfedgeParam& _param)
+{
+    const auto path = _em.get_embedded_path(l_h);
+    const auto h_first = pm::halfedge_from_to(path[0], path[1]);
+    const auto h_last = pm::halfedge_from_to(path[path.size() - 2], path[path.size() - 1]);
+    LE_ASSERT(h_first.is_valid());
+    LE_ASSERT(h_last.is_valid());
+
+    const auto uv_from = snap(_param[h_first.prev()]);
+    const auto uv_to = snap(_param[h_last]);
+    if (uv_from.x == uv_to.x)
+        return abs(uv_to.y - uv_from.y) - 1;
+    else if (uv_from.y == uv_to.y)
+        return abs(uv_to.x - uv_from.x) - 1;
+    else
+        LE_ERROR_THROW("");
+}
+
+const double* ptr(
+        const tg::dpos2& _p)
+{
+    return &_p.x;
+}
+
+bool in_triangle_inclusive(
+        const tg::dpos2& _p,
+        tg::dpos2 _a, tg::dpos2 _b, tg::dpos2 _c,
+        const double _scale = 1.0)
+{
+    if (_scale != 1.0)
+    {
+        const auto cog = tg::average(std::vector<tg::dpos2> { _a, _b, _c });
+        const auto M = tg::translation(cog) * tg::scaling(_scale, _scale) * tg::translation(-cog);
+        _a = M * _a;
+        _b = M * _b;
+        _c = M * _c;
+    }
+
+    return orient2d(ptr(_p), ptr(_a), ptr(_b)) >= 0 &&
+           orient2d(ptr(_p), ptr(_b), ptr(_c)) >= 0 &&
+           orient2d(ptr(_p), ptr(_c), ptr(_a)) >= 0;
+}
+
+std::pair<double, double> compute_bary(
+        const tg::dpos2& _p,
+        const tg::dpos2& _a, const tg::dpos2& _b, const tg::dpos2& _c)
+{
+    const auto va = _a - _c;
+    const auto vb = _b - _c;
+    const auto vp = _p - _c;
+
+    const double d00 = tg::dot(va, va);
+    const double d01 = tg::dot(va, vb);
+    const double d02 = tg::dot(va, vp);
+    const double d11 = tg::dot(vb, vb);
+    const double d12 = tg::dot(vb, vp);
+
+    const double denom = d00 * d11 - d01 * d01;
+
+    const double alpha = (d02 * d11 - d01 * d12) / denom;
+    const double beta = (d00 * d12 - d01 * d02) / denom;
+
+    return std::make_pair(alpha, beta);
+}
+
+tg::pos3 point_on_surface(
+        const tg::dpos2& _p,
+        const std::vector<pm::face_handle> _t_patch,
+        const pm::vertex_attribute<tg::pos3> _pos,
+        const HalfedgeParam& _param)
+{
+    // To fix numerical issues at the patch boundary,
+    // try the lookup a few times while slowly growing each individual triangle.
+    const int n_attempts = 3;
+    double scale = 1.0;
+    const double eps = 1e-6;
+    for (int i = 0; i < n_attempts; ++i)
+    {
+        if (scale != 1.0)
+            std::cout << "Re-trying triangle lookup with scale " << scale << std::endl;
+
+        for (auto t_f : _t_patch)
+        {
+            LE_ASSERT(t_f.halfedges().size() == 3);
+            const auto ha = t_f.halfedges().first(); // pointing to vertex a
+            const auto hb = ha.next(); // pointing to vertex b
+            const auto hc = hb.next(); // pointing to vertex c
+
+            if (in_triangle_inclusive(_p, _param[ha], _param[hb], _param[hc], scale))
+            {
+                auto [alpha, beta] = compute_bary(_p, _param[ha], _param[hb], _param[hc]);
+                return alpha * _pos[ha.vertex_to()] + beta * _pos[hb.vertex_to()] + (1.0 - alpha - beta) * _pos[hc.vertex_to()];
+            }
+        }
+
+        scale *= 1.0 + eps;
+    }
+
+    LE_ERROR_THROW("Triangle lookup failed");
+}
+
+pm::face_handle add_face(
+        pm::Mesh& _q,
+        const int _idx_a,
+        const int _idx_b,
+        const int _idx_c,
+        const int _idx_d)
+{
+    return _q.faces().add({ pm::vertex_index(_idx_a),
+                     pm::vertex_index(_idx_b),
+                     pm::vertex_index(_idx_c),
+                     pm::vertex_index(_idx_d)});
+}
+
+}
+
+pm::vertex_attribute<tg::pos3> extract_quad_mesh(
+        const Embedding& _em,
+        HalfedgeParam _param, // copy
+        const double _param_scale,
+        pm::Mesh& _q,
+        pm::face_attribute<pm::face_handle>& _q_matching_layout_face)
+{
+    exactinit();
+
+    _q.clear();
+    auto q_pos = _q.vertices().make_attribute<tg::pos3>();
+    _q_matching_layout_face = _q.faces().make_attribute<pm::face_handle>();
+
+    // Apply param scale
+    _param.apply([&] (auto& uv) { uv *= _param_scale; } );
+
+    // Per layout face, cache grid of vertex indices.
+    // First halfedge defines u direction.
+    auto fv_cache = _em.layout_mesh().faces().make_attribute<Eigen::MatrixXi>();
+
+    for (auto l_f : _em.layout_mesh().faces())
+    {
+        // Determine patch dimensions
+        const auto l_h_u = l_f.halfedges().first();
+        const auto l_h_v = l_h_u.next();
+        const int n_u = count_subdiv(_em, l_h_u, _param) + 2;
+        const int n_v = count_subdiv(_em, l_h_v, _param) + 2;
+        fv_cache[l_f] = Eigen::MatrixXi::Constant(n_u, n_v, -1);
+
+        // Get patch target triangles
+        const auto t_patch = _em.get_patch(l_f);
+        LE_ASSERT(!t_patch.empty());
+
+        // Enumerate patch vertices
+        for (int u = 0; u < n_u; ++u)
+        {
+            for (int v = 0; v < n_v; ++v)
+            {
+                // Look-up vertex in cache
+                pm::vertex_handle q_v;
+                if ((u == 0 || u == n_u - 1) && (v == 0 || v == n_v - 1))
+                {
+                    // Patch vertex
+                }
+                else if (u == 0 || u == n_u - 1 || v == 0 || v == n_v - 1)
+                {
+                    // Boundary vertex
+                }
+                else
+                {
+                    // Interior vertex
+                }
+
+                if (q_v.is_invalid())
+                    q_v = _q.vertices().add();
+
+                // Compute position
+                const auto p_param = tg::dpos2((double)u, (double)v);
+                q_pos[q_v] = point_on_surface(p_param, t_patch, _em.target_pos(), _param);
+
+                // Add vertex to cache
+                fv_cache[l_f](u, v) = q_v.idx.value;
+
+                // Add face
+                if (u >= 1 && v >= 1)
+                {
+                    const auto q_f = add_face(_q,
+                            fv_cache[l_f](u-1, v-1),
+                            fv_cache[l_f](u, v-1),
+                            fv_cache[l_f](u, v),
+                            fv_cache[l_f](u-1, v));
+
+                    _q_matching_layout_face[q_f] = l_f;
+                }
+            }
+        }
+    }
+
+    return q_pos;
 }
 
 }

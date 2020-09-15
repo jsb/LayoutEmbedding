@@ -21,11 +21,27 @@ void parametrize(EmbeddingInput& _input)
     auto l_subdivisions = choose_loop_subdivisions(em, 0.05);
     auto param = parametrize_patches(em, l_subdivisions);
 
-    {   // View checkerboard
+    // Extract quad mesh
+    pm::Mesh q;
+    pm::face_attribute<pm::face_handle> q_matching_layout_face;
+    auto q_pos = extract_quad_mesh(em, param, 2.0, q, q_matching_layout_face);
+
+    // View
+    {
+        auto g = gv::grid();
         auto style = default_style();
-        auto texture = read_texture(fs::path(LE_DATA_PATH) / "textures/param_blue.png");
-        auto v = gv::view(em.target_pos(), gv::textured(param.map([] (auto p) { return tg::pos2(p.x, p.y); }), texture));
-        view_vertices_and_paths(em);
+
+        { // Checkerboard
+            auto texture = read_texture(fs::path(LE_DATA_PATH) / "textures/param_blue.png");
+            auto v = gv::view(em.target_pos(), gv::textured(param.map([] (auto p) { return tg::pos2(p.x, p.y); }), texture));
+            view_vertices_and_paths(em);
+        }
+
+        {
+            auto v = gv::view();
+            view_quad_mesh(q_pos, q_matching_layout_face);
+            view_vertices_and_paths(em);
+        }
     }
 }
 
