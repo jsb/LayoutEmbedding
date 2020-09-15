@@ -23,8 +23,7 @@ HalfedgeParam parametrize_patches(
 /// Takes an integer-grid map and extracts a quad mesh.
 pm::vertex_attribute<tg::pos3> extract_quad_mesh(
         const Embedding& _em,
-        HalfedgeParam _param, // copy
-        const double _param_scale,
+        const HalfedgeParam& _param,
         pm::Mesh& _q,
         pm::face_attribute<pm::face_handle>& _q_matching_layout_face);
 

@@ -24,7 +24,7 @@ void parametrize(EmbeddingInput& _input)
     // Extract quad mesh
     pm::Mesh q;
     pm::face_attribute<pm::face_handle> q_matching_layout_face;
-    auto q_pos = extract_quad_mesh(em, param, 2.0, q, q_matching_layout_face);
+    auto q_pos = extract_quad_mesh(em, param, q, q_matching_layout_face);
 
     // View
     {

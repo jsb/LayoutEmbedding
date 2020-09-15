@@ -87,7 +87,7 @@ int main(int argc, char** argv)
                 em = smooth_paths(em);
 
             // Compute integer-grid map
-            auto l_subdivisions = choose_loop_subdivisions(em, 0.05);
+            auto l_subdivisions = choose_loop_subdivisions(em, 0.05, 13);
             auto param = parametrize_patches(em, l_subdivisions);
 
             // View checkerboard

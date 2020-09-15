@@ -140,9 +140,8 @@ HalfedgeParam parametrize_patches(
         auto p_constrained = p_m.vertices().make_attribute<bool>(false);
         auto p_constraint_value = p_m.vertices().make_attribute<tg::dpos2>();
 
-        const double texture_scale = 0.5;
-        const double width = texture_scale * (_l_subdivisions[l_f.halfedges().first().edge()] + 1.0);
-        const double height = texture_scale * (_l_subdivisions[l_f.halfedges().last().edge()] + 1.0);
+        const double width = _l_subdivisions[l_f.halfedges().first().edge()] + 1.0;
+        const double height = _l_subdivisions[l_f.halfedges().last().edge()] + 1.0;
         const std::vector<tg::dpos2> corners = { {0.0, 0.0}, {width, 0.0}, {width, height}, {0.0, height} };
         int corner_idx = 0;
         for (auto l_h : l_f.halfedges())
@@ -298,8 +297,7 @@ tg::pos3 point_on_surface(
 
 pm::vertex_attribute<tg::pos3> extract_quad_mesh(
         const Embedding& _em,
-        HalfedgeParam _param, // copy
-        const double _param_scale,
+        const HalfedgeParam& _param,
         pm::Mesh& _q,
         pm::face_attribute<pm::face_handle>& _q_matching_layout_face)
 {
@@ -308,9 +306,6 @@ pm::vertex_attribute<tg::pos3> extract_quad_mesh(
     _q.clear();
     auto q_pos = _q.vertices().make_attribute<tg::pos3>();
     _q_matching_layout_face = _q.faces().make_attribute<pm::face_handle>();
-
-    // Apply param scale
-    _param.apply([&] (auto& uv) { uv *= _param_scale; } );
 
     // Per layout vertex, cache vertex index.
     // Per layout halfedge, cache list of vertex indices. First and last stay unused.
