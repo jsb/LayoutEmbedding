@@ -1,3 +1,4 @@
+#include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
@@ -7,26 +8,7 @@
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;
 
-namespace
-{
-
-std::pair<Embedding, pm::halfedge_attribute<tg::dpos2>> parametrize(EmbeddingInput& _input)
-{
-    // Compute embedding
-    Embedding em(_input);
-    embed_greedy(em);
-    em = smooth_paths(em);
-
-    // Compute integer-grid map
-    auto l_subdivisions = choose_loop_subdivisions(em, 0.05);
-    auto param = parametrize_patches(em, l_subdivisions);
-
-    return std::make_pair(em, param);
-}
-
-}
-
-int main()
+int main(int argc, char** argv)
 {
     glow::glfw::GlfwContext ctx;
 
@@ -48,13 +30,13 @@ int main()
             inputs[i].t_pos.apply([] (auto& p) { p = tg::rotate_z(p, tg::angle::from_degree(-90)); });
         }
 
-        // Transfer layout vertex positions from 003.obj to all others
         const auto& input_source = inputs[2];
         for (int i = 0; i < inputs.size(); ++i)
         {
 //            if (i != 2)
 //                continue;
 
+            // Transfer layout vertex positions from 003.obj to all others
             if (&inputs[i] != &input_source)
             {
                 for (auto l_v : inputs[i].l_m.vertices())
@@ -68,12 +50,49 @@ int main()
                 }
             }
 
-            // Compute
-            auto [em, param] = parametrize(inputs[i]);
+            // Compute embedding
+            Embedding em(inputs[i]);
+
+            std::string name;
+            if (flag("--greedy", argc, argv))
+            {
+                embed_greedy(em);
+                name = "greedy";
+            }
+            else if (flag("--praun", argc, argv))
+            {
+                embed_praun(em);
+                name = "praun";
+            }
+            else if (flag("--kraevoy", argc, argv))
+            {
+                embed_kraevoy(em);
+                name = "kraevoy";
+            }
+            else if (flag("--schreiner", argc, argv))
+            {
+                embed_schreiner(em);
+                name = "schreiner";
+            }
+            else
+            {
+                BranchAndBoundSettings settings;
+                settings.time_limit = 2 * 60;
+                branch_and_bound(em, settings);
+                name = "bnb";
+            }
+
+            // Smooth embedding
+            if (flag("--smooth", argc, argv))
+                em = smooth_paths(em);
+
+            // Compute integer-grid map
+            auto l_subdivisions = choose_loop_subdivisions(em, 0.05);
+            auto param = parametrize_patches(em, l_subdivisions);
 
             // View checkerboard
             {
-                auto v = gv::view(em.target_pos(), gv::textured(param.map([] (auto p) { return tg::pos2(p.x, p.y); }), texture));
+                auto v = gv::view(em.target_pos(), gv::textured(param.map([] (auto p) { return tg::pos2(p.x, p.y); }), texture), name);
                 view_vertices_and_paths(em);
             }
         }
