@@ -66,7 +66,8 @@ void extract_patch(
 
 pm::edge_attribute<int> choose_loop_subdivisions(
         const Embedding& _em,
-        const double _target_edge_length)
+        const double _target_edge_length,
+        const int _max)
 {
     // Assert embedded quad layout
     LE_ASSERT(_em.is_complete());
@@ -111,6 +112,8 @@ pm::edge_attribute<int> choose_loop_subdivisions(
             while (h != l_e.halfedgeA());
         }
     }
+
+    subdivisions = subdivisions.map([&] (int s) { return std::min(_max, s); });
 
     return subdivisions;
 }

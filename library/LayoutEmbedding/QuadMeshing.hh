@@ -11,7 +11,8 @@ struct Embedding;
 /// subdivisions per edge that best achives the target edge length.
 pm::edge_attribute<int> choose_loop_subdivisions(
         const Embedding& _em,
-        const double _target_edge_length);
+        const double _target_edge_length,
+        const int _max = INT_MAX);
 
 /// Takes an embedded quad layout and a valid number of subdivisions
 /// per edge. Returns an integer-grid map.
