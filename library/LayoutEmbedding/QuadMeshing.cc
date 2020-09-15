@@ -271,9 +271,6 @@ tg::pos3 point_on_surface(
     const double eps = 1e-6;
     for (int i = 0; i < n_attempts; ++i)
     {
-        if (scale != 1.0)
-            std::cout << "Re-trying triangle lookup with scale " << scale << std::endl;
-
         for (auto t_f : _t_patch)
         {
             LE_ASSERT(t_f.halfedges().size() == 3);
@@ -294,19 +291,6 @@ tg::pos3 point_on_surface(
     LE_ERROR_THROW("Triangle lookup failed");
 }
 
-pm::face_handle add_face(
-        pm::Mesh& _q,
-        const int _idx_a,
-        const int _idx_b,
-        const int _idx_c,
-        const int _idx_d)
-{
-    return _q.faces().add({ pm::vertex_index(_idx_a),
-                     pm::vertex_index(_idx_b),
-                     pm::vertex_index(_idx_c),
-                     pm::vertex_index(_idx_d)});
-}
-
 }
 
 pm::vertex_attribute<tg::pos3> extract_quad_mesh(
@@ -325,18 +309,22 @@ pm::vertex_attribute<tg::pos3> extract_quad_mesh(
     // Apply param scale
     _param.apply([&] (auto& uv) { uv *= _param_scale; } );
 
-    // Per layout face, cache grid of vertex indices.
-    // First halfedge defines u direction.
-    auto fv_cache = _em.layout_mesh().faces().make_attribute<Eigen::MatrixXi>();
+    // Per layout vertex, cache vertex index.
+    // Per layout halfedge, cache list of vertex indices. First and last stay unused.
+    auto vv_cache = _em.layout_mesh().vertices().make_attribute<pm::vertex_handle>();
+    auto hv_cache = _em.layout_mesh().halfedges().make_attribute<std::vector<pm::vertex_handle>>();
 
     for (auto l_f : _em.layout_mesh().faces())
     {
         // Determine patch dimensions
-        const auto l_h_u = l_f.halfedges().first();
+        const auto l_h_u = l_f.halfedges().first(); // u direction
         const auto l_h_v = l_h_u.next();
         const int n_u = count_subdiv(_em, l_h_u, _param) + 2;
         const int n_v = count_subdiv(_em, l_h_v, _param) + 2;
-        fv_cache[l_f] = Eigen::MatrixXi::Constant(n_u, n_v, -1);
+
+        // Per layout face, cache grid of vertex indices.
+        // First halfedge defines u direction.
+        std::vector<std::vector<pm::vertex_handle>> fv_cache(n_u, std::vector<pm::vertex_handle>(n_v));
 
         // Get patch target triangles
         const auto t_patch = _em.get_patch(l_f);
@@ -352,40 +340,109 @@ pm::vertex_attribute<tg::pos3> extract_quad_mesh(
                 if ((u == 0 || u == n_u - 1) && (v == 0 || v == n_v - 1))
                 {
                     // Patch vertex
+                    pm::vertex_handle l_v;
+                    if (u == 0 && v == 0)
+                        l_v = l_h_u.vertex_from();
+                    else if (u == n_u - 1 && v == 0)
+                        l_v = l_h_u.vertex_to();
+                    else if (u == n_u - 1 && v == n_v - 1)
+                        l_v = l_h_v.vertex_to();
+                    else if (u == 0 && v == n_v - 1)
+                        l_v = l_h_v.next().vertex_to();
+                    else
+                        LE_ERROR_THROW("");
+
+                    // Cache lookup
+                    q_v = vv_cache[l_v];
+                    if (q_v.is_invalid())
+                    {
+                        q_v = _q.vertices().add();
+                        vv_cache[l_v] = q_v;
+                    }
                 }
                 else if (u == 0 || u == n_u - 1 || v == 0 || v == n_v - 1)
                 {
-                    // Boundary vertex
+                    // Patch boundary interior vertex
+                    pm::halfedge_handle l_h;
+                    int idx = -1;
+                    int n = -1;
+                    if (v == 0)
+                    {
+                        l_h = l_h_u;
+                        idx = u;
+                        n = n_u;
+                    }
+                    else if (u == n_u - 1)
+                    {
+                        l_h = l_h_v;
+                        idx = v;
+                        n = n_v;
+                    }
+                    else if (v == n_v - 1)
+                    {
+                        l_h = l_h_v.next();
+                        idx = n_u - 1 - u;
+                        n = n_u;
+                    }
+                    else if (u == 0)
+                    {
+                        l_h = l_h_u.prev();
+                        idx = n_v - 1 - v;
+                        n = n_v;
+                    }
+                    else
+                        LE_ERROR_THROW("");
+                    LE_ASSERT(idx >= 1);
+                    LE_ASSERT(idx < n - 1);
+
+                    // Init halfedge cache vectors
+                    if (hv_cache[l_h].empty())
+                        hv_cache[l_h] = std::vector<pm::vertex_handle>(n);
+                    const auto l_h_opp = l_h.opposite();
+                    if (hv_cache[l_h_opp].empty())
+                        hv_cache[l_h_opp] = std::vector<pm::vertex_handle>(n);
+
+                    // Cache lookup
+                    LE_ASSERT(hv_cache[l_h][idx] == hv_cache[l_h_opp][n - 1 - idx]);
+                    q_v = hv_cache[l_h][idx];
+                    if (q_v.is_invalid())
+                    {
+                        q_v = _q.vertices().add();
+                        hv_cache[l_h][idx] = q_v;
+                        hv_cache[l_h_opp][n - 1 - idx] = q_v;
+                    }
                 }
                 else
                 {
-                    // Interior vertex
-                }
-
-                if (q_v.is_invalid())
+                    // Patch interior vertex
                     q_v = _q.vertices().add();
+                }
 
                 // Compute position
                 const auto p_param = tg::dpos2((double)u, (double)v);
                 q_pos[q_v] = point_on_surface(p_param, t_patch, _em.target_pos(), _param);
 
                 // Add vertex to cache
-                fv_cache[l_f](u, v) = q_v.idx.value;
+                fv_cache[u][v] = q_v;
 
                 // Add face
                 if (u >= 1 && v >= 1)
                 {
-                    const auto q_f = add_face(_q,
-                            fv_cache[l_f](u-1, v-1),
-                            fv_cache[l_f](u, v-1),
-                            fv_cache[l_f](u, v),
-                            fv_cache[l_f](u-1, v));
+                    const auto q_f = _q.faces().add(
+                            fv_cache[u-1][v-1],
+                            fv_cache[u][v-1],
+                            fv_cache[u][v],
+                            fv_cache[u-1][v]);
 
                     _q_matching_layout_face[q_f] = l_f;
                 }
             }
         }
     }
+
+    // Assert no boundaries
+    for (auto e : _q.edges())
+        LE_ASSERT(!e.is_boundary());
 
     return q_pos;
 }
