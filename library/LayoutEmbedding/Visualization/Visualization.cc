@@ -10,15 +10,22 @@ namespace
 {
 
 pm::face_attribute<tg::color3> generate_patch_colors(
-        const pm::Mesh& _m)
+        const pm::Mesh& _m,
+        const double _brightness)
 {
-    HaltonColorGenerator color_generator(0);
     pm::face_attribute<tg::color3> colors(_m);
-
-    const float brightness = 0.75;
+    HaltonColorGenerator halton(0);
+    RWTHColorGenerator rwth;
 
     for (const auto f : _m.faces())
-        colors[f] = tg::mix(color_generator.generate_next_color(), tg::color3::white, brightness);
+    {
+        if (f.idx.value < 12)
+            colors[f] = rwth.generate_next_color();
+        else
+            colors[f] = halton.generate_next_color();
+
+        colors[f] = tg::mix(colors[f], tg::color3::white, _brightness);
+    }
 
     return colors;
 }
@@ -55,15 +62,17 @@ void view_layout(const Embedding& _em, const bool patch_colors)
     auto l_pos = make_layout_mesh_positions(_em);
 
     if (patch_colors)
-        view_layout_mesh(_em, generate_patch_colors(_em.layout_mesh()));
+    {
+        //view_layout_mesh(_em, generate_patch_colors(_em.layout_mesh()).map([] (auto c) { return tg::color4(c.r, c.g, c.b, 0.5); }));
+        auto l_pos = make_layout_mesh_positions(_em);
+        gv::view(l_pos, generate_patch_colors(_em.layout_mesh(), 0.5)/*, gv::no_shading*/);
+    }
     else
         view_layout(_em);
 
     // Embedded layout edges
     for (const auto l_e : l_m.edges()) {
-        if (_em.is_embedded(l_e)) {
-            view_edge(l_pos, l_e, l_e_color[l_e]);
-        }
+        view_edge(l_pos, l_e, l_e_color[l_e]);
     }
 
     // Layout nodes
@@ -81,7 +90,7 @@ void view_target(const Embedding& _em, const bool patch_colors)
 
     // Mesh
     if (patch_colors && _em.is_complete()) {
-        const auto l_f_colors = generate_patch_colors(_em.layout_mesh());
+        const auto l_f_colors = generate_patch_colors(_em.layout_mesh(), 0.5);
         auto t_f_colors = _em.target_mesh().faces().make_attribute<tg::color3>();
         for (auto l_f : _em.layout_mesh().faces()) {
             for (auto t_f : _em.get_patch(l_f)) {
@@ -133,7 +142,7 @@ void view_vertices_and_paths(const Embedding& _em)
             path_pos[v2] = t_pos[t_e.vertexB()];
             path_color[e] = l_e_color[l_h.edge()];
         }
-        //gv::view(gv::lines(path_pos).line_width_px(arc_width), path_color, gv::no_shading);
+        gv::view(gv::lines(path_pos).line_width_px(arc_width), path_color, gv::no_shading, gv::maybe_empty);
     }
 
     // Layout nodes
@@ -265,10 +274,10 @@ void view_param(const std::vector<pm::face_handle>& _fs, const HalfedgeParam& _p
 
 void view_quad_mesh(const pm::vertex_attribute<tg::pos3>& _q_pos, const pm::face_attribute<pm::face_handle>& _q_matching_layout_face)
 {
-    const auto l_colors = generate_patch_colors(*_q_matching_layout_face.first().mesh);
+    const auto l_colors = generate_patch_colors(*_q_matching_layout_face.first().mesh, 0.3);
     const auto q_colors = _q_pos.mesh().faces().map([&] (auto q_f) { return l_colors[_q_matching_layout_face[q_f]]; });
 
-    gv::view(_q_pos, q_colors);
+    auto v = gv::view(_q_pos, q_colors, /*gv::no_shading,*/ gv::ssao_power(1));
     gv::view(gv::lines(_q_pos).line_width_px(1));
 }
 

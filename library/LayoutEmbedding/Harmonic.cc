@@ -44,16 +44,14 @@ bool harmonic(
         const pm::vertex_attribute<bool>& _constrained,
         const Eigen::MatrixXd& _constraint_values,
         Eigen::MatrixXd& _res,
-        const double _lambda_uniform)
+        const LaplaceWeights _weights,
+        const bool _fallback_iterative)
 {
     LE_ASSERT(_pos.mesh().is_compact());
 
     const int n = _pos.mesh().vertices().size();
     const int d = _constraint_values.cols();
     LE_ASSERT(_constraint_values.rows() == n);
-
-    if (_lambda_uniform > 0.0)
-        std::cout << "Trying harmonic parametrization with " << _lambda_uniform * 100.0 << "% uniform weights." << std::endl;
 
     // Set up Laplace matrix and rhs
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(n, d);
@@ -74,7 +72,14 @@ bool harmonic(
             for (auto h : v.outgoing_halfedges())
             {
                 const int j = h.vertex_to().idx.value;
-                const double w_ij = (1.0 - _lambda_uniform) * mean_value_weight(_pos, h) + _lambda_uniform * 1.0;
+                double w_ij;
+                if (_weights == LaplaceWeights::Uniform)
+                    w_ij = 1.0;
+                else if (_weights == LaplaceWeights::MeanValue)
+                    w_ij = mean_value_weight(_pos, h);
+                else
+                    LE_ERROR_THROW("");
+
                 triplets.push_back(Eigen::Triplet<double>(i, j, w_ij));
                 triplets.push_back(Eigen::Triplet<double>(i, i, -w_ij));
             }
@@ -86,22 +91,30 @@ bool harmonic(
 
     Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
     solver.compute(L);
-    if (solver.info() != Eigen::Success)
-        return false;
+    if (solver.info() == Eigen::Success)
+    {
+        _res = solver.solve(rhs);
+        if (solver.info() == Eigen::Success)
+            return true;
+    }
 
-    _res = solver.solve(rhs);
-    if (solver.info() != Eigen::Success)
-        return false;
+    std::cout << "LU solve failed" << std::endl;
 
-    return true;;
+    if (_fallback_iterative)
+    {
+        std::cout << "Falling back to iterative solver" << std::endl;
+    }
+
+    return false;
 }
 
-bool harmonic(
+bool harmonic_parametrization(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
-        const pm::vertex_attribute<tg::dpos2>& _constraint_values,
-        pm::vertex_attribute<tg::dpos2>& _res,
-        const double _lambda_uniform)
+        const VertexParam& _constraint_values,
+        VertexParam& _res,
+        const LaplaceWeights _weights,
+        const bool _fallback_iterative)
 {
     const int n = _pos.mesh().vertices().size();
     const int d = 2;
@@ -113,7 +126,7 @@ bool harmonic(
 
     // Compute
     Eigen::MatrixXd res_mat;
-    if (!harmonic(_pos, _constrained, constraint_values, res_mat, _lambda_uniform))
+    if (!harmonic(_pos, _constrained, constraint_values, res_mat, _weights, _fallback_iterative))
         return false;
 
     // Convert result

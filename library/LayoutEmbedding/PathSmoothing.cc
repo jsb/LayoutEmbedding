@@ -230,30 +230,18 @@ bool smooth_path(
 
     // Construct 2D n-gon
     pm::vertex_attribute<bool> constrained;
-    pm::vertex_attribute<tg::dpos2> constraint_pos;
+    VertexParam constraint_pos;
     constrain_flap_boundary(_em, _l_h, v_target_to_region, region, constrained, constraint_pos);
 
     // Compute harmonic parametrization
     // Try a few times with successively more uniform weights
-    pm::vertex_attribute<tg::dpos2> region_param;
-    const int n_attempts = 3;
-    bool success = false;
-    for (int i = 0; i < n_attempts; ++i)
+    VertexParam region_param;
+    if (!harmonic_parametrization(region_pos, constrained, constraint_pos, region_param, LaplaceWeights::MeanValue, false) || !injective(region_param))
     {
-        const double lambda_uniform = (double)i / (n_attempts - 1);
-        if (!harmonic(region_pos, constrained, constraint_pos, region_param, lambda_uniform))
-            continue;
-
-        if (!injective(region_param))
-            continue;
-
-        success = true;
-        break;
-    }
-    if (!success)
-    {
-        std::cout << "Could not smooth a path." << std::endl;
-        return false;
+        if (!harmonic_parametrization(region_pos, constrained, constraint_pos, region_param, LaplaceWeights::Uniform, true) || !injective(region_param))
+        {
+            return false;
+        }
     }
 
     // Compute snake by tracing straight line in parametrization

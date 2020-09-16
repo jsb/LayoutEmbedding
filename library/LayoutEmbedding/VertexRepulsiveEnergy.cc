@@ -22,7 +22,7 @@ Eigen::MatrixXd compute_vertex_repulsive_energy(const Embedding& _em)
 
     // Compute l_num_v many harmonic fields
     Eigen::MatrixXd W;
-    LE_ASSERT(harmonic(_em.target_pos(), constrained, constraint_values, W));
+    LE_ASSERT(harmonic(_em.target_pos(), constrained, constraint_values, W, LaplaceWeights::MeanValue));
 
     return W;
 }

@@ -165,8 +165,21 @@ HalfedgeParam parametrize_patches(
         }
 
         // Compute Tutte embedding
-        pm::vertex_attribute<tg::dpos2> p_param;
-        harmonic(p_pos, p_constrained, p_constraint_value, p_param);
+        // Try a few times with successively more uniform weights
+        VertexParam p_param;
+        if (!harmonic_parametrization(p_pos, p_constrained, p_constraint_value, p_param, LaplaceWeights::MeanValue, false))
+        {
+            if (!harmonic_parametrization(p_pos, p_constrained, p_constraint_value, p_param, LaplaceWeights::Uniform, true))
+            {
+                LE_ERROR_THROW("Harmonic parametrization failed.");
+            }
+        }
+
+        for (auto v : p_m.vertices())
+        {
+            LE_ASSERT(std::isfinite(p_param[v].x));
+            LE_ASSERT(std::isfinite(p_param[v].y));
+        }
 
         // Transfer parametrization to target mesh
         for (auto p_h : p_m.halfedges())
@@ -283,6 +296,12 @@ tg::pos3 point_on_surface(
             if (in_triangle_inclusive(_p, _param[ha], _param[hb], _param[hc], scale))
             {
                 auto [alpha, beta] = compute_bary(_p, _param[ha], _param[hb], _param[hc]);
+                if (!std::isfinite(alpha) || !std::isfinite(beta))
+                {
+                    alpha = 1.0 / 3.0;
+                    beta = 1.0 / 3.0;
+//                    std::cout << "Computing barycentric coordinates failed due to degenerate triangle." << std::endl;
+                }
                 return alpha * _pos[ha.vertex_to()] + beta * _pos[hb.vertex_to()] + (1.0 - alpha - beta) * _pos[hc.vertex_to()];
             }
         }
@@ -441,6 +460,13 @@ pm::vertex_attribute<tg::pos3> extract_quad_mesh(
     // Assert no boundaries
     for (auto e : _q.edges())
         LE_ASSERT(!e.is_boundary());
+
+    for (auto v : _q.vertices())
+    {
+        LE_ASSERT(std::isfinite(q_pos[v].x));
+        LE_ASSERT(std::isfinite(q_pos[v].y));
+        LE_ASSERT(std::isfinite(q_pos[v].z));
+    }
 
     return q_pos;
 }

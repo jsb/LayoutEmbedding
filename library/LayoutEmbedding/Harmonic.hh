@@ -8,19 +8,28 @@
 namespace LayoutEmbedding
 {
 
-// Compute harmonic field using mean-value weights.
+enum class LaplaceWeights
+{
+    Uniform,
+    MeanValue,
+};
+
+/// Compute harmonic field using mean-value weights.
 bool harmonic(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
         const Eigen::MatrixXd& _constraint_values,
         Eigen::MatrixXd& _res,
-        const double _lambda_uniform = 0.0);
+        const LaplaceWeights _weights,
+        const bool _fallback_iterative = false);
 
-bool harmonic(
+/// Compute harmonic field using mean-value weights.
+bool harmonic_parametrization(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const pm::vertex_attribute<bool>& _constrained,
         const VertexParam& _constraint_values,
         VertexParam& _res,
-        const double _lambda_uniform = 0.0);
+        const LaplaceWeights _weights,
+        const bool _fallback_iterative = false);
 
 }
