@@ -33,7 +33,7 @@ void parametrize(EmbeddingInput& _input)
 
         { // Checkerboard
             auto texture = read_texture(fs::path(LE_DATA_PATH) / "textures/param_blue.png");
-            auto v = gv::view(em.target_pos(), gv::textured(param.map([] (auto p) { return tg::pos2(p.x, p.y); }), texture));
+            auto v = gv::view(em.target_pos(), gv::textured(param.map([] (auto p) { return 0.5 * tg::pos2(p.x, p.y); }), texture));
             view_vertices_and_paths(em);
         }
 
