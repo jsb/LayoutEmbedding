@@ -38,8 +38,9 @@ int main()
     { // SHREC
         const auto dir = fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings";
 
-//        smooth(dir / "384_bnb"); // Wolf
-        smooth(dir / "3_greedy"); // Human
+//        smooth(dir / "3_greedy"); // Human
+        smooth(dir / "381_greedy"); // Cow
+//        smooth(dir / "384_greedy"); // Wolf
     }
 
     { // Sphere

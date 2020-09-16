@@ -41,6 +41,7 @@ void parametrize(EmbeddingInput& _input)
             auto v = gv::view();
             view_quad_mesh(q_pos, q_matching_layout_face);
 //            view_vertices_and_paths(em);
+//            view_layout(em);
         }
     }
 }
