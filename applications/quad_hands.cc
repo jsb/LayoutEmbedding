@@ -56,8 +56,8 @@ int main()
         "schreiner",
     };
 
-    const auto layout_path = fs::path(LE_DATA_PATH) / "models/layouts/hand_TMBF_003_v3.obj";
-    const auto input_dir = fs::path("/servers/ash/hdd-storage1/pschmidt/Backups/SurfaceMapsMeshes/TMBF_hands/");
+    const auto layout_path = fs::path(LE_DATA_PATH) / "models/layouts/hand_TMBF_003.obj";
+    const auto input_dir = fs::path(LE_DATA_PATH) / "models/target-meshes/TMBF_hands/";
     const auto output_dir = fs::path(LE_OUTPUT_PATH) / "quad_hands";
     auto texture = read_texture(fs::path(LE_DATA_PATH) / "textures/param_blue.png");
     fs::create_directories(output_dir);
