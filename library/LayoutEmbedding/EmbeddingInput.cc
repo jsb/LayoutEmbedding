@@ -294,7 +294,7 @@ void EmbeddingInput::center_translation()
 {
     // Move center of gravity to origin
     const auto cog = t_pos.sum() / t_pos.mesh().vertices().size();
-    t_pos.apply([&] (auto& p) { p - cog; });
+    t_pos.apply([&] (auto& p) { p -= cog - tg::pos3::zero; });
 }
 
 // Adopted from obj_writer::write_mesh from polymesh.
