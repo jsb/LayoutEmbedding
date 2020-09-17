@@ -24,15 +24,15 @@ int main()
     {
         {
             "001.obj",
-            glow::viewer::camera_transform(tg::pos3(0.215420f, 0.222535f, -1.291119f), tg::pos3(0.133045f, 0.131673f, -0.894561f)),
+            glow::viewer::camera_transform(tg::pos3(0.329532f, 0.222535f, -1.284020f), tg::pos3(0.218050f, 0.131482f, -0.893754f)),
         },
         {
             "002.obj",
-            glow::viewer::camera_transform(tg::pos3(0.528895f, 0.324307f, -1.174637f), tg::pos3(0.362890f, 0.193530f, -0.807955f)),
+            glow::viewer::camera_transform(tg::pos3(-0.108347f, 0.312487f, -1.304698f), tg::pos3(-0.113235f, 0.193670f, -0.899082f)),
         },
         {
             "003.obj",
-            glow::viewer::camera_transform(tg::pos3(0.215420f, 0.222535f, -1.291119f), tg::pos3(0.133045f, 0.131673f, -0.894561f)),
+            glow::viewer::camera_transform(tg::pos3(-0.001297f, 0.234221f, -1.339844f), tg::pos3(-0.014470f, 0.128625f, -0.906745f)),
         },
 //        {
 //            "004.obj",
@@ -50,8 +50,7 @@ int main()
 
     std::vector<std::string> algorithms =
     {
-        // "bnb" // TODO: enable
-        "praun",
+        "bnb",
         "kraevoy",
         "schreiner",
     };
@@ -127,7 +126,8 @@ int main()
             else if (algorithm == "bnb")
             {
                 BranchAndBoundSettings settings;
-                settings.time_limit = 10;
+                settings.optimality_gap = 0.02;
+                settings.time_limit = 60;
                 branch_and_bound(em, settings);
             }
 
