@@ -32,7 +32,7 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
     namespace fs = std::filesystem;
 
     const std::vector<std::string> algorithms = {
-        "greedy",
+//        "greedy",
         "praun",
         "kraevoy",
         "schreiner",
