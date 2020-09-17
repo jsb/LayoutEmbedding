@@ -50,9 +50,9 @@ int main()
 
     std::vector<std::string> algorithms =
     {
-        "bnb",
         "kraevoy",
         "schreiner",
+        "bnb",
     };
 
     const auto layout_path = fs::path(LE_DATA_PATH) / "models/layouts/hand_TMBF_003.obj";
@@ -126,13 +126,19 @@ int main()
             else if (algorithm == "bnb")
             {
                 BranchAndBoundSettings settings;
-                settings.optimality_gap = 0.02;
                 settings.time_limit = 60;
                 branch_and_bound(em, settings);
             }
 
             // Smooth embedding
             em = smooth_paths(em);
+
+            // Save embedding
+            {
+                const auto dir = output_dir / "embeddings";
+                fs::create_directories(dir);
+                em.save(dir / (test.filename + "_" + algorithm));
+            }
 
             // Compute integer-grid map
             const auto l_subdivisions = choose_loop_subdivisions(em, 0.05, 13);
