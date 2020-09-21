@@ -20,7 +20,7 @@ void view_layout(const Embedding& _em, const bool patch_colors = true);
 
 /// Target mesh with colorized embedded edge paths
 void view_target(const Embedding& _em, const bool patch_colors = true);
-void view_vertices_and_paths(const Embedding& _em);
+void view_vertices_and_paths(const Embedding& _em, const bool _paths = true);
 
 pm::vertex_attribute<tg::pos3> make_layout_mesh_positions(const Embedding& _em);
 

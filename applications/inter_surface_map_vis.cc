@@ -7,6 +7,12 @@ namespace fs = std::filesystem;
 namespace
 {
 
+const auto screenshot_size = tg::ivec2(2560, 1440);
+const int screenshot_samples = 64;
+const auto output_dir = fs::path(LE_OUTPUT_PATH) / "inter_surface_map";
+const auto cam_pos_A = glow::viewer::camera_transform(tg::pos3(-0.920128f, 0.235564f, 1.267972f), tg::pos3(-0.618207f, 0.128431f, 0.897975f));
+const auto cam_pos_B = glow::viewer::camera_transform(tg::pos3(-1.427252f, 0.205623f, -0.015807f), tg::pos3(-0.982034f, 0.118342f, 0.014635f));
+
 pm::halfedge_attribute<tg::pos2> projected_tex_coords(
         const pm::vertex_attribute<tg::pos3>& _pos,
         const tg::vec3 _right,
@@ -116,20 +122,59 @@ void renderables_front_back(
 }
 
 void show_ism(
-        const fs::path& path_A,
-        const fs::path& path_B)
+        const fs::path& _embedding_path_A,
+        const fs::path& _embedding_path_B,
+        const fs::path& _ism_path_A,
+        const fs::path& _ism_path_B,
+        const std::string& _algorithm)
 {
+    // Load layout embeddings from file
+    EmbeddingInput input_A;
+    EmbeddingInput input_B;
+    Embedding em_A(input_A);
+    Embedding em_B(input_B);
+    LE_ASSERT(em_A.load_embedding(_embedding_path_A));
+    LE_ASSERT(em_B.load_embedding(_embedding_path_B));
+
+    // Layout and embedding screenshots
+    {
+        {
+            auto cfg_style = default_style();
+            auto cfg_view = gv::config(cam_pos_A);
+            const fs::path screenshot_path = output_dir / ("layout.png");
+            auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+
+            view_layout(em_A);
+        }
+        {
+            auto cfg_style = default_style();
+            auto cfg_view = gv::config(cam_pos_A);
+            const fs::path screenshot_path = output_dir / (_algorithm + "_embedding_A_" + ".png");
+            auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+
+            view_target(em_A);
+        }
+        {
+            auto cfg_style = default_style();
+            auto cfg_view = gv::config(cam_pos_B);
+            const fs::path screenshot_path = output_dir / (_algorithm + "_embedding_B_" + ".png");
+            auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+
+            view_target(em_B);
+        }
+    }
+
     // Load overlay mesh with vertex positions on A and B
     pm::Mesh overlay_A;
     pm::Mesh overlay_B;
     auto pos_A = overlay_A.vertices().make_attribute<tg::pos3>();
     auto pos_B = overlay_B.vertices().make_attribute<tg::pos3>();
-    pm::load(path_A, overlay_A, pos_A);
-    pm::load(path_B, overlay_B, pos_B);
+    pm::load(_ism_path_A, overlay_A, pos_A);
+    pm::load(_ism_path_B, overlay_B, pos_B);
 
     const auto uvs_A = projected_tex_coords(pos_A, tg::vec3(0, 0, 2), tg::vec3(0, 2, 0));
     const auto texture_front = glow::Texture2D::createFromFile(fs::path(LE_DATA_PATH) / "textures/checkerboard.png", glow::ColorSpace::sRGB);
-    const auto texture_back = glow::Texture2D::createFromFile(fs::path(LE_DATA_PATH) / "textures/checkerboard_white.png", glow::ColorSpace::sRGB);
+    const auto texture_back = glow::Texture2D::createFromFile(fs::path(LE_DATA_PATH) / "textures/checkerboard.png", glow::ColorSpace::sRGB);
 
     // Transfer uvs
     auto uvs_B = overlay_B.halfedges().make_attribute<tg::pos2>();
@@ -140,23 +185,36 @@ void show_ism(
         uvs_B[h_B] = uvs_A[h_A];
     }
 
+
+    // Screenshots
     {
-        auto g = gv::grid();
-        auto style = default_style();
-        {
-            auto v = gv::view();
-            gv::SharedGeometricRenderable r1, r2;
-            renderables_front_back(pos_A, pos_A, uvs_A, texture_front, texture_back, r1, r2);
-            gv::view(r1);
-            gv::view(r2);
-        }
-        {
-            auto v = gv::view();
-            gv::SharedGeometricRenderable r1, r2;
-            renderables_front_back(pos_B, pos_A, uvs_B, texture_front, texture_back, r1, r2);
-            gv::view(r1);
-            gv::view(r2);
-        }
+        const fs::path screenshot_path = output_dir / (_algorithm + ("_ism_A.png"));
+        auto cfg_style = default_style();
+        auto cfg_view = gv::config(cam_pos_A);
+        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+
+        auto v = gv::view();
+        gv::SharedGeometricRenderable r1, r2;
+        renderables_front_back(pos_A, pos_A, uvs_A, texture_front, texture_back, r1, r2);
+        gv::view(r1);
+        gv::view(r2);
+
+        view_vertices_and_paths(em_A, false);
+    }
+
+    {
+        const fs::path screenshot_path = output_dir / (_algorithm + ("_ism_AonB.png"));
+        auto cfg_style = default_style();
+        auto cfg_view = gv::config(cam_pos_B);
+        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+
+        auto v = gv::view();
+        gv::SharedGeometricRenderable r1, r2;
+        renderables_front_back(pos_B, pos_A, uvs_B, texture_front, texture_back, r1, r2);
+        gv::view(r1);
+        gv::view(r2);
+
+        view_vertices_and_paths(em_B, false);
     }
 }
 
@@ -167,9 +225,15 @@ int main()
     register_segfault_handler();
     glow::glfw::GlfwContext ctx;
 
-    show_ism(fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "greedy" / "AonB_overlay.obj",
-             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "greedy" / "BonA_overlay.obj");
+    show_ism(fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "2_kraevoy",
+             fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "13_kraevoy",
+             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "ism" / "kraevoy" / "BonA_overlay.obj",
+             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "ism" / "kraevoy" / "AonB_overlay.obj",
+             "kraevoy");
 
-//    show_ism(fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "bnb" / "AonB_overlay.obj",
-//             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "bnb" / "BonA_overlay.obj");
+    show_ism(fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "2_bnb",
+             fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "13_bnb",
+             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "ism" / "bnb" / "BonA_overlay.obj",
+             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "ism" / "bnb" / "AonB_overlay.obj",
+             "bnb");
 }

@@ -106,7 +106,7 @@ void view_target(const Embedding& _em, const bool patch_colors)
     view_vertices_and_paths(_em);
 }
 
-void view_vertices_and_paths(const Embedding& _em)
+void view_vertices_and_paths(const Embedding& _em, const bool _paths)
 {
     const pm::Mesh& l_m = _em.layout_mesh();
     const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
@@ -124,6 +124,7 @@ void view_vertices_and_paths(const Embedding& _em)
     auto v = gv::view();
 
     // Embedded layout edges
+    if (_paths)
     {
         const float arc_width = 5.0f; // TODO: parameter?
         pm::Mesh path_mesh;
