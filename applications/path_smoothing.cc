@@ -16,7 +16,7 @@ void smooth(
     // Load layout embedding from file
     EmbeddingInput input;
     Embedding em_orig(input);
-    LE_ASSERT(em_orig.load_embedding(_path_prefix));
+    LE_ASSERT(em_orig.load(_path_prefix));
 
     {
         auto g = gv::grid();

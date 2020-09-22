@@ -806,7 +806,7 @@ double Embedding::get_vertex_repulsive_energy(const VirtualVertex& _t_vv, const 
     }
 }
 
-bool Embedding::load_embedding(std::string filename)
+bool Embedding::load(std::string filename)
 {
     std::string em_file_name = filename + ".lem";
     // These two names are loaded in from the .lem file
@@ -907,7 +907,7 @@ bool Embedding::load_embedding(std::string filename)
 
 
     // Load target mesh
-    if(!load(tm_file_name, target_mesh(), target_pos()))
+    if(!pm::load(tm_file_name, target_mesh(), target_pos()))
     {
         std::cerr << "Could not load target mesh object file that was specified in the lem file. Please check again." << std::endl;
         return false;

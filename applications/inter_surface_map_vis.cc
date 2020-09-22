@@ -133,8 +133,8 @@ void show_ism(
     EmbeddingInput input_B;
     Embedding em_A(input_A);
     Embedding em_B(input_B);
-    LE_ASSERT(em_A.load_embedding(_embedding_path_A));
-    LE_ASSERT(em_B.load_embedding(_embedding_path_B));
+    LE_ASSERT(em_A.load(_embedding_path_A));
+    LE_ASSERT(em_B.load(_embedding_path_B));
 
     // Layout and embedding screenshots
     {

@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     // Load Embedding from file
     if(argc > 1) {
         const std::string embedding_file = std::string(argv[1]);
-        if(!em.load_embedding(embedding_file)) {
+        if(!em.load(embedding_file)) {
             std::cout << "Embedding File could not be loaded." << std::endl;
             return 1;
         }

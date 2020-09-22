@@ -79,7 +79,7 @@ public:
     bool save(std::string filename, bool write_target_mesh=true,
               bool write_layout_mesh=true, bool write_target_input_mesh=true) const;
 
-    bool load_embedding(std::string filename);
+    bool load(std::string filename);
 
     // Getters.
     const pm::Mesh& layout_mesh() const; // This will always refer to the original l_m in the input
