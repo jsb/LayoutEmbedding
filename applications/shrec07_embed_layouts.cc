@@ -73,13 +73,19 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         }
         else if (algorithm == "bnb") {
             BranchAndBoundSettings settings;
-            settings.time_limit = 10 * 60;
+            settings.time_limit = 5 * 60;
             auto result = branch_and_bound(em, settings);
+
+            double last_upper_bound_event_t = std::numeric_limits<double>::infinity();
+            if (!result.upper_bound_events.empty()) {
+                const auto& last_upper_bound_event = result.upper_bound_events.back();
+                last_upper_bound_event_t = last_upper_bound_event.t;
+            }
 
             const fs::path bnb_stats_path = shrec_results_dir / ("stats_" + _name + "_bnb.csv");
             std::ofstream f{bnb_stats_path};
-            f << "gap,lower_bound" << std::endl;
-            f << result.gap << "," << result.lower_bound << std::endl;
+            f << "gap,lower_bound,last_upper_bound_event_t,max_state_tree_memory" << std::endl;
+            f << result.gap << "," << result.lower_bound << "," << last_upper_bound_event_t << result.max_state_tree_memory_estimate << std::endl;
         }
         else {
             LE_ASSERT(false);

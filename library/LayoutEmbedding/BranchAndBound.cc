@@ -266,6 +266,8 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     }
                 }
 
+                result.max_state_tree_memory_estimate = std::max(result.max_state_tree_memory_estimate, estimated_memory);
+
                 std::cout << "State tree memory estimate: ";
                 if (estimated_memory > 1000000000.0) {
                     std::cout << (estimated_memory / 1000000000.0) << " GB";
