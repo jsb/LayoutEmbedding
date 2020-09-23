@@ -344,7 +344,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     state.children.push_back(new_es_hash);
 
                     // Walk up the state tree to find states where the newly inserted edge path is identical.
-                    {
+                    if (_settings.use_advanced_pruning) {
                         int num_pruned = 0;
                         std::vector<pm::edge_index> w; // Reversed
                         const State* current_state = &known_states[c.state_hash];
