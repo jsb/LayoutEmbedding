@@ -74,7 +74,6 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         else if (algorithm == "bnb") {
             BranchAndBoundSettings settings;
             settings.time_limit = 10 * 60;
-            settings.lower_bound_priority_time_limit = 9 * 60;
             auto result = branch_and_bound(em, settings);
 
             const fs::path bnb_stats_path = shrec_results_dir / ("stats_" + _name + "_bnb.csv");

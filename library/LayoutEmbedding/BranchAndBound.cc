@@ -116,26 +116,6 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
             }
         }
 
-        // Priority switch time limit
-        if (_settings.lower_bound_priority_time_limit > 0.0) {
-            if (timer.elapsedSecondsD() >= _settings.lower_bound_priority_time_limit) {
-                if (priority != BranchAndBoundSettings::Priority::LowerBound) {
-                    std::cout << "Switching queue priority to LowerBound." << std::endl;
-                    priority = BranchAndBoundSettings::Priority::LowerBound;
-
-                    // Reorder the current queue
-                    std::priority_queue<Candidate> new_q;
-                    while (!q.empty()) {
-                        auto new_c = q.top();
-                        new_c.priority = new_c.lower_bound;
-                        new_q.push(new_c);
-                        q.pop();
-                    }
-                    q = new_q;
-                }
-            }
-        }
-
         auto c = q.top();
         q.pop();
 
