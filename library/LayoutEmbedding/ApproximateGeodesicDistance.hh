@@ -11,4 +11,10 @@ approximate_geodesic_distance(
     const std::vector<pm::vertex_handle>& _source_vertices
 );
 
+pm::vertex_attribute<double>
+approximate_geodesic_distance(
+    const pm::vertex_attribute<tg::pos3>& _pos,
+    const pm::vertex_handle& _source_vertex
+);
+
 }

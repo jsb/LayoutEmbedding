@@ -42,13 +42,22 @@ int main()
     load(data_path / "models/layouts/horse_layout.obj", input.l_m, input.l_pos);
     load(data_path / "models/target-meshes/horse_8078.obj", input.t_m, input.t_pos);
     find_matching_vertices_by_proximity(input);
+    input.normalize_surface_area();
+    input.center_translation();
 
     std::vector<pm::vertex_handle> matching_target_vertices;
     for (const auto l_v : input.l_m.vertices()) {
         const auto& t_v = input.l_matching_vertex[l_v];
         matching_target_vertices.push_back(t_v);
     }
-    auto geodesic_distance = approximate_geodesic_distance(input.t_pos, matching_target_vertices);
+
+    auto geodesic_distance = input.l_m.vertices().make_attribute<std::vector<double>>();
+    for (const auto l_v : input.l_m.vertices()) {
+        const auto& t_v = input.l_matching_vertex[l_v];
+        auto da = approximate_geodesic_distance(input.t_pos, t_v);
+        auto d = da.to_vector();
+        geodesic_distance[l_v] = d;
+    }
 
     const fs::path stats_path = jitter_evaluation_output_dir / "stats.csv";
     fs::create_directories(jitter_evaluation_output_dir);
@@ -110,7 +119,7 @@ int main()
             double sum_d = 0.0;
             for (const auto l_v : jittered_input.l_m.vertices()) {
                 const auto& t_v = jittered_input.l_matching_vertex[l_v];
-                const auto d = geodesic_distance[t_v.idx];
+                const auto d = geodesic_distance[l_v.idx][t_v.idx.value];
                 max_d = std::max(max_d, d);
                 sum_d += d;
             }

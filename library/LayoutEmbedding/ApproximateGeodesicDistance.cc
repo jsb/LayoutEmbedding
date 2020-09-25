@@ -1,5 +1,6 @@
 #include "ApproximateGeodesicDistance.hh"
 
+#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/IGLMesh.hh>
 
 #include <igl/heat_geodesics.h>
@@ -17,6 +18,7 @@ pm::vertex_attribute<double> approximate_geodesic_distance(const pm::vertex_attr
     Eigen::VectorXi gamma(_source_vertices.size());
     for (int row = 0; row < gamma.size(); ++row) {
         const auto& v = _source_vertices[row];
+        LE_ASSERT(v.mesh == &_pos.mesh());
         gamma[row] = v.idx.value;
     }
 
@@ -29,6 +31,11 @@ pm::vertex_attribute<double> approximate_geodesic_distance(const pm::vertex_attr
         result[v] = D[v.idx.value];
     }
     return result;
+}
+
+pm::vertex_attribute<double> approximate_geodesic_distance(const pm::vertex_attribute<tg::pos3>& _pos, const pm::vertex_handle& _source_vertex)
+{
+    return approximate_geodesic_distance(_pos, std::vector<pm::vertex_handle>{_source_vertex});
 }
 
 }
