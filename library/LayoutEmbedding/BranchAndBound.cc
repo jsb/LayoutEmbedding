@@ -176,17 +176,17 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
 
         std::cout << "t: " << timer.elapsedSecondsD();
         std::cout << "    ";
+        std::cout << "global UB: " << global_upper_bound;
+        std::cout << "    ";
+        std::cout << "local LB: " << es.cost_lower_bound();
+        std::cout << "    ";
+        std::cout << "local gap: " << (gap * 100.0) << " %";
+        std::cout << "    ";
         std::cout << "|Embd|: " << es_embedded_edges.size();
         std::cout << "    ";
         std::cout << "|Conf|: " << es_conflicting_edges.size();
         std::cout << "    ";
         std::cout << "|Ncnf|: " << es_non_conflicting_edges.size();
-        std::cout << "    ";
-        std::cout << "LB: " << es.cost_lower_bound();
-        std::cout << "    ";
-        std::cout << "UB: " << global_upper_bound;
-        std::cout << "    ";
-        std::cout << "gap: " << (gap * 100.0) << " %";
         std::cout << "    ";
         std::cout << "|Q|: " << q.size();
         std::cout << "    ";
