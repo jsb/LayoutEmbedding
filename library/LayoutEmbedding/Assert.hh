@@ -16,6 +16,8 @@
     print_stack_trace(); \
     throw std::runtime_error("ERROR");}
 
+#define LE_ASSERT_EQ(a, b) \
+    {if (!(a == b)) LE_ERROR_THROW("Assertion failed: " #a " == " #b " (" << (a) << " == " << (b) << ")");}
 
 #define LE_ASSERT(exp) \
     {if (!(exp)) LE_ERROR_THROW("Assertion failed: " << (#exp));}

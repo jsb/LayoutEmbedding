@@ -166,7 +166,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         }
 
         if (c.lower_bound > 0) {
-            LE_ASSERT(es.cost_lower_bound() == c.lower_bound);
+            LE_ASSERT_EQ(es.cost_lower_bound(), c.lower_bound);
         }
 
         // Cache classified edges
@@ -293,6 +293,10 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
             else {
                 // Add children to the queue
                 for (const auto& l_e : insertion_options) {
+                    if (es.candidate_paths[l_e].empty()) {
+                        continue;
+                    }
+
                     EmbeddingState new_es(es); // Copy
 
                     // Update new state by adding the new child halfedge
@@ -300,8 +304,10 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
 
                     // Early-out if the resulting state is already known
                     const HashValue new_es_hash = new_es.hash();
-                    if (known_states.count(new_es_hash)) {
-                        continue;
+                    if (_settings.use_state_hashing) {
+                        if (known_states.count(new_es_hash)) {
+                            continue;
+                        }
                     }
 
                     // Update candidate paths that were in conflict with the newly inserted edge
@@ -328,9 +334,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     new_state.candidate_conflicts = new_es.conflicts;
 
                     // Save the new state
-                    if (_settings.use_state_hashing) {
-                        known_states.emplace(new_es_hash, new_state);
-                    }
+                    known_states.emplace(new_es_hash, new_state);
                     state.children.push_back(new_es_hash);
 
                     // Insert a corresponding element into the queue
