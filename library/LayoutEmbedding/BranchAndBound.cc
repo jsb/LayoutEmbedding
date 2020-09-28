@@ -328,7 +328,9 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     new_state.candidate_conflicts = new_es.conflicts;
 
                     // Save the new state
-                    known_states.emplace(new_es_hash, new_state);
+                    if (_settings.use_state_hashing) {
+                        known_states.emplace(new_es_hash, new_state);
+                    }
                     state.children.push_back(new_es_hash);
 
                     // Insert a corresponding element into the queue

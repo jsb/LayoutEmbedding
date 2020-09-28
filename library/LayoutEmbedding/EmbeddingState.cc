@@ -107,7 +107,12 @@ double EmbeddingState::cost_lower_bound() const
         return embedded_cost() + unembedded_cost();
     }
     else {
-        return embedded_cost();
+        if (std::isinf(unembedded_cost())) {
+            return std::numeric_limits<double>::infinity();
+        }
+        else {
+            return embedded_cost();
+        }
     }
 }
 

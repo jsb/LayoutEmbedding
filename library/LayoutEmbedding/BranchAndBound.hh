@@ -20,6 +20,7 @@ struct BranchAndBoundSettings
     };
     Priority priority = Priority::LowerBoundNonConflicting;
 
+    bool use_state_hashing = true;
     bool use_proactive_pruning = true;
     bool use_candidate_paths_for_lower_bounds = true;
 
