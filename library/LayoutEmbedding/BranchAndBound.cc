@@ -192,7 +192,6 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         std::cout << "    ";
         std::cout << "|H|: " << known_states.size();
         std::cout << "    ";
-        std::cout << "|CC|: " << es.count_connected_components();
         if (_settings.print_current_insertion_sequence) {
             std::cout << "    ";
             std::cout << "s: ";

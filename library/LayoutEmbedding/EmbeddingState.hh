@@ -31,8 +31,6 @@ struct EmbeddingState
 
     HashValue hash() const;
 
-    int count_connected_components() const;
-
     Embedding em;
 
     std::set<pm::edge_index> embedded_edges() const;

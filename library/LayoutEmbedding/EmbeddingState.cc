@@ -153,23 +153,6 @@ HashValue EmbeddingState::hash() const
     return h;
 }
 
-int EmbeddingState::count_connected_components() const
-{
-    int num_components = em.layout_mesh().faces().size();
-    UnionFind face_components(num_components);
-    for (const auto l_e : em.layout_mesh().edges()) {
-        if (!em.is_embedded(l_e)) {
-            const int id_A = l_e.faceA().idx.value;
-            const int id_B = l_e.faceB().idx.value;
-            if (!face_components.equivalent(id_A, id_B)) {
-                --num_components;
-                face_components.merge(id_A, id_B);
-            }
-        }
-    }
-    return num_components;
-}
-
 std::set<pm::edge_index> EmbeddingState::embedded_edges() const
 {
     std::set<pm::edge_index> result;
