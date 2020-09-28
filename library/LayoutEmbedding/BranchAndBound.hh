@@ -20,6 +20,9 @@ struct BranchAndBoundSettings
     };
     Priority priority = Priority::LowerBoundNonConflicting;
 
+    bool use_proactive_pruning = true;
+    bool use_candidate_paths_for_lower_bounds = true;
+
     bool print_current_insertion_sequence = true;
     bool print_memory_footprint_estimate = true;
 };

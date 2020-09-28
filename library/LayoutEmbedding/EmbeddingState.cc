@@ -103,7 +103,12 @@ bool EmbeddingState::valid() const
 
 double EmbeddingState::cost_lower_bound() const
 {
-    return embedded_cost() + unembedded_cost();
+    if (use_candidate_paths_for_lower_bounds) {
+        return embedded_cost() + unembedded_cost();
+    }
+    else {
+        return embedded_cost();
+    }
 }
 
 double EmbeddingState::embedded_cost() const
@@ -165,6 +170,17 @@ std::set<pm::edge_index> EmbeddingState::embedded_edges() const
     std::set<pm::edge_index> result;
     for (const auto l_e : em.layout_mesh().edges()) {
         if (em.is_embedded(l_e)) {
+            result.insert(l_e);
+        }
+    }
+    return result;
+}
+
+std::set<polymesh::edge_index> EmbeddingState::unembedded_edges() const
+{
+    std::set<pm::edge_index> result;
+    for (const auto l_e : em.layout_mesh().edges()) {
+        if (!em.is_embedded(l_e)) {
             result.insert(l_e);
         }
     }

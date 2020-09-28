@@ -75,7 +75,6 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         }
     }
 
-    //std::set<HashValue> known_state_hashes;
     std::map<HashValue, State> known_states;
     {
         EmbeddingState es(_em);
@@ -140,6 +139,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
 
         // Reconstruct the embedding associated with this state
         EmbeddingState es(_em);
+        es.use_candidate_paths_for_lower_bounds = _settings.use_candidate_paths_for_lower_bounds;
         LE_ASSERT(insertion_sequence.size() == inserted_paths.size());
         for (size_t i = 0; i < insertion_sequence.size(); ++i) {
             const pm::edge_index& l_e = insertion_sequence[i];
@@ -270,8 +270,16 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         }
 
         if (es.cost_lower_bound() < global_upper_bound) {
+            std::set<pm::edge_index> insertion_options;
+            if (_settings.use_proactive_pruning) {
+                insertion_options = es_conflicting_edges;
+            }
+            else {
+                insertion_options = es.unembedded_edges();
+            }
+
             // Completed layout?
-            if (es_conflicting_edges.empty()) {
+            if (insertion_options.empty()) {
                 global_upper_bound = es.cost_lower_bound();
                 best_insertion_sequence = insertion_sequence;
                 std::cout << "New upper bound: " << global_upper_bound << std::endl;
@@ -284,7 +292,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
             }
             else {
                 // Add children to the queue
-                for (const auto& l_e : es_conflicting_edges) {
+                for (const auto& l_e : insertion_options) {
                     EmbeddingState new_es(es); // Copy
 
                     // Update new state by adding the new child halfedge

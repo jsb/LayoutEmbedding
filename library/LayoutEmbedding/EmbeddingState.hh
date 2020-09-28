@@ -36,11 +36,14 @@ struct EmbeddingState
     Embedding em;
 
     std::set<pm::edge_index> embedded_edges() const;
+    std::set<pm::edge_index> unembedded_edges() const;
     std::set<pm::edge_index> conflicting_edges() const;
     std::set<pm::edge_index> non_conflicting_edges() const;
 
     pm::edge_attribute<VirtualPath> candidate_paths;
     std::set<std::pair<pm::edge_index, pm::edge_index>> conflicts;
+
+    bool use_candidate_paths_for_lower_bounds = true;
 };
 
 }
