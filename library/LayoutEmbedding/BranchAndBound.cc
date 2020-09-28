@@ -21,7 +21,6 @@ struct State
     VirtualPath path;
     std::vector<VirtualPath> candidate_paths;
     std::set<std::pair<pm::edge_index, pm::edge_index>> candidate_conflicts;
-    std::set<pm::edge_index> forbidden_children;
 };
 
 struct Candidate
@@ -129,24 +128,12 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         InsertionSequence insertion_sequence;
         std::vector<const VirtualPath*> inserted_paths;
         HashValue current_state_hash = c.state_hash;
-        bool pruned = false;
         while (current_state_hash != 0) {
             LE_ASSERT(known_states.count(current_state_hash) > 0);
             const State& state = known_states[current_state_hash];
             insertion_sequence.push_back(state.l_e);
             inserted_paths.push_back(&state.path);
-
-            if (state.parent != 0) {
-                const auto& parent = known_states[state.parent];
-                if (parent.forbidden_children.count(state.l_e) > 0) {
-                    pruned = true;
-                }
-            }
-
             current_state_hash = state.parent;
-        }
-        if (pruned) {
-            continue;
         }
         std::reverse(insertion_sequence.begin(), insertion_sequence.end());
         std::reverse(inserted_paths.begin(), inserted_paths.end());
@@ -261,9 +248,6 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     for (const auto& pair : state.candidate_conflicts) {
                         estimated_memory += sizeof(pair);
                     }
-                    for (const auto& item : state.forbidden_children) {
-                        estimated_memory += sizeof(item);
-                    }
                 }
 
                 result.max_state_tree_memory_estimate = std::max(result.max_state_tree_memory_estimate, estimated_memory);
@@ -301,10 +285,6 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
             else {
                 // Add children to the queue
                 for (const auto& l_e : es_conflicting_edges) {
-                    if (state.forbidden_children.count(l_e) > 0) {
-                        continue;
-                    }
-
                     EmbeddingState new_es(es); // Copy
 
                     // Update new state by adding the new child halfedge
@@ -342,36 +322,6 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     // Save the new state
                     known_states.emplace(new_es_hash, new_state);
                     state.children.push_back(new_es_hash);
-
-                    // Walk up the state tree to find states where the newly inserted edge path is identical.
-                    if (_settings.use_advanced_pruning) {
-                        int num_pruned = 0;
-                        std::vector<pm::edge_index> w; // Reversed
-                        const State* current_state = &known_states[c.state_hash];
-                        while (current_state->parent != 0) {
-                            w.push_back(current_state->l_e);
-
-                            const auto& parent = known_states[current_state->parent];
-                            LE_ASSERT(l_e != current_state->l_e);
-                            const auto conflict_pair = std::minmax({l_e, current_state->l_e});
-                            if (parent.candidate_conflicts.count(conflict_pair) > 0) {
-                                break;
-                            }
-
-                            for (const auto& sibling_hash : parent.children) {
-                                auto& sibling = known_states[sibling_hash];
-                                if (sibling.l_e == l_e) {
-                                    for (const auto& forbidden_ei : w) {
-                                        sibling.forbidden_children.insert(forbidden_ei);
-                                        ++num_pruned;
-                                    }
-                                    break;
-                                }
-                            }
-
-                            current_state = &parent;
-                        }
-                    }
 
                     // Insert a corresponding element into the queue
                     Candidate new_c;
