@@ -29,6 +29,7 @@ public:
 
     bool is_embedded(const pm::halfedge_handle& _l_he) const;
     bool is_embedded(const pm::edge_handle& _l_e) const;
+    bool is_embedded(const pm::edge_index& _l_e) const;
 
     /// Returns the target halfedge representing the sector in which the layout halfedge _l_h can be currently embedded.
     /// Returns an invalid halfedge if the layout halfedge is already embedded.

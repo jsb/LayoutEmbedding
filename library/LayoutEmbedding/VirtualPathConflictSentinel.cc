@@ -126,6 +126,9 @@ void VirtualPathConflictSentinel::insert_path(const VirtualPath& _path, const Vi
 
 void VirtualPathConflictSentinel::mark_conflicting(const VirtualPathConflictSentinel::Label& _a, const VirtualPathConflictSentinel::Label& _b)
 {
+    LE_ASSERT(!em.is_embedded(_a));
+    LE_ASSERT(!em.is_embedded(_b));
+
     if (_a == _b) {
         return;
     }
@@ -157,6 +160,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
                         l_he_in_sector = rotated_ccw(l_he_in_sector);
                     }
                 }
+                LE_ASSERT_EQ(labels_in_sector.size(), embedded_ports_in_sector.size());
 
                 // This map assigns each unembedded layout edge in the sector an integer position
                 // that corresponds to its index in the fan of possible outgoing ports in the
@@ -266,6 +270,8 @@ void VirtualPathConflictSentinel::check_path_ordering()
                     port_current = port_current.rotated_ccw();
                 }
 
+                LE_ASSERT(port_current == port);
+
                 // Check the sector from port to port_next
                 while (port_current != port_next) {
                     for (const auto& l_at_port : labels_at_port[port_current]) {
@@ -277,6 +283,17 @@ void VirtualPathConflictSentinel::check_path_ordering()
                         }
                     }
                     port_current = port_current.rotated_ccw();
+                }
+
+                LE_ASSERT(port_current == port_next);
+
+                for (const auto& l_at_port : labels_at_port[port_next]) {
+                    // Any other labels at port_next?
+                    if (l_at_port != l_next) {
+                        // --> Conflict
+                        valid = false;
+                        break;
+                    }
                 }
 
                 if (!valid) {

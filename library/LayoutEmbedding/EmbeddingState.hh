@@ -41,7 +41,7 @@ struct EmbeddingState
     pm::edge_attribute<VirtualPath> candidate_paths;
     std::set<std::pair<pm::edge_index, pm::edge_index>> conflicts;
 
-    bool use_candidate_paths_for_lower_bounds = true;
+    bool use_candidate_paths_for_lower_bounds = true; // TODO: replace by const BranchAndBoundSettings *
 };
 
 }

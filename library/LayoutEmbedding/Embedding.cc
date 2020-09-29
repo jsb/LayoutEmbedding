@@ -99,6 +99,12 @@ bool Embedding::is_embedded(const pm::edge_handle& _l_e) const
     return is_embedded(_l_e.halfedgeA());
 }
 
+bool Embedding::is_embedded(const pm::edge_index& _l_e) const
+{
+    const auto& l_e = layout_mesh()[_l_e];
+    return is_embedded(l_e);
+}
+
 pm::halfedge_handle Embedding::get_embeddable_sector(const pm::halfedge_handle& _l_he) const
 {
     LE_ASSERT(_l_he.mesh == &layout_mesh());
