@@ -355,6 +355,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
     }
     std::cout << "Branch-and-bound optimization completed." << std::endl;
     result.insertion_sequence = best_insertion_sequence;
+    result.num_iters = iter;
 
     {
         // Drain the rest of the queue to find the maximum optimality gap

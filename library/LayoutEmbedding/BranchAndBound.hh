@@ -61,6 +61,7 @@ struct BranchAndBoundResult
     std::vector<LowerBoundEvent> lower_bound_events;
 
     double max_state_tree_memory_estimate = 0.0; // Bytes
+    int num_iters = 0;
 };
 
 BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettings& _settings = BranchAndBoundSettings(), const std::string& _name = "bnb");
