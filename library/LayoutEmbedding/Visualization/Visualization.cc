@@ -47,14 +47,8 @@ void view_layout(const Embedding& _em, const bool patch_colors)
 {
     const pm::Mesh& l_m = _em.layout_mesh();
 
-    HaltonColorGenerator color_generator;
-    pm::vertex_attribute<tg::color3> l_v_color(l_m);
-    pm::edge_attribute<tg::color3> l_e_color(l_m);
-
-    for (const auto l_v : l_m.vertices())
-        l_v_color[l_v] = color_generator.generate_next_color();
-    for (const auto l_e : l_m.edges())
-        l_e_color[l_e] = color_generator.generate_next_color();
+    pm::vertex_attribute<tg::color3> l_v_color = make_layout_vertex_colors(_em);
+    pm::edge_attribute<tg::color3> l_e_color = make_layout_edge_colors(_em);
 
     auto v = gv::view();
 
@@ -111,15 +105,8 @@ void view_vertices_and_paths(const Embedding& _em, const bool _paths)
     const pm::Mesh& l_m = _em.layout_mesh();
     const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
 
-    HaltonColorGenerator color_generator;
-    pm::vertex_attribute<tg::color3> l_v_color(l_m);
-    pm::edge_attribute<tg::color3> l_e_color(l_m);
-    for (const auto l_v : l_m.vertices()) {
-        l_v_color[l_v] = color_generator.generate_next_color();
-    }
-    for (const auto l_e : l_m.edges()) {
-        l_e_color[l_e] = color_generator.generate_next_color();
-    }
+    pm::vertex_attribute<tg::color3> l_v_color = make_layout_vertex_colors(_em);
+    pm::edge_attribute<tg::color3> l_e_color = make_layout_edge_colors(_em);
 
     auto v = gv::view();
 
@@ -196,6 +183,26 @@ pm::vertex_attribute<tg::pos3> make_layout_mesh_positions(const Embedding& _em)
     return l_pos;
 }
 
+pm::vertex_attribute<tg::color3> make_layout_vertex_colors(const Embedding& _em)
+{
+    auto result = _em.layout_mesh().vertices().make_attribute<tg::color3>();
+    HaltonColorGenerator color_generator;
+    for (const auto l_v : _em.layout_mesh().vertices()) {
+        result[l_v] = color_generator.generate_next_color();
+    }
+    return result;
+}
+
+pm::edge_attribute<tg::color3> make_layout_edge_colors(const Embedding& _em)
+{
+    auto result = _em.layout_mesh().edges().make_attribute<tg::color3>();
+    HaltonColorGenerator color_generator;
+    for (const auto l_e : _em.layout_mesh().edges()) {
+        result[l_e] = color_generator.generate_next_color();
+    }
+    return result;
+}
+
 void view_path(const Embedding& _em, const std::vector<pm::vertex_handle>& _path, const tg::color3& _color, float _width)
 {
     const auto& t_pos = _em.target_pos();
@@ -228,6 +235,18 @@ void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _col
         path_segments.push_back({p_i, p_j});
     }
     gv::view(glow::viewer::lines(path_segments).line_width_px(_width), _color, gv::no_shading);
+}
+
+void view_virtual_paths(const Embedding& _em, const pm::edge_attribute<VirtualPath>& _virtual_paths, float _width)
+{
+    auto l_e_color = make_layout_edge_colors(_em);
+    for (const auto l_e : _em.layout_mesh().edges()) {
+        const auto& vp = _virtual_paths[l_e];
+        if (vp.empty()) {
+            continue;
+        }
+        view_path(_em, vp, l_e_color[l_e], _width);
+    }
 }
 
 void view_edge(const pm::vertex_attribute<tg::pos3>& _pos, const pm::edge_handle& _e, const tg::color3& _color, float _width)

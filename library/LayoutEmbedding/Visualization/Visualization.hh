@@ -23,6 +23,8 @@ void view_target(const Embedding& _em, const bool patch_colors = true);
 void view_vertices_and_paths(const Embedding& _em, const bool _paths = true);
 
 pm::vertex_attribute<tg::pos3> make_layout_mesh_positions(const Embedding& _em);
+pm::vertex_attribute<tg::color3> make_layout_vertex_colors(const Embedding& _em);
+pm::edge_attribute<tg::color3> make_layout_edge_colors(const Embedding& _em);
 
 void view_layout_mesh(const Embedding& _em);
 void view_layout_mesh(const Embedding& _em, const pm::face_attribute<tg::color3>& _l_f_color);
@@ -33,6 +35,8 @@ void view_target_mesh(const Embedding& _em, const pm::face_attribute<tg::color3>
 void view_path(const Embedding& _em, const std::vector<pm::vertex_handle>& _path, const tg::color3& _color, float _width = default_line_width);
 void view_path(const Embedding& _em, const VirtualPath& _path, const tg::color3& _color, float _width = default_line_width);
 void view_path(const Embedding& _em, const Snake& _snake, const tg::color3& _color, float _width = default_line_width);
+
+void view_virtual_paths(const Embedding& _em, const pm::edge_attribute<VirtualPath>& _virtual_paths, float _width = default_line_width);
 
 void view_edge(const pm::vertex_attribute<tg::pos3>& _pos, const pm::edge_handle& _e, const tg::color3& _color, float _width = default_line_width);
 void view_vertex(const pm::vertex_attribute<tg::pos3>& _pos, const pm::vertex_handle& _v, const tg::color3& _color, float _size = default_point_size);
