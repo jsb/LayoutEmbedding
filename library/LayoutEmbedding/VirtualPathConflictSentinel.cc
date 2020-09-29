@@ -3,6 +3,8 @@
 #include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 
+#include <unordered_map>
+
 namespace LayoutEmbedding {
 
 VirtualPathConflictSentinel::VirtualPathConflictSentinel(const Embedding& _em) :
@@ -133,11 +135,8 @@ void VirtualPathConflictSentinel::mark_conflicting(const VirtualPathConflictSent
         return;
     }
 
-    global_conflicts.insert(_a);
-    global_conflicts.insert(_b);
-
     const Conflict sorted = std::minmax(_a, _b);
-    global_conflict_relation.insert(sorted);
+    conflict_relation.insert(sorted);
 }
 
 void VirtualPathConflictSentinel::check_path_ordering()
@@ -224,7 +223,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
 
         if (!vertex_has_sectors) {
             // Save back references -- from VirtualPorts around this vertex to corresponding layout halfedges.
-            std::map<VirtualPort, std::set<Label>> labels_at_port;
+            std::unordered_map<VirtualPort, std::set<Label>> labels_at_port;
             for (const auto l_he : l_v.outgoing_halfedges()) {
                 LE_ASSERT(!em.is_embedded(l_he));
                 const auto& port = l_port[l_he];
@@ -233,7 +232,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
             }
 
             // Detect local violations of cyclic order
-            for (const pm::halfedge_handle l_he : l_v.outgoing_halfedges()) {
+            for (const auto l_he : l_v.outgoing_halfedges()) {
                 const pm::halfedge_handle& l_he_prev = rotated_cw(l_he);
                 const pm::halfedge_handle& l_he_next = rotated_ccw(l_he);
 

@@ -23,8 +23,7 @@ struct VirtualPathConflictSentinel
     pm::edge_attribute<LabelSet> e_label;
     pm::face_attribute<LabelSet> f_label;
 
-    ConflictSet global_conflict_relation; // The pairs of labels which are conflicting
-    LabelSet global_conflicts; // The set of all labels that participate in a conflict
+    ConflictSet conflict_relation; // The pairs of labels which are conflicting
 
     pm::halfedge_attribute<VirtualPort> l_port;
 

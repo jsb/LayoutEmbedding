@@ -26,16 +26,11 @@ bool VirtualPort::operator!=(const VirtualPort& _rhs) const
     return !(*this == _rhs);
 }
 
-bool VirtualPort::operator<(const VirtualPort& _rhs) const
-{
-    return std::tuple<int, int>(from.idx.value, to.index()) < std::tuple<int, int>(_rhs.from.idx.value, _rhs.to.index());
-}
-
 VirtualPort VirtualPort::rotated_cw() const
 {
     const auto& m = *from.mesh;
     if (is_real_vertex(to)) {
-        const auto he = pm::halfedge_from_to(from, real_vertex(to, m));
+        const auto he = real_halfedge();
         LE_ASSERT(he.is_valid());
         const auto e_new = he.opposite().prev().edge();
         return {from, e_new};
@@ -60,7 +55,7 @@ VirtualPort VirtualPort::rotated_ccw() const
 {
     const auto& m = *from.mesh;
     if (is_real_vertex(to)) {
-        const auto he = pm::halfedge_from_to(from, real_vertex(to, m));
+        const auto he = real_halfedge();
         LE_ASSERT(he.is_valid());
         const auto e_new = he.next().edge();
         return {from, e_new};

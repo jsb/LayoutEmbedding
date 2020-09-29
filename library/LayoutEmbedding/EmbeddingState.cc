@@ -68,7 +68,7 @@ void EmbeddingState::detect_candidate_path_conflicts()
             }
         }
         vpcs.check_path_ordering();
-        conflicts = vpcs.global_conflict_relation;
+        conflicts = vpcs.conflict_relation;
     }
 
     LE_ASSERT(c_em.layout_mesh().edges().size() == embedded_edges().size() + conflicting_edges().size() + non_conflicting_edges().size());
