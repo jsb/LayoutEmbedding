@@ -92,7 +92,8 @@ public:
     pm::vertex_attribute<tg::pos3>& target_pos();
     const pm::vertex_handle matching_target_vertex(const pm::vertex_handle& _l_v) const;
     const pm::vertex_handle matching_layout_vertex(const pm::vertex_handle& _t_v) const;
-    const pm::halfedge_handle matching_layout_halfedge(const pm::halfedge_handle& _t_h) const;
+    const pm::halfedge_handle& matching_layout_halfedge(const pm::halfedge_handle& _t_h) const;
+    pm::halfedge_handle& matching_layout_halfedge(const pm::halfedge_handle& _t_h);
 
     double get_vertex_repulsive_energy(const pm::vertex_handle& _t_v, const pm::vertex_handle& _l_v) const;
     double get_vertex_repulsive_energy(const VirtualVertex& _t_vv, const pm::vertex_handle& _l_v) const;

@@ -12,6 +12,89 @@ namespace LayoutEmbedding
 namespace
 {
 
+}
+
+Embedding subdivide(
+        const Embedding& _em_orig,
+        const int _n_iters)
+{
+    Embedding em = _em_orig; // copy
+
+    for (int iter = 0; iter < _n_iters; ++iter)
+    {
+        // Backup mesh
+        pm::Mesh m_orig;
+        m_orig.copy_from(em.target_mesh());
+
+        // Delet all faces
+        std::vector<std::vector<pm::vertex_handle>> f_vs_orig;
+        for (auto f : em.target_mesh().faces())
+        {
+            f_vs_orig.push_back(f.vertices().to_vector());
+            em.target_mesh().faces().remove(f);
+        }
+
+        // Split vertices at edge midpoints
+        auto e_v_orig = m_orig.edges().make_attribute<pm::vertex_handle>();
+        auto h_label_orig = m_orig.halfedges().make_attribute<pm::halfedge_handle>();
+        for (auto e_orig : m_orig.edges())
+        {
+            const auto e_before = em.target_mesh()[e_orig.idx];
+            h_label_orig[e_orig.halfedgeA()] = em.matching_layout_halfedge(e_before.halfedgeA());
+            h_label_orig[e_orig.halfedgeB()] = em.matching_layout_halfedge(e_before.halfedgeB());
+
+            const auto p = tg::mix(em.target_pos()[e_before.vertexA()], em.target_pos()[e_before.vertexB()], 0.5);
+            const auto v = em.target_mesh().edges().split(e_before);
+            e_v_orig[e_orig] = v;
+            em.target_pos()[v] = p;
+        }
+
+        // Insert four new faces in each old face
+        for (auto f_orig : m_orig.faces())
+        {
+            const auto hs_orig = f_orig.halfedges().to_vector();
+            const auto v0 = em.target_mesh()[hs_orig[0].vertex_from().idx];
+            const auto v1 = e_v_orig[hs_orig[0].edge()];
+            const auto v2 = em.target_mesh()[hs_orig[1].vertex_from().idx];
+            const auto v3 = e_v_orig[hs_orig[1].edge()];
+            const auto v4 = em.target_mesh()[hs_orig[2].vertex_from().idx];
+            const auto v5 = e_v_orig[hs_orig[2].edge()];
+
+            em.target_mesh().faces().add(v0, v1, v5);
+            em.target_mesh().faces().add(v1, v2, v3);
+            em.target_mesh().faces().add(v3, v4, v5);
+            em.target_mesh().faces().add(v1, v3, v5);
+
+            const auto h01 = pm::halfedge_from_to(v0, v1);
+            const auto h12 = pm::halfedge_from_to(v1, v2);
+            const auto h23 = pm::halfedge_from_to(v2, v3);
+            const auto h34 = pm::halfedge_from_to(v3, v4);
+            const auto h45 = pm::halfedge_from_to(v4, v5);
+            const auto h50 = pm::halfedge_from_to(v5, v0);
+
+            em.matching_layout_halfedge(h01) = h_label_orig[hs_orig[0]];
+            em.matching_layout_halfedge(h01.opposite()) = h_label_orig[hs_orig[0].opposite()];
+            em.matching_layout_halfedge(h12) = h_label_orig[hs_orig[0]];
+            em.matching_layout_halfedge(h12.opposite()) = h_label_orig[hs_orig[0].opposite()];
+            em.matching_layout_halfedge(h23) = h_label_orig[hs_orig[1]];
+            em.matching_layout_halfedge(h23.opposite()) = h_label_orig[hs_orig[1].opposite()];
+            em.matching_layout_halfedge(h34) = h_label_orig[hs_orig[1]];
+            em.matching_layout_halfedge(h34.opposite()) = h_label_orig[hs_orig[1].opposite()];
+            em.matching_layout_halfedge(h45) = h_label_orig[hs_orig[2]];
+            em.matching_layout_halfedge(h45.opposite()) = h_label_orig[hs_orig[2].opposite()];
+            em.matching_layout_halfedge(h50) = h_label_orig[hs_orig[2]];
+            em.matching_layout_halfedge(h50.opposite()) = h_label_orig[hs_orig[2].opposite()];
+        }
+
+        em.target_mesh().compactify();
+    }
+
+    return em;
+}
+
+namespace
+{
+
 void preprocess_split_edges(
         Embedding& _em)
 {
@@ -105,7 +188,8 @@ void constrain_flap_boundary(
         const pm::vertex_attribute<pm::vertex_handle>& _v_target_to_region,
         const pm::Mesh& _region,
         pm::vertex_attribute<bool>& _constrained,
-        pm::vertex_attribute<tg::dpos2>& _constraint_pos)
+        pm::vertex_attribute<tg::dpos2>& _constraint_pos,
+        const bool _quad_flap_to_rectangle)
 {
     _constrained = _region.vertices().make_attribute<bool>(false);
     _constraint_pos = _region.vertices().make_attribute<tg::dpos2>(tg::dpos2(0.0, 0.0));
@@ -139,7 +223,8 @@ void constrain_flap_boundary(
     };
 
     if (_l_h.face().vertices().size() == 4 &&
-        _l_h.opposite_face().vertices().size() == 4)
+        _l_h.opposite_face().vertices().size() == 4 &&
+        _quad_flap_to_rectangle)
     {
         // Quad patch: merge flap to a single 4-gon
         auto lh = _l_h;
@@ -219,7 +304,8 @@ Snake transfer_snake_to_target(
  */
 bool smooth_path(
         Embedding& _em,
-        const pm::halfedge_handle& _l_h)
+        const pm::halfedge_handle& _l_h,
+        const bool _quad_flap_to_rectangle)
 {
     // Extract flap region mesh
     pm::Mesh region;
@@ -231,7 +317,7 @@ bool smooth_path(
     // Construct 2D n-gon
     pm::vertex_attribute<bool> constrained;
     VertexParam constraint_pos;
-    constrain_flap_boundary(_em, _l_h, v_target_to_region, region, constrained, constraint_pos);
+    constrain_flap_boundary(_em, _l_h, v_target_to_region, region, constrained, constraint_pos, _quad_flap_to_rectangle);
 
     // Compute harmonic parametrization
     // Try a few times with successively more uniform weights
@@ -240,6 +326,7 @@ bool smooth_path(
     {
         if (!harmonic_parametrization(region_pos, constrained, constraint_pos, region_param, LaplaceWeights::Uniform, true) || !injective(region_param))
         {
+            std::cout << "Path smoothing failed" << std::endl;
             return false;
         }
     }
@@ -261,15 +348,17 @@ bool smooth_path(
 
 Embedding smooth_paths(
         const Embedding& _em_orig,
-        const int _n_iters)
+        const int _n_iters,
+        const bool _quad_flap_to_rectangle)
 {
-    return smooth_paths(_em_orig, _em_orig.layout_mesh().edges().to_vector(), _n_iters);
+    return smooth_paths(_em_orig, _em_orig.layout_mesh().edges().to_vector(), _n_iters, _quad_flap_to_rectangle);
 }
 
 Embedding smooth_paths(
         const Embedding& _em_orig,
         const std::vector<pm::edge_handle>& _l_edges,
-        const int _n_iters)
+        const int _n_iters,
+        const bool _quad_flap_to_rectangle)
 {
     glow::timing::CpuTimer timer;
 
@@ -281,7 +370,7 @@ Embedding smooth_paths(
     for (int iter = 0; iter < _n_iters; ++iter)
     {
         for (auto l_e : _l_edges)
-            smooth_path(em, l_e.halfedgeA());
+            smooth_path(em, l_e.halfedgeA(), _quad_flap_to_rectangle);
     }
 
     std::cout << "Smoothing paths (" << _n_iters << " iterations ) took "
