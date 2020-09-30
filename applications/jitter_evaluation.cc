@@ -90,6 +90,15 @@ int main()
         }
     }
 
+    // Uncomment to only compute selected configurations and skip the rest.
+    std::set<std::tuple<int, int, std::string>> selected_configs = {
+        //{0, 0, "bnb"},
+        //{8, 0, "bnb"},
+        //{8, 0, "kraevoy"},
+        //{14, 0, "bnb"},
+        //{14, 0, "schreiner"},
+    };
+
     for (int jitter_iters = 0; jitter_iters < 40; ++jitter_iters) {
         int num_seeds = 1;
         if (jitter_iters == 0) {
@@ -135,6 +144,13 @@ int main()
             };
 
             for (const auto& algo : algos) {
+                if (!selected_configs.empty()) {
+                    const auto config = std::tuple<int, int, std::string>(jitter_iters, seed, algo);
+                    if (selected_configs.count(config) == 0) {
+                        continue;
+                    }
+                }
+
                 Embedding em(jittered_input);
 
                 double cost = std::numeric_limits<double>::infinity();
@@ -160,7 +176,6 @@ int main()
                 else {
                     LE_ERROR_THROW("unknown algo");
                 }
-                const double runtime = timer.elapsedSecondsD();
 
                 {
                     std::ofstream f{stats_path, std::ofstream::app};
