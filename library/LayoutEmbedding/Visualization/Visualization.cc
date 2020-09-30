@@ -43,7 +43,11 @@ void view_embedding(const Embedding& _em)
     }
 }
 
-void view_layout(const Embedding& _em, const bool patch_colors)
+void view_layout(
+        const Embedding& _em,
+        const bool patch_colors,
+        const float _point_size,
+        const float _line_width)
 {
     const pm::Mesh& l_m = _em.layout_mesh();
 
@@ -66,16 +70,20 @@ void view_layout(const Embedding& _em, const bool patch_colors)
 
     // Embedded layout edges
     for (const auto l_e : l_m.edges()) {
-        view_edge(l_pos, l_e, l_e_color[l_e]);
+        view_edge(l_pos, l_e, l_e_color[l_e], _line_width);
     }
 
     // Layout nodes
     for (const auto l_v : l_m.vertices()) {
-        view_vertex(l_pos, l_v, l_v_color[l_v]);
+        view_vertex(l_pos, l_v, l_v_color[l_v], _point_size);
     }
 }
 
-void view_target(const Embedding& _em, const bool patch_colors)
+void view_target(
+        const Embedding& _em,
+        const bool patch_colors,
+        const float _point_size,
+        const float _line_width)
 {
     const pm::Mesh& l_m = _em.layout_mesh();
     const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
@@ -97,10 +105,14 @@ void view_target(const Embedding& _em, const bool patch_colors)
         view_target_mesh(_em);
     }
 
-    view_vertices_and_paths(_em);
+    view_vertices_and_paths(_em, true, _point_size, _line_width);
 }
 
-void view_vertices_and_paths(const Embedding& _em, const bool _paths)
+void view_vertices_and_paths(
+        const Embedding& _em,
+        const bool _paths,
+        const float _point_size,
+        const float _line_width)
 {
     const pm::Mesh& l_m = _em.layout_mesh();
     const pm::vertex_attribute<tg::pos3>& t_pos = _em.target_pos();
@@ -113,7 +125,6 @@ void view_vertices_and_paths(const Embedding& _em, const bool _paths)
     // Embedded layout edges
     if (_paths)
     {
-        const float arc_width = 5.0f; // TODO: parameter?
         pm::Mesh path_mesh;
         auto path_pos = path_mesh.vertices().make_attribute<tg::pos3>();
         auto path_color = path_mesh.edges().make_attribute<tg::color3>();
@@ -130,13 +141,13 @@ void view_vertices_and_paths(const Embedding& _em, const bool _paths)
             path_pos[v2] = t_pos[t_e.vertexB()];
             path_color[e] = l_e_color[l_h.edge()];
         }
-        gv::view(gv::lines(path_pos).line_width_px(arc_width), path_color, gv::no_shading, gv::maybe_empty);
+        gv::view(gv::lines(path_pos).line_width_px(_line_width), path_color, gv::no_shading, gv::maybe_empty);
     }
 
     // Layout nodes
     for (const auto l_v : l_m.vertices()) {
         const auto& t_v = _em.matching_target_vertex(l_v);
-        view_vertex(t_pos, t_v, l_v_color[l_v]);
+        view_vertex(t_pos, t_v, l_v_color[l_v], _point_size);
     }
 }
 
@@ -168,7 +179,7 @@ void view_target_mesh(const Embedding& _em, const pm::face_attribute<tg::color3>
     gv::view(t_pos, _t_f_color);
 
     // Wireframe
-    //gv::view(gv::lines(t_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
+//    gv::view(gv::lines(t_pos).line_width_px(1.0f), tg::color3{0.1f, 0.1f, 0.1f});
 }
 
 pm::vertex_attribute<tg::pos3> make_layout_mesh_positions(const Embedding& _em)

@@ -16,11 +16,24 @@ constexpr float default_point_size = 10.0f;
 void view_embedding(const Embedding& _em);
 
 /// Layout mesh with colorized embedded edges
-void view_layout(const Embedding& _em, const bool patch_colors = true);
+void view_layout(
+        const Embedding& _em,
+        const bool patch_colors = true,
+        const float _point_size = default_point_size,
+        const float _line_width = default_line_width);
 
 /// Target mesh with colorized embedded edge paths
-void view_target(const Embedding& _em, const bool patch_colors = true);
-void view_vertices_and_paths(const Embedding& _em, const bool _paths = true);
+void view_target(
+        const Embedding& _em,
+        const bool patch_colors = true,
+        const float _point_size = default_point_size,
+        const float _line_width = default_line_width);
+
+void view_vertices_and_paths(
+        const Embedding& _em,
+        const bool _paths = true,
+        const float _point_size = default_point_size,
+        const float _line_width = default_line_width);
 
 pm::vertex_attribute<tg::pos3> make_layout_mesh_positions(const Embedding& _em);
 pm::vertex_attribute<tg::color3> make_layout_vertex_colors(const Embedding& _em);
