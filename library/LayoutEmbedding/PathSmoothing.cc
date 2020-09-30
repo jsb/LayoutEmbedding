@@ -263,6 +263,14 @@ Embedding smooth_paths(
         const Embedding& _em_orig,
         const int _n_iters)
 {
+    return smooth_paths(_em_orig, _em_orig.layout_mesh().edges().to_vector(), _n_iters);
+}
+
+Embedding smooth_paths(
+        const Embedding& _em_orig,
+        const std::vector<pm::edge_handle>& _l_edges,
+        const int _n_iters)
+{
     glow::timing::CpuTimer timer;
 
     Embedding em = _em_orig; // copy
@@ -272,7 +280,7 @@ Embedding smooth_paths(
 
     for (int iter = 0; iter < _n_iters; ++iter)
     {
-        for (auto l_e : em.layout_mesh().edges())
+        for (auto l_e : _l_edges)
             smooth_path(em, l_e.halfedgeA());
     }
 
