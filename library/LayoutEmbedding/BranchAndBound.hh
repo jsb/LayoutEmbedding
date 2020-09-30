@@ -26,6 +26,8 @@ struct BranchAndBoundSettings
 
     bool print_current_insertion_sequence = true;
     bool print_memory_footprint_estimate = true;
+
+    bool use_greedy_init = true;
 };
 
 struct BranchAndBoundResult

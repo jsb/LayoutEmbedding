@@ -41,7 +41,6 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
     glow::timing::CpuTimer timer;
 
     BranchAndBoundResult result(_name, _settings);
-    BranchAndBoundSettings::Priority priority = _settings.priority;
 
     InsertionSequence best_insertion_sequence;
     double global_upper_bound = std::numeric_limits<double>::infinity();
@@ -61,7 +60,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
     }
 
     // Run heuristic algorithm to find a tighter initial upper bound.
-    {
+    if (_settings.use_greedy_init) {
         Embedding em(_em);
         const auto results = embed_competitors(em);
         global_upper_bound = em.total_embedded_path_length();
@@ -340,10 +339,10 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                     Candidate new_c;
                     new_c.state_hash = new_es_hash;
                     new_c.lower_bound = new_lower_bound;
-                    if (priority == BranchAndBoundSettings::Priority::LowerBoundNonConflicting) {
+                    if (_settings.priority == BranchAndBoundSettings::Priority::LowerBoundNonConflicting) {
                         new_c.priority = new_c.lower_bound * new_es.conflicting_edges().size();
                     }
-                    else if (priority == BranchAndBoundSettings::Priority::LowerBound) {
+                    else if (_settings.priority == BranchAndBoundSettings::Priority::LowerBound) {
                         new_c.priority = new_c.lower_bound;
                     }
                     else {
@@ -378,27 +377,31 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         result.gap = final_gap;
     }
 
-    // Apply the victorious embedding sequence to the input embedding
-
-    // Edges with predefined insertion sequence
-    std::set<pm::edge_index> l_e_embedded;
-    for (const auto& l_ei : best_insertion_sequence) {
-        const auto l_e = _em.layout_mesh().edges()[l_ei];
-        const auto l_he = l_e.halfedgeA();
-        const auto path = _em.find_shortest_path(l_he);
-        _em.embed_path(l_he, path);
-        l_e_embedded.insert(l_e);
+    if (best_insertion_sequence.empty()) {
+        result.cost = std::numeric_limits<double>::infinity();
     }
-    // Remaining edges
-    for (const auto l_e : _em.layout_mesh().edges()) {
-        if (!l_e_embedded.count(l_e)) {
+    else {
+        // Apply the victorious embedding sequence to the input embedding
+        // Edges with predefined insertion sequence
+        std::set<pm::edge_index> l_e_embedded;
+        for (const auto& l_ei : best_insertion_sequence) {
+            const auto l_e = _em.layout_mesh().edges()[l_ei];
             const auto l_he = l_e.halfedgeA();
             const auto path = _em.find_shortest_path(l_he);
             _em.embed_path(l_he, path);
             l_e_embedded.insert(l_e);
         }
+        // Remaining edges
+        for (const auto l_e : _em.layout_mesh().edges()) {
+            if (!l_e_embedded.count(l_e)) {
+                const auto l_he = l_e.halfedgeA();
+                const auto path = _em.find_shortest_path(l_he);
+                _em.embed_path(l_he, path);
+                l_e_embedded.insert(l_e);
+            }
+        }
+        result.cost = _em.total_embedded_path_length();
     }
-    result.cost = _em.total_embedded_path_length();
     return result;
 }
 
