@@ -57,6 +57,7 @@ void EmbeddingState::compute_all_candidate_paths()
 void EmbeddingState::detect_candidate_path_conflicts()
 {
     const Embedding& c_em = em; // We don't want to modify the embedding in this method.
+    conflicts.clear();
 
     if (valid()) {
         VirtualPathConflictSentinel vpcs(c_em);
@@ -180,6 +181,9 @@ std::set<pm::edge_index> EmbeddingState::conflicting_edges() const
     std::set<pm::edge_index> result;
     for (const auto& [l_ei_A, l_ei_B] : conflicts) {
         LE_ASSERT(l_ei_A != l_ei_B);
+        LE_ASSERT(!em.is_embedded(l_ei_A));
+        LE_ASSERT(!em.is_embedded(l_ei_B));
+
         result.insert(l_ei_A);
         result.insert(l_ei_B);
     }
