@@ -166,7 +166,8 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         }
 
         if (c.lower_bound > 0) {
-            LE_ASSERT_EQ(es.cost_lower_bound(), c.lower_bound);
+            // TODO
+            //LE_ASSERT_EQ(es.cost_lower_bound(), c.lower_bound);
         }
 
         // Cache classified edges
