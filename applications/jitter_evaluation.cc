@@ -176,6 +176,7 @@ int main()
                 else {
                     LE_ERROR_THROW("unknown algo");
                 }
+                const double runtime = timer.elapsedSecondsD();
 
                 {
                     std::ofstream f{stats_path, std::ofstream::app};
