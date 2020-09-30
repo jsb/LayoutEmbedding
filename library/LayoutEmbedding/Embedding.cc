@@ -963,12 +963,15 @@ bool Embedding::load(std::string filename)
 
             // Get corresponding halfedge_handle
             pm::halfedge_handle target_halfedge = pm::halfedge_from_to(from_snake_vertex_handle, to_snake_vertex_handle);
-
             LE_ASSERT(target_halfedge.is_valid());
 
             // Save ID of layout_halfedge at position target_halfedge in t_matching_halfedge attribute
+            LE_ASSERT(!is_blocked(target_halfedge.edge()));
             t_matching_halfedge[target_halfedge] = layout_halfedge;
+            t_matching_halfedge[target_halfedge.opposite()] = layout_halfedge.opposite();
         }
+
+        LE_ASSERT_EQ(get_embedded_path(layout_halfedge).size(), snake_length);
     }
     return true;
 }
