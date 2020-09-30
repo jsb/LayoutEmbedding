@@ -85,7 +85,7 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
             const fs::path bnb_stats_path = shrec_results_dir / ("stats_" + _name + "_bnb.csv");
             std::ofstream f{bnb_stats_path};
             f << "gap,lower_bound,last_upper_bound_event_t,max_state_tree_memory" << std::endl;
-            f << result.gap << "," << result.lower_bound << "," << last_upper_bound_event_t << result.max_state_tree_memory_estimate << std::endl;
+            f << result.gap << "," << result.lower_bound << "," << last_upper_bound_event_t << "," << result.max_state_tree_memory_estimate << std::endl;
         }
         else {
             LE_ASSERT(false);
