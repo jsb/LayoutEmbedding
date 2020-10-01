@@ -93,7 +93,7 @@ void view_target(
     // Mesh
     if (patch_colors && _em.is_complete()) {
         const auto l_f_colors = generate_patch_colors(_em.layout_mesh(), 0.5);
-        auto t_f_colors = _em.target_mesh().faces().make_attribute<tg::color3>();
+        auto t_f_colors = _em.target_mesh().faces().make_attribute<tg::color3>(tg::color3::white);
         for (auto l_f : _em.layout_mesh().faces()) {
             for (auto t_f : _em.get_patch(l_f)) {
                 t_f_colors[t_f] = l_f_colors[l_f];

@@ -1,5 +1,4 @@
 #include <LayoutEmbedding/IO.hh>
-#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>

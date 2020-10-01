@@ -370,7 +370,10 @@ Embedding smooth_paths(
     for (int iter = 0; iter < _n_iters; ++iter)
     {
         for (auto l_e : _l_edges)
-            smooth_path(em, l_e.halfedgeA(), _quad_flap_to_rectangle);
+        {
+            if (!l_e.is_boundary())
+                smooth_path(em, l_e.halfedgeA(), _quad_flap_to_rectangle);
+        }
     }
 
     std::cout << "Smoothing paths (" << _n_iters << " iterations ) took "
