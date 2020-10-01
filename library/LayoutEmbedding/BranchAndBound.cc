@@ -76,7 +76,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
 
     std::map<HashValue, State> known_states;
     {
-        EmbeddingState es(_em);
+        EmbeddingState es(_em, _settings);
         es.compute_all_candidate_paths();
         es.detect_candidate_path_conflicts();
 
@@ -137,8 +137,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         std::reverse(inserted_paths.begin(), inserted_paths.end());
 
         // Reconstruct the embedding associated with this state
-        EmbeddingState es(_em);
-        es.use_candidate_paths_for_lower_bounds = _settings.use_candidate_paths_for_lower_bounds;
+        EmbeddingState es(_em, _settings);
         LE_ASSERT(insertion_sequence.size() == inserted_paths.size());
         for (size_t i = 0; i < insertion_sequence.size(); ++i) {
             const pm::edge_index& l_e = insertion_sequence[i];
@@ -302,11 +301,13 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
 
                     // Early-out if the resulting state is already known
                     const HashValue new_es_hash = new_es.hash();
-                    if (_settings.use_state_hashing) {
-                        if (known_states.count(new_es_hash)) {
-                            continue;
-                        }
+
+                    // TODO: re-enable? remove?
+                    //if (_settings.use_state_hashing) {
+                    if (known_states.count(new_es_hash)) {
+                        continue;
                     }
+                    //}
 
                     // Update candidate paths that were in conflict with the newly inserted edge
                     for (const auto& l_e_conflicting : new_es.get_conflicting_candidates(l_e)) {

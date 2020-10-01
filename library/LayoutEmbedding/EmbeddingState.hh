@@ -1,5 +1,6 @@
 #pragma once
 
+#include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/Hash.hh>
 #include <LayoutEmbedding/InsertionSequence.hh>
@@ -12,11 +13,10 @@ namespace LayoutEmbedding {
 /// - compute candidate paths for further insertions, determine their cost and conflicts among them.
 struct EmbeddingState
 {
-    explicit EmbeddingState(const Embedding& _em);
+    explicit EmbeddingState(const Embedding& _em, const BranchAndBoundSettings& _settings);
     explicit EmbeddingState(const EmbeddingState& _es) = default;
 
     void extend(const pm::edge_index& _l_ei, const VirtualPath& _path);
-    void replace(const pm::edge_index& _l_ei, const VirtualPath& _path);
 
     void compute_candidate_path(const pm::edge_index& _l_ei);
     void compute_all_candidate_paths();
@@ -32,6 +32,7 @@ struct EmbeddingState
     HashValue hash() const;
 
     Embedding em;
+    InsertionSequence insertion_sequence;
 
     std::set<pm::edge_index> embedded_edges() const;
     std::set<pm::edge_index> unembedded_edges() const;
@@ -41,7 +42,7 @@ struct EmbeddingState
     pm::edge_attribute<VirtualPath> candidate_paths;
     std::set<std::pair<pm::edge_index, pm::edge_index>> conflicts;
 
-    bool use_candidate_paths_for_lower_bounds = true; // TODO: replace by const BranchAndBoundSettings *
+    const BranchAndBoundSettings* settings;
 };
 
 }

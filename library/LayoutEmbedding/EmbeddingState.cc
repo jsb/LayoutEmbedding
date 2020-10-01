@@ -6,9 +6,10 @@
 
 namespace LayoutEmbedding {
 
-EmbeddingState::EmbeddingState(const Embedding& _em) :
+EmbeddingState::EmbeddingState(const Embedding& _em, const BranchAndBoundSettings& _settings) :
     em(_em),
-    candidate_paths(_em.layout_mesh())
+    candidate_paths(_em.layout_mesh()),
+    settings(&_settings)
 {
 }
 
@@ -26,6 +27,7 @@ void EmbeddingState::extend(const pm::edge_index& _l_ei, const VirtualPath& _pat
     LE_ASSERT(real_vertex(_path.back())  == em.matching_target_vertex(l_he.vertex_to()));
 
     em.embed_path(l_he, _path);
+    insertion_sequence.push_back(_l_ei);
 }
 
 void EmbeddingState::compute_candidate_path(const pm::edge_index& _l_ei)
@@ -104,7 +106,7 @@ bool EmbeddingState::valid() const
 
 double EmbeddingState::cost_lower_bound() const
 {
-    if (use_candidate_paths_for_lower_bounds) {
+    if (settings->use_candidate_paths_for_lower_bounds) {
         return embedded_cost() + unembedded_cost();
     }
     else {
@@ -149,6 +151,11 @@ HashValue EmbeddingState::hash() const
                 const auto& pos = em.target_pos()[t_v];
                 h = hash_combine(h, LayoutEmbedding::hash(pos));
             }
+        }
+    }
+    if (!settings->use_state_hashing) {
+        for (const auto& e_i : insertion_sequence) {
+            h = hash_combine(h, LayoutEmbedding::hash(e_i.value));
         }
     }
     return h;
