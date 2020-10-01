@@ -30,17 +30,17 @@ int main()
 
     const fs::path data_path = LE_DATA_PATH;
     const fs::path output_dir = LE_OUTPUT_PATH;
-    const fs::path bnb_ablation_output_dir = output_dir / "bnb_ablation_triangulated_cube";
+    const fs::path bnb_ablation_output_dir = output_dir / "bnb_ablation";
+    const fs::path stats_path = bnb_ablation_output_dir / "stats_cube_DEBUG.csv";
 
     EmbeddingInput input;
     load(data_path / "models/layouts/cube_layout.obj", input.l_m, input.l_pos);
     load(data_path / "models/target-meshes/sphere.obj", input.t_m, input.t_pos);
-    pm::triangulate_naive(input.l_m);
+    //pm::triangulate_naive(input.l_m);
     input.normalize_surface_area();
     input.center_translation();
 
     fs::create_directories(bnb_ablation_output_dir);
-    const fs::path stats_path = bnb_ablation_output_dir / "stats.csv";
     {
         std::ofstream f(stats_path);
         f << "seed,state_hashing,proactive_pruning,balanced_priority,advanced_lower_bounds,runtime,last_upper_bound_event_t,score" << std::endl;
@@ -56,21 +56,21 @@ int main()
     std::vector<Configuration> configs;
     configs.push_back({true,  true,  true,  true });
     configs.push_back({false, true,  true,  true });
-    configs.push_back({true,  false, true,  true });
-    configs.push_back({true,  true,  false, true });
-    configs.push_back({true,  true,  true,  false});
+//    configs.push_back({true,  false, true,  true });
+//    configs.push_back({true,  true,  false, true });
+//    configs.push_back({true,  true,  true,  false});
 
-    int seed = 0;
+    int seed = 2;
     while (true) {
-        EmbeddingInput jittered_input = input;
+        EmbeddingInput randomized_input = input;
         std::srand(seed);
-        randomize_matching_vertices(jittered_input);
+        randomize_matching_vertices(randomized_input);
         for (const auto& config : configs) {
             // Generate random matching vertices
-            Embedding em(jittered_input);
+            Embedding em(randomized_input);
 
             BranchAndBoundSettings settings;
-            settings.time_limit = 2 * 60;
+            settings.time_limit = 50;//2 * 60;
             settings.use_greedy_init = false;
             settings.use_state_hashing = config.state_hashing;
             settings.use_proactive_pruning = config.proactive_pruning;
@@ -115,5 +115,6 @@ int main()
             std::cout << "Cost:                  " << embedding_cost << std::endl;
         }
         ++seed;
+        break;
     }
 }

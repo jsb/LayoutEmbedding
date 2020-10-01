@@ -28,7 +28,8 @@ int main()
 
     const fs::path data_path = LE_DATA_PATH;
     const fs::path output_dir = LE_OUTPUT_PATH;
-    const fs::path bnb_ablation_output_dir = output_dir / "bnb_ablation_cow_even_simpler";
+    const fs::path bnb_ablation_output_dir = output_dir / "bnb_ablation";
+    const fs::path stats_path = bnb_ablation_output_dir / "stats_cow_even_simpler.csv";
 
     EmbeddingInput input;
     load(data_path / "models/target-meshes/cow_6938.obj", input.t_m, input.t_pos);
@@ -38,7 +39,6 @@ int main()
     input.center_translation();
 
     fs::create_directories(bnb_ablation_output_dir);
-    const fs::path stats_path = bnb_ablation_output_dir / "stats.csv";
     {
         std::ofstream f(stats_path);
         f << "seed,state_hashing,proactive_pruning,balanced_priority,advanced_lower_bounds,runtime,last_upper_bound_event_t,score" << std::endl;
