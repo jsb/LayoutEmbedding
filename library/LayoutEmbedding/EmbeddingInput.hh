@@ -70,6 +70,12 @@ struct EmbeddingInput
      */
     void normalize_surface_area();
     void center_translation();
+
+    /// Reverse face orientation of the layout.
+    /// Warning:
+    /// - Loses all attributes stored on edges, halfedges, and faces.
+    /// - May change the indices of edges and halfedges.
+    void invert_layout();
 };
 
 // TODO: Find elegant way to cast vertex-attribute position from pos3 to std::array<float,3>

@@ -297,6 +297,32 @@ void EmbeddingInput::center_translation()
     t_pos.apply([&] (auto& p) { p -= cog - tg::pos3::zero; });
 }
 
+void EmbeddingInput::invert_layout()
+{
+    // Remember face connectivity
+    std::vector<std::vector<pm::vertex_handle>> fv_indices;
+    for (const auto f : l_m.faces()) {
+        std::vector<pm::vertex_handle> local_fv_indices;
+        for (const auto v : f.vertices()) {
+            local_fv_indices.push_back(v);
+        }
+        fv_indices.push_back(std::move(local_fv_indices));
+    }
+
+    // Remove all edges and faces
+    for (const auto e : l_m.edges()) {
+        l_m.edges().remove(e);
+    }
+
+    // Rebuild the mesh using inverted faces
+    for (auto& local_fv_indices : fv_indices) {
+        std::reverse(local_fv_indices.begin(), local_fv_indices.end());
+        l_m.faces().add(local_fv_indices);
+    }
+
+    l_m.compactify();
+}
+
 // Adopted from obj_writer::write_mesh from polymesh.
 // Currently, the Pos3-based vertex-attributes used in LayoutEmbedding are incompatible with
 //            the obj_writer
