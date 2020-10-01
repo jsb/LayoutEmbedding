@@ -39,14 +39,15 @@ int main()
         const fs::path ub_path = optimization_timeline_output_dir / (std::to_string(seed) + "_upper_bound.csv");
 
         // Generate random matching vertices
-        std::srand(seed); // TODO: make the seed a parameter of randomize_matching_vertices?
+        std::srand(seed);
         randomize_matching_vertices(input);
         Embedding em(input);
 
         BranchAndBoundSettings settings;
+        settings.use_greedy_init = false;
         settings.record_lower_bound_events = true;
         settings.record_upper_bound_events = true;
-        settings.time_limit = 10 * 60;
+        settings.time_limit = 5 * 60;
         auto result = branch_and_bound(em, settings);
 
         fs::create_directories(optimization_timeline_output_dir);
