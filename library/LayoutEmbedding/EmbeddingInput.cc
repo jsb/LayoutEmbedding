@@ -241,10 +241,10 @@ bool EmbeddingInput::load(
     std::cout << t_m.faces().size() << " faces. ";
     std::cout << "χ = " << pm::euler_characteristic(t_m) << std::endl;
 
-    if (pm::euler_characteristic(l_m) != pm::euler_characteristic(t_m)) {
-        std::cout << "Euler characteristic does not match. Skipping." << std::endl;
-        return false;
-    }
+//    if (pm::euler_characteristic(l_m) != pm::euler_characteristic(t_m)) {
+//        std::cout << "Euler characteristic does not match. Skipping." << std::endl;
+//        return false;
+//    }
 
     find_matching_vertices_by_proximity(*this);
 

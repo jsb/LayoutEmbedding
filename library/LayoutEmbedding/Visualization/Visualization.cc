@@ -47,7 +47,8 @@ void view_layout(
         const Embedding& _em,
         const bool patch_colors,
         const float _point_size,
-        const float _line_width)
+        const float _line_width,
+        const bool _use_layout_input_positions)
 {
     const pm::Mesh& l_m = _em.layout_mesh();
 
@@ -57,12 +58,13 @@ void view_layout(
     auto v = gv::view();
 
     // Mesh
-    auto l_pos = make_layout_mesh_positions(_em);
+    const auto l_pos = _use_layout_input_positions ?
+              _em.layout_pos()
+            : make_layout_mesh_positions(_em);
 
     if (patch_colors)
     {
         //view_layout_mesh(_em, generate_patch_colors(_em.layout_mesh()).map([] (auto c) { return tg::color4(c.r, c.g, c.b, 0.5); }));
-        auto l_pos = make_layout_mesh_positions(_em);
         gv::view(l_pos, generate_patch_colors(_em.layout_mesh(), 0.5)/*, gv::no_shading*/);
     }
     else

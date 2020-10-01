@@ -20,7 +20,8 @@ void view_layout(
         const Embedding& _em,
         const bool patch_colors = true,
         const float _point_size = default_point_size,
-        const float _line_width = default_line_width);
+        const float _line_width = default_line_width,
+        const bool _use_layout_input_positions = false);
 
 /// Target mesh with colorized embedded edge paths
 void view_target(
