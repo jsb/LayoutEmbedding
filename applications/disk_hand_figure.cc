@@ -20,6 +20,7 @@ int main()
     fs::create_directories(output_dir);
 
     const auto layout_path = fs::path(LE_DATA_PATH) / "models/layouts/human/hand_disk.obj";
+    const auto layout_rest_path = fs::path(LE_DATA_PATH) / "models/layouts/human/hand_disk_rest.obj";
     const auto target_path = fs::path(LE_DATA_PATH) / "models/target-meshes/human/kneeling_closed.obj";
 
     EmbeddingInput input;
@@ -37,21 +38,29 @@ int main()
     };
     const std::vector<float> line_widths =
     {
-        22,
-        4,
+        28,
+        5,
     };
+
+    // Layout screenshot
+    {
+        // Load rest state vertex positions
+        Embedding em_rest = em;
+        pm::Mesh m_rest;
+        auto pos_rest = m_rest.vertices().make_attribute<tg::pos3>();
+        pm::load(layout_rest_path, m_rest, pos_rest);
+        for (auto v : em_rest.layout_mesh().vertices())
+            em_rest.layout_pos()[v] = pos_rest[m_rest[v.idx]];
+
+        auto cfg_style = default_style();
+        auto cfg_view = gv::config(cam_poses.front(), gv::no_shadow);
+        const auto screenshot_path = output_dir / ("hand_layout.png");
+        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+        view_layout(em_rest, true, 0.6 * line_widths.front(), line_widths.front(), true);
+    }
 
     for (int i = 0; i < cam_poses.size(); ++i)
     {
-        // Layout screenshot
-        {
-            auto cfg_style = default_style();
-            auto cfg_view = gv::config(cam_poses[i], gv::no_shadow);
-            const auto screenshot_path = output_dir / ("hand_layout" + std::to_string(i) + ".png");
-            auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
-            view_layout(em, true, 0.6 * line_widths[i], line_widths[i], true);
-        }
-
         // Embedding screenshot
         {
             auto cfg_style = default_style();
