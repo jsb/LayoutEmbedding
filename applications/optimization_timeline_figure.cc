@@ -8,21 +8,25 @@
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
-#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/StackTrace.hh>
+#include <LayoutEmbedding/PathSmoothing.hh>
+#include <LayoutEmbedding/Visualization/Visualization.hh>
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 
 using namespace LayoutEmbedding;
+namespace fs = std::filesystem;
+
+const auto screenshot_size = tg::ivec2(1920, 1080);
+const int screenshot_samples = 64;
 
 int main()
 {
-    namespace fs = std::filesystem;
-
     register_segfault_handler();
+    glow::glfw::GlfwContext ctx;
 
     const fs::path data_path = LE_DATA_PATH;
     const fs::path output_dir = LE_OUTPUT_PATH;
@@ -75,5 +79,26 @@ int main()
 
         std::cout << "Saving embedding " << cached_embedding_path << " ..." << std::endl;
         em.save(cached_embedding_path_without_extension);
+    }
+
+    // Layout screenshot
+    {
+        auto cfg_style = default_style();
+        const auto cam_pos = glow::viewer::camera_transform(tg::pos3(-2.750460f, 2.037175f, 4.701994f), tg::pos3(-2.184680f, 1.625002f, 3.783660f));
+        auto cfg_view = gv::config(cam_pos);
+        const auto screenshot_path = optimization_timeline_output_dir / (std::to_string(seed) + "_layout.png");
+        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+        view_layout(em, true, 12.0, 7.0, true);
+    }
+
+    // Embedding screenshot
+    em = smooth_paths(em, 2);
+    {
+        auto cfg_style = default_style();
+        const auto cam_pos = glow::viewer::camera_transform(tg::pos3(-0.403092f, 0.426785f, 1.924197f), tg::pos3(-0.282427f, 0.295313f, 1.375118f));
+        auto cfg_view = gv::config(cam_pos);
+        const auto screenshot_path = optimization_timeline_output_dir / (std::to_string(seed) + "_embedding.png");
+        auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+        view_target(em, true, 12.0, 7.0);
     }
 }
