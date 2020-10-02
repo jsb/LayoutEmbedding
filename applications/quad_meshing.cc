@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 namespace
 {
 
-void parametrize(EmbeddingInput& _input)
+void quad(EmbeddingInput& _input)
 {
     // Compute embedding
     Embedding em(_input);
@@ -59,7 +59,7 @@ int main()
         input.load(dir / "layouts/horse_layout.obj",
                    dir / "target-meshes/horse_8078.obj");
 
-        parametrize(input);
+        quad(input);
     }
 
 }
