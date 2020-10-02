@@ -51,7 +51,7 @@ void quad(
 //        view_quad_mesh(q_pos, q_matching_layout_face, 6);
 //        view_quad_mesh(q_pos, q_matching_layout_face, 11);
 //        view_quad_mesh(q_pos, q_matching_layout_face, 251);
-        view_quad_mesh(q_pos, q_matching_layout_face, 256);
+//        view_quad_mesh(q_pos, q_matching_layout_face, 256);
     }
 
     // Layout screenshot
