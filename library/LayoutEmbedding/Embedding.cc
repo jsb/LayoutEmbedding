@@ -972,7 +972,7 @@ bool Embedding::load(std::string filename)
             LE_ASSERT(target_halfedge.is_valid());
 
             // Save ID of layout_halfedge at position target_halfedge in t_matching_halfedge attribute
-            LE_ASSERT(!is_blocked(target_halfedge.edge()));
+//            LE_ASSERT(!is_blocked(target_halfedge.edge()));
             t_matching_halfedge[target_halfedge] = layout_halfedge;
             t_matching_halfedge[target_halfedge.opposite()] = layout_halfedge.opposite();
         }
