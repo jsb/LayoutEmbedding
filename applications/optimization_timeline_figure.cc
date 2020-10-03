@@ -1,3 +1,11 @@
+/**
+  * Embeds a cube layout on a sphere using random landmark positions.
+  * Writes lower and upper bound events to file.
+  *
+  * Output files can be found in <build-folder>/output/optimization_timeline.
+  *
+  */
+
 #include <glow-extras/timing/CpuTimer.hh>
 
 #include <polymesh/formats.hh>

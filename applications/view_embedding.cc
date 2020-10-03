@@ -1,3 +1,11 @@
+/**
+  * View a saved embedding file.
+  *
+  * Usage
+  *     ./view_embedding <path_to_lem_file>
+  *
+  */
+
 #include <glow-extras/glfw/GlfwContext.hh>
 #include <glow-extras/viewer/view.hh>
 
@@ -5,9 +13,8 @@
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/StackTrace.hh>
 
-#include <tinyfiledialogs.h>
-
 using namespace LayoutEmbedding;
+namespace fs = std::filesystem;
 
 int main(int argc, char** argv)
 {
@@ -18,10 +25,10 @@ int main(int argc, char** argv)
     Embedding em(input);
 
     // Load Embedding from file
-    if(argc > 1) {
-        const std::string embedding_file = std::string(argv[1]);
-        if(!em.load(embedding_file)) {
-            std::cout << "Embedding File could not be loaded." << std::endl;
+    if (argc > 1) {
+        const fs::path filename = argv[1];
+        if (!em.load(filename.parent_path() / filename.stem())) {
+            std::cout << "Embedding file could not be loaded." << std::endl;
             return 1;
         }
 
@@ -29,6 +36,6 @@ int main(int argc, char** argv)
         view_embedding(em);
     }
     else {
-        std::cout << "Please specify an embedding file." << std::endl;
+        std::cout << "Please specify a path to a .lem file." << std::endl;
     }
 }

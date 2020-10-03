@@ -1,3 +1,14 @@
+const bool open_viewer = true;
+/**
+  * Loads different embeddings on a cube from file.
+  *
+  * If "open_viewer" is enabled, multiple windows will open successively.
+  * Press ESC to close the current window.
+  *
+  * Output files can be found in <build-folder>/output/homotopy_cube.
+  *
+  */
+
 #include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
@@ -82,6 +93,12 @@ int main()
             const auto screenshot_path = output_dir / (name + ".png");
             auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
             view_target(em, true, 30, 15);
+        }
+
+        if (open_viewer)
+        {
+            auto cfg_style = default_style();
+            view_embedding(em);
         }
     }
 }

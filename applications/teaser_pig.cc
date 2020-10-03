@@ -1,3 +1,14 @@
+const bool open_viewer = true;
+/**
+  * Embeds layout into pig mesh (teaser figure).
+  *
+  * If "open_viewer" is enabled, multiple windows will open successively.
+  * Press ESC to close the current window.
+  *
+  * Output files can be found in <build-folder>/output/teaser_pig.
+  *
+  */
+
 #include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/StackTrace.hh>
@@ -28,9 +39,6 @@ int main()
     std::vector<std::string> algorithms =
     {
         "greedy",
-//        "praun",
-//        "kraevoy",
-//        "schreiner",
         "bnb",
     };
 
@@ -58,18 +66,14 @@ int main()
         Embedding em(input);
         if (algorithm == "greedy")
             embed_greedy(em);
-        else if (algorithm == "praun")
-            embed_praun(em);
-        else if (algorithm == "kraevoy")
-            embed_kraevoy(em);
-        else if (algorithm == "schreiner")
-            embed_schreiner(em);
         else if (algorithm == "bnb")
         {
             BranchAndBoundSettings settings;
             settings.time_limit = 1 * 60;
             branch_and_bound(em, settings);
         }
+        else
+            LE_ERROR_THROW("");
 
         // Smooth embedding
         em = smooth_paths(em);
@@ -88,6 +92,14 @@ int main()
             const auto screenshot_path = output_dir / (algorithm + ".png");
             GV_SCOPED_CONFIG(algorithm);
             auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
+            view_target(em);
+        }
+
+        if (open_viewer)
+        {
+            auto style = default_style();
+            auto v = gv::view();
+            caption(algorithm);
             view_target(em);
         }
     }

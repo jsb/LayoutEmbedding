@@ -1,3 +1,10 @@
+/**
+  * Evaluates our method and greedy methods on randomly perturbed landmarks.
+  *
+  * Output files can be found in <build-folder>/output/jitter_evaluation.
+  *
+  */
+
 #include <glow-extras/timing/CpuTimer.hh>
 
 #include <polymesh/formats.hh>

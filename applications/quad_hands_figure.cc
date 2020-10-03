@@ -1,3 +1,15 @@
+const bool open_viewer = true;
+/**
+  * Embeds quad layout into hands in different poses using challenging landmark positions
+  * and computes quad meshes.
+  *
+  * If "open_viewer" is enabled, multiple windows will open successively.
+  * Press ESC to close the current window.
+  *
+  * Output files can be found in <build-folder>/output/quad_hands.
+  *
+  */
+
 #include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
@@ -34,18 +46,6 @@ int main()
             "003.obj",
             glow::viewer::camera_transform(tg::pos3(-0.001297f, 0.234221f, -1.339844f), tg::pos3(-0.014470f, 0.128625f, -0.906745f)),
         },
-//        {
-//            "004.obj",
-//            glow::viewer::camera_transform(tg::pos3(0.215420f, 0.222535f, -1.291119f), tg::pos3(0.133045f, 0.131673f, -0.894561f)),
-//        },
-//        {
-//            "005.obj",
-//            glow::viewer::camera_transform(tg::pos3(0.215420f, 0.222535f, -1.291119f), tg::pos3(0.133045f, 0.131673f, -0.894561f)),
-//        },
-//        {
-//            "006.obj",
-//            glow::viewer::camera_transform(tg::pos3(0.215420f, 0.222535f, -1.291119f), tg::pos3(0.133045f, 0.131673f, -0.894561f)),
-//        },
     };
 
     std::vector<std::string> algorithms =
@@ -58,7 +58,6 @@ int main()
     const auto layout_path = fs::path(LE_DATA_PATH) / "models/layouts/hand_TMBF_003.obj";
     const auto input_dir = fs::path(LE_DATA_PATH) / "models/target-meshes/TMBF_hands/";
     const auto output_dir = fs::path(LE_OUTPUT_PATH) / "quad_hands";
-    auto texture = read_texture(fs::path(LE_DATA_PATH) / "textures/param_blue.png");
     fs::create_directories(output_dir);
 
     const auto screenshot_size = tg::ivec2(2560, 1440);
@@ -117,9 +116,7 @@ int main()
         {
             // Compute embedding
             Embedding em(input);
-            if (algorithm == "praun")
-                embed_praun(em);
-            else if (algorithm == "kraevoy")
+            if (algorithm == "kraevoy")
                 embed_kraevoy(em);
             else if (algorithm == "schreiner")
                 embed_schreiner(em);
@@ -127,8 +124,11 @@ int main()
             {
                 BranchAndBoundSettings settings;
                 settings.time_limit = 60;
+                settings.optimality_gap = 0.02;
                 branch_and_bound(em, settings);
             }
+            else
+                LE_ERROR_THROW("");
 
             // Smooth embedding
             em = smooth_paths(em);
@@ -165,6 +165,19 @@ int main()
                     auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
                     view_quad_mesh(q_pos, q_matching_layout_face);
                 }
+            }
+
+            if (open_viewer)
+            {
+                auto style = default_style();
+                auto g = gv::columns();
+                view_layout(em);
+                {
+                    auto v = gv::view();
+                    caption(algorithm);
+                    view_target(em);
+                }
+                view_quad_mesh(q_pos, q_matching_layout_face);
             }
         }
     }

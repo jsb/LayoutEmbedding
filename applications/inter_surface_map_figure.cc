@@ -1,3 +1,19 @@
+const bool open_viewer = true;
+/**
+  * Loads two different inter-surface maps from file and takes screenshots.
+  *
+  *  * Instructions:
+  *
+  *     * Run shrec07_generate_layouts before running this file.
+  *     * Run shrec07_embed_layouts (up to model 13) before running this file.
+  *
+  * If "open_viewer" is enabled, multiple windows will open successively.
+  * Press ESC to close the current window.
+  *
+  * Output files can be found in <build-folder>/output/inter_surface_map.
+  *
+  */
+
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <omp.h>
 
@@ -186,18 +202,18 @@ void show_ism(
     }
 
 
-    // Screenshots
+    // Map Screenshots
+    gv::SharedGeometricRenderable r1_A, r2_A, r1_B, r2_B;
     {
         const fs::path screenshot_path = output_dir / (_algorithm + ("_ism_A.png"));
         auto cfg_style = default_style();
         auto cfg_view = gv::config(cam_pos_A);
         auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
 
+        renderables_front_back(pos_A, pos_A, uvs_A, texture_front, texture_back, r1_A, r2_A);
         auto v = gv::view();
-        gv::SharedGeometricRenderable r1, r2;
-        renderables_front_back(pos_A, pos_A, uvs_A, texture_front, texture_back, r1, r2);
-        gv::view(r1);
-        gv::view(r2);
+        gv::view(r1_A);
+        gv::view(r2_A);
 
         view_vertices_and_paths(em_A, false);
     }
@@ -208,13 +224,32 @@ void show_ism(
         auto cfg_view = gv::config(cam_pos_B);
         auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
 
+        renderables_front_back(pos_B, pos_A, uvs_B, texture_front, texture_back, r1_B, r2_B);
         auto v = gv::view();
-        gv::SharedGeometricRenderable r1, r2;
-        renderables_front_back(pos_B, pos_A, uvs_B, texture_front, texture_back, r1, r2);
-        gv::view(r1);
-        gv::view(r2);
+        gv::view(r1_B);
+        gv::view(r2_B);
 
         view_vertices_and_paths(em_B, false);
+    }
+
+    if (open_viewer)
+    {
+        auto style = default_style();
+        auto g = gv::grid();
+        view_target(em_A);
+        view_target(em_B);
+        {
+            auto v = gv::view();
+            gv::view(r1_A);
+            gv::view(r2_A);
+            view_vertices_and_paths(em_A, false);
+        }
+        {
+            auto v = gv::view();
+            gv::view(r1_B);
+            gv::view(r2_B);
+            view_vertices_and_paths(em_B, false);
+        }
     }
 }
 
@@ -225,15 +260,17 @@ int main()
     register_segfault_handler();
     glow::glfw::GlfwContext ctx;
 
+    fs::create_directories(output_dir);
+
     show_ism(fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "2_kraevoy",
              fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "13_kraevoy",
-             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "ism" / "kraevoy" / "BonA_overlay.obj",
-             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "ism" / "kraevoy" / "AonB_overlay.obj",
+             fs::path(LE_DATA_PATH) / "maps" / "kraevoy" / "BonA_overlay.obj",
+             fs::path(LE_DATA_PATH) / "maps" / "kraevoy" / "AonB_overlay.obj",
              "kraevoy");
 
     show_ism(fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "2_bnb",
              fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "13_bnb",
-             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "ism" / "bnb" / "BonA_overlay.obj",
-             fs::path(LE_OUTPUT_PATH) / "inter_surface_map" / "ism" / "bnb" / "AonB_overlay.obj",
+             fs::path(LE_DATA_PATH) / "maps" / "bnb" / "BonA_overlay.obj",
+             fs::path(LE_DATA_PATH) / "maps" / "bnb" / "AonB_overlay.obj",
              "bnb");
 }

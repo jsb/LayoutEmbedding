@@ -1,3 +1,20 @@
+#include <string>
+std::string open_prefix = "284";
+/**
+  * View results of the evaluation on the SHREC07 dataset.
+  *
+  * Instructions:
+  *
+  *     * Run shrec07_generate_layouts before running this file.
+  *     * Run shrec07_embed_layouts before running this file.
+  *
+  *     * Navigate through results using left and right arrow keys.
+  *     * Mesh id and embedding algorithm are shown in bottom left corner.
+  *     * Close window by pressing ESC
+  *     * Set "open_prefix" to start at a specific mesh id.
+  *
+  */
+
 #include "shrec07.hh"
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <GLFW/glfw3.h>
@@ -6,7 +23,6 @@ using namespace LayoutEmbedding;
 
 const auto input_dir = fs::path(LE_OUTPUT_PATH) / "shrec07_results/saved_embeddings";
 const auto suffix = "smoothed.lem";
-std::string open_prefix = "284";
 
 namespace
 {

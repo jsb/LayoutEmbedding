@@ -1,3 +1,14 @@
+const bool open_viewer = true;
+/**
+  * Embeds quad layout into three animals and computes quad meshes.
+  *
+  * If "open_viewer" is enabled, multiple windows will open successively.
+  * Press ESC to close the current window.
+  *
+  * Output files can be found in <build-folder>/output/quad_animals.
+  *
+  */
+
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
@@ -59,6 +70,15 @@ void quad_greedy(
         view_quad_mesh(q_pos, q_matching_layout_face);
 //        view_quad_mesh(q_pos, q_matching_layout_face, 256); // Enable this and check out quad-animals branch to achieve paper style
     }
+
+    if (open_viewer)
+    {
+        auto style = default_style();
+        auto g = gv::columns();
+        view_layout(em);
+        view_target(em);
+        view_quad_mesh(q_pos, q_matching_layout_face);
+    }
 }
 
 void quad_bnb(
@@ -114,6 +134,15 @@ void quad_bnb(
 
         gv::view(gv::lines(pos_rest).line_width_px(2.2));
         view_layout(em_rest, true, 0, 0, true);
+    }
+
+    if (open_viewer)
+    {
+        auto style = default_style();
+        auto g = gv::columns();
+        view_layout(em);
+        view_target(em);
+        view_quad_mesh(q_pos, q_matching_layout_face);
     }
 }
 

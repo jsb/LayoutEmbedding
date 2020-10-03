@@ -1,3 +1,15 @@
+/**
+  * Generates screenshots of selected results on the SHREC07 datset.
+  *
+  * Instructions:
+  *
+  *     * Run shrec07_generate_layouts before running this file.
+  *     * Run shrec07_embed_layouts before running this file.
+  *
+  * Output files can be found in <build-folder>/output/shrec07_figure.
+  *
+  */
+
 #include "shrec07.hh"
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <GLFW/glfw3.h>

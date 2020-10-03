@@ -1,3 +1,11 @@
+const bool open_viewer = true;
+/**
+  * Embeds a disk topology layout into a disk topology target surface.
+  *
+  * Output files can be found in <build-folder>/output/disk_figure.
+  *
+  */
+
 #include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/StackTrace.hh>
@@ -84,5 +92,11 @@ int main()
         const auto screenshot_path = output_dir / "face_embedding.png";
         auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
         view_target(em, true, 5, 7);
+    }
+
+    if (open_viewer)
+    {
+        auto cfg_style = default_style();
+        view_embedding(em);
     }
 }

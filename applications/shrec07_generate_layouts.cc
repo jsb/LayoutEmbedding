@@ -1,3 +1,11 @@
+/**
+  * Generates one template layout for each of the 16 selected categories
+  * of the SHREC07 dataset.
+  *
+  * Output files can be found in <build-folder>/output/shrec07_layouts.
+  *
+  */
+
 #include "shrec07.hh"
 
 #include <polymesh/formats.hh>

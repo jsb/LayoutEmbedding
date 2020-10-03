@@ -93,4 +93,9 @@ inline auto render_objects_only()
     );
 }
 
+inline auto caption(const std::string& _s)
+{
+    return gv::view(gv::make_renderable(std::vector<tg::pos3>()), gv::maybe_empty, _s);
+}
+
 }

@@ -1,3 +1,15 @@
+/**
+  * Runs an ablation study on a subset of the SHREC07 dataset.
+  *
+  * Instructions:
+  *
+  *     * Run shrec07_generate_layouts before running this file.
+  *     * Running this experiment might take a while (~24h).
+  *
+  * Output files can be found in <build-folder>/output/bnb_ablation.
+  *
+  */
+
 #include "shrec07.hh"
 
 #include <glow-extras/timing/CpuTimer.hh>

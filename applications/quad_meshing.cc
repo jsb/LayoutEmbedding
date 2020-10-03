@@ -1,3 +1,7 @@
+/**
+  * Demonstrates simplistic quad meshing pipeline on a simple example.
+  */
+
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
@@ -40,8 +44,6 @@ void quad(EmbeddingInput& _input)
         {
             auto v = gv::view();
             view_quad_mesh(q_pos, q_matching_layout_face);
-//            view_vertices_and_paths(em);
-//            view_layout(em);
         }
     }
 }
@@ -55,7 +57,7 @@ int main()
     const auto dir = fs::path(LE_DATA_PATH) / "models";
     EmbeddingInput input;
 
-    {   // Box animal -> SHREC
+    {
         input.load(dir / "layouts/horse_layout.obj",
                    dir / "target-meshes/horse_8078.obj");
 
