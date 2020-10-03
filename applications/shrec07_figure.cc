@@ -441,45 +441,4 @@ int main()
     glow::glfw::GlfwContext ctx;
 
     take_screenshots();
-
-    // Find all files with suffix
-    std::vector<fs::path> embedding_files;
-    for (auto& f : fs::recursive_directory_iterator(input_dir))
-    {
-        if (ends_with(f.path(), suffix))
-            embedding_files.push_back(f.path());
-    }
-
-    // Sort
-    std::sort(embedding_files.begin(), embedding_files.end(), [](const fs::path& a, const fs::path& b) -> bool
-    {
-        return std::stoi(a.filename()) < std::stoi(b.filename());
-    });
-
-    // If there is a file with this prefix, open it first
-    int i_embedding = 0;
-    for (int i = 0; i < embedding_files.size(); ++i)
-    {
-        if (starts_with(embedding_files[i].filename(), open_prefix))
-        {
-            i_embedding = i;
-            break;
-        }
-    }
-
-    // View
-    do
-    {
-        GV_SCOPED_CONFIG(gv::close_keys(GLFW_KEY_LEFT, GLFW_KEY_RIGHT, GLFW_KEY_P));
-        const auto key = gv::get_last_close_info().closed_by_key;
-        if (key == GLFW_KEY_LEFT)
-            i_embedding = (i_embedding + embedding_files.size() - 1) % embedding_files.size();
-        else if (key == GLFW_KEY_RIGHT)
-            i_embedding = (i_embedding + 1) % embedding_files.size();
-        else if (key == GLFW_KEY_ESCAPE)
-            break;
-
-        view(embedding_files[i_embedding], find_settings(embedding_files[i_embedding]), false, false);
-    }
-    while (true);
 }
