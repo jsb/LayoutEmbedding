@@ -59,7 +59,7 @@ int main()
     });
 
     // If there is a file with this prefix, open it first
-    int i_embedding = 0;
+    int i_embedding = -1;
     for (int i = 0; i < embedding_files.size(); ++i)
     {
         if (starts_with(embedding_files[i].filename(), open_prefix))
@@ -68,6 +68,10 @@ int main()
             break;
         }
     }
+
+    // If no embedding with the specified prefix can be found, open the last one.
+    if (i_embedding < 0)
+        i_embedding = embedding_files.size() - 1;
 
     // View
     do
