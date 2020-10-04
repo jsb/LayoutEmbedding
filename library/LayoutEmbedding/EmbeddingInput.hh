@@ -78,7 +78,6 @@ struct EmbeddingInput
     void invert_layout();
 };
 
-// TODO: Find elegant way to cast vertex-attribute position from pos3 to std::array<float,3>
 bool write_obj_file(std::string file_name, const pm::Mesh & mesh,
                     const pm::vertex_attribute<tg::pos3>& t_pos);
 

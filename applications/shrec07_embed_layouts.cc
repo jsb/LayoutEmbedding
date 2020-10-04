@@ -128,7 +128,6 @@ void compute_embeddings(const std::string& _name, EmbeddingInput& _input)
         // Visualization
         auto cfg_style = gv::config(gv::no_grid, gv::no_outline, gv::background_color(RWTH_WHITE));
 
-        // TODO: Camera position
         if (screenshots_only) {
             {
                 const fs::path screenshot_path = shrec_results_dir / ("screenshot_" + _name + "_layout.png");

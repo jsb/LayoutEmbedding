@@ -17,7 +17,6 @@ struct Snake;
 class Embedding
 {
 public:
-    // TODO: Change to const again
     explicit Embedding(EmbeddingInput& _input);
 
     Embedding(const Embedding& _em);
@@ -102,7 +101,6 @@ public:
     double path_length_norm = 1.0; // TODO: find a suitable place for this
 
 private:
-    // TODO: Change back to const
     EmbeddingInput* input;
     pm::Mesh t_m; // Target mesh. Copy.
     pm::vertex_attribute<tg::pos3> t_pos; // Target mesh positions. Copy.
