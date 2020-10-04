@@ -96,9 +96,6 @@ bool EmbeddingInput::save(std::string filename,
     std::ofstream inp_file_stream(inp_write_file_name);
     if(inp_file_stream.is_open())
     {
-        // Write model name comment
-        inp_file_stream << "# " + filename + "\n\n";
-
         // Write links to layout mesh and target mesh
         inp_file_stream << "lf " + filename_without_path + "_layout.obj" + "\n";
         inp_file_stream << "tif " + filename_without_path + "_target_input.obj" + "\n\n";

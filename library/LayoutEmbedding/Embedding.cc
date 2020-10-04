@@ -221,9 +221,6 @@ bool Embedding::save(std::string filename, bool write_target_mesh,
     std::ofstream em_file_stream(em_write_file_name);
     if(em_file_stream.is_open())
     {
-        // Write model name comment
-        em_file_stream << "# " + filename + "\n\n";
-
         // Write links to layout mesh and target mesh
         em_file_stream << "inp " + filename_without_path + ".inp" + "\n";
         em_file_stream << "tf " + filename_without_path + "_target.obj" + "\n\n";
