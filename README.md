@@ -40,16 +40,15 @@ Edit the respective file in the "applications" folder to surpress the viewer win
 ./disk_hand_figure			(output, viewer)
 ```
 
-To replicate the SHREC07 evaluation, run the following executables in the correct order:
+To replicate the SHREC07 evaluation, run the following executables in the correct order.
+Note that `shrec07_embed_layouts` takes ~24h to run.
 
 ```
 ./shrec07_generate_layouts
-./shrec07_embed_layouts
-./shrec07_figure
-./shrec07_ablation
+./shrec07_embed_layouts			(requires shrec07_generate_layouts)
+./shrec07_figure			(requires shrec07_embed_layouts)
+./shrec07_ablation			(requires shrec07_generate_layouts)
 ```
-
-Note that `shrec07_embed_layouts` takes ~24h to run.
  
 Run `./shrec07_view` to inspect the results of `shrec07_embed_layouts`.
 Use the left and right arrow keys to navigate through the results.
@@ -75,7 +74,7 @@ Edit applications/shrec07_view.cc to start the viewer at a different result.
 
     --smooth: Smoothing post-process based on [Praun2001].
 
-    --view: Open viewer window.
+    --noview: Don't open viewer window.
 
 Output files can be found in "build/output/embed".
 ```
