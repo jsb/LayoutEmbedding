@@ -21,7 +21,7 @@
   *
   *     --smooth: Smoothing post-process based on [Praun2001].
   *
-  *     --view: Open viewer window.
+  *     --noview: Don't open viewer window.
   *
   * Output files can be found in <build-folder>/output/embed.
   *
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
     }
 
     // View embedding
-    if (flag("--view", argc, argv))
+    if (!flag("--noview", argc, argv))
     {
         auto style = default_style();
         view_embedding(em);
