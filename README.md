@@ -12,7 +12,7 @@ If not already present, install a C++17 compiler (GCC >= 8) and the following de
 ```
 mkdir build
 cd build
-cmake ../
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 ```
 
