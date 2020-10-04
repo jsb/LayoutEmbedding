@@ -76,6 +76,11 @@ int main()
 
     em = smooth_paths(em, 1);
 
+    // Save embedding
+    const auto embeddings_dir = output_dir / "embeddings";
+    fs::create_directories(embeddings_dir);
+    em.save(embeddings_dir / "face_embedding");
+
     // Layout screenshot
     {
         auto cfg_style = default_style();

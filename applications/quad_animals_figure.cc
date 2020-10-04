@@ -42,6 +42,11 @@ void quad_greedy(
 
     em = smooth_paths(em);
 
+    // Save embedding
+    const auto embeddings_dir = output_dir / "embeddings";
+    fs::create_directories(embeddings_dir);
+    em.save(embeddings_dir / (_target_path.stem().string() + "_greedy"));
+
     // Compute integer-grid map
     auto l_subdivisions = choose_loop_subdivisions(em, 0.05);
 
@@ -97,6 +102,11 @@ void quad_bnb(
     branch_and_bound(em, settings);
 
     em = smooth_paths(em);
+
+    // Save embedding
+    const auto embeddings_dir = output_dir / "embeddings";
+    fs::create_directories(embeddings_dir);
+    em.save(embeddings_dir / (_target_path.stem().string() + "_bnb"));
 
     // Compute integer-grid map
     auto l_subdivisions = choose_loop_subdivisions(em, 0.05);

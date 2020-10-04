@@ -1,3 +1,4 @@
+const bool open_viewer = true;
 /**
   * Embeds a cube layout on a sphere using random landmark positions.
   * Writes lower and upper bound events to file.
@@ -108,5 +109,11 @@ int main()
         const auto screenshot_path = optimization_timeline_output_dir / (std::to_string(seed) + "_embedding.png");
         auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
         view_target(em, true, 12.0, 7.0);
+    }
+
+    if (open_viewer)
+    {
+        auto cfg_style = default_style();
+        view_embedding(em);
     }
 }

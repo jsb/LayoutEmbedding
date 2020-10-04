@@ -27,6 +27,11 @@ int main()
     settings.optimality_gap = 0.05;
     branch_and_bound(em, settings);
 
+    // Save embedding
+    const auto embeddings_dir = fs::path(LE_OUTPUT_PATH) / "path_smoothing/embeddings";
+    fs::create_directories(embeddings_dir);
+    em.save(embeddings_dir / "before_smoothing");
+
     {
         auto g = gv::grid();
         auto style = default_style();
@@ -34,6 +39,8 @@ int main()
         view_target(em);
 
         em = smooth_paths(em);
+        em.save(embeddings_dir / "after_smoothing");
+
         view_target(em);
     }
 }

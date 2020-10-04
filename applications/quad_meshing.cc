@@ -21,6 +21,11 @@ void quad(EmbeddingInput& _input)
     embed_greedy(em);
     em = smooth_paths(em);
 
+    // Save embedding
+    const auto embeddings_dir = fs::path(LE_OUTPUT_PATH) / "quad_meshing/embeddings";
+    fs::create_directories(embeddings_dir);
+    em.save(embeddings_dir / "quad_meshing");
+
     // Compute integer-grid map
     auto l_subdivisions = choose_loop_subdivisions(em, 0.05);
     auto param = parametrize_patches(em, l_subdivisions);

@@ -41,6 +41,11 @@ int main()
 
     em = smooth_paths(em, 2);
 
+    // Save embedding
+    const auto embeddings_dir = output_dir / "embeddings";
+    fs::create_directories(embeddings_dir);
+    em.save(embeddings_dir / "hand_embedding");
+
     const std::vector<glow::viewer::camera_transform> cam_poses =
     {
         glow::viewer::camera_transform(tg::pos3(0.052100f, 0.355749f, 0.054042f), tg::pos3(-0.100641f, 0.389507f, 0.014364f)),
