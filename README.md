@@ -64,10 +64,10 @@ Edit applications/shrec07_view.cc to start the viewer at a different result.
     Layout connectivity as polygonal mesh (e.g. obj).
     Vertices are projected to target surface to define landmark positions.
 
-path-to-target:
+<path-to-target>:
     Target triangle mesh (e.g. obj).
 
-flags:
+<flags>:
     --greedy: Run greedy algorithm, always choosing shortest path.
     --praun: Run greedy algorithm w/ heuristic based on [Praun2001].
     --kraevoy: Run greedy algorithm w/ heuristic based on [Kraevoy2003] / [Kraevoy2004].
@@ -84,6 +84,6 @@ Output files can be found in "build/output/embed".
 ```
 ./view_embedding <path_to_lem_file>
 
-path_to_lem_file:
+<path_to_lem_file>:
 	Specify .lem file. E.g. in "build/output/embed"
 ```
