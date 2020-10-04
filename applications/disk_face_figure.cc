@@ -70,7 +70,9 @@ int main()
     input.load(layout_path, target_path);
 
     Embedding em(input);
-    embed_greedy(em);
+    BranchAndBoundSettings settings;
+    settings.use_greedy_init = false;
+    branch_and_bound(em, settings);
 
     em = smooth_paths(em, 1);
 

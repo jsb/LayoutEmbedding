@@ -35,7 +35,9 @@ int main()
     input.load(layout_path, target_path);
 
     Embedding em(input);
-    embed_greedy(em);
+    BranchAndBoundSettings settings;
+    settings.use_greedy_init = false;
+    branch_and_bound(em, settings);
 
     em = smooth_paths(em, 2);
 
@@ -82,6 +84,13 @@ int main()
     if (open_viewer)
     {
         auto cfg_style = default_style();
-        view_embedding(em);
+        auto g = gv::grid();
+        {
+            auto no_shadow = gv::config(gv::no_shadow);
+            view_layout(em);
+        }
+        {
+            view_target(em);
+        }
     }
 }

@@ -378,19 +378,22 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         result.gap = final_gap;
     }
 
-    if (best_insertion_sequence.empty()) {
-        result.cost = std::numeric_limits<double>::infinity();
+    if (std::isinf(global_upper_bound)) {
+        result.cost = global_upper_bound;
+        result.insertion_sequence.clear();
     }
     else {
         // Apply the victorious embedding sequence to the input embedding
         // Edges with predefined insertion sequence
         std::set<pm::edge_index> l_e_embedded;
+        result.insertion_sequence.clear();
         for (const auto& l_ei : best_insertion_sequence) {
             const auto l_e = _em.layout_mesh().edges()[l_ei];
             const auto l_he = l_e.halfedgeA();
             const auto path = _em.find_shortest_path(l_he);
             _em.embed_path(l_he, path);
             l_e_embedded.insert(l_e);
+            result.insertion_sequence.push_back(l_e);
         }
         // Remaining edges
         for (const auto l_e : _em.layout_mesh().edges()) {
@@ -399,10 +402,12 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
                 const auto path = _em.find_shortest_path(l_he);
                 _em.embed_path(l_he, path);
                 l_e_embedded.insert(l_e);
+                result.insertion_sequence.push_back(l_e);
             }
         }
         result.cost = _em.total_embedded_path_length();
     }
+
     return result;
 }
 

@@ -84,13 +84,11 @@ pm::face_handle triangle_with_edge_and_opposite_vertex(const pm::edge_handle& _e
 
 pm::halfedge_handle rotated_cw(const pm::halfedge_handle& _he)
 {
-    LE_ASSERT(!_he.opposite().is_boundary());
     return _he.opposite().next();
 }
 
 pm::halfedge_handle rotated_ccw(const pm::halfedge_handle& _he)
 {
-    LE_ASSERT(!_he.is_boundary());
     return _he.prev().opposite();
 }
 

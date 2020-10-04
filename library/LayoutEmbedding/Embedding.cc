@@ -10,7 +10,6 @@
 
 namespace LayoutEmbedding {
 
-// TODO: Change to const again
 Embedding::Embedding(EmbeddingInput& _input) :
     input(&_input),
     t_m(),
@@ -30,6 +29,9 @@ Embedding::Embedding(EmbeddingInput& _input) :
         l_matching_vertex[l_v] = t_v;
         t_matching_vertex[t_v] = l_v;
     }
+
+    for (auto l_v : layout_mesh().vertices())
+        LE_ASSERT(!l_matching_vertex[l_v].is_boundary());
 }
 
 Embedding::Embedding(const Embedding& _em)
@@ -68,12 +70,6 @@ Embedding& Embedding::operator=(const Embedding& _em) {
 
     return *this;
 }
-
-//Embedding::Embedding(std::string file_name, std::string file_directory,
-//                     pm::Mesh& external_layout_mesh, pm::Mesh& external_target_mesh)
-//{
-//    load_embedding(file_name, file_directory, external_layout_mesh, external_target_mesh);
-//}
 
 pm::halfedge_handle Embedding::get_embedded_target_halfedge(const pm::halfedge_handle& _l_he) const
 {
@@ -979,6 +975,10 @@ bool Embedding::load(std::string filename)
 
         LE_ASSERT_EQ(get_embedded_path(layout_halfedge).size(), snake_length);
     }
+
+    for (auto l_v : layout_mesh().vertices())
+        LE_ASSERT(!l_matching_vertex[l_v].is_boundary());
+
     return true;
 }
 
