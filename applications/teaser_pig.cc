@@ -69,7 +69,7 @@ int main()
         else if (algorithm == "bnb")
         {
             BranchAndBoundSettings settings;
-            settings.time_limit = 1 * 60;
+            settings.use_greedy_init = false;
             branch_and_bound(em, settings);
         }
         else
