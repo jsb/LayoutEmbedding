@@ -59,9 +59,8 @@ Edit applications/shrec07_view.cc to start the viewer at a different result.
 
 ```
 ./embed <path-to-layout> <path-to-target> <flags>
-```
 
-path-to-layout:
+<path-to-layout>:
     Layout connectivity as polygonal mesh (e.g. obj).
     Vertices are projected to target surface to define landmark positions.
 
@@ -79,11 +78,12 @@ flags:
     --view: Open viewer window.
 
 Output files can be found in "build/output/embed".
+```
 
 
 ```
 ./view_embedding <path_to_lem_file>
-```
 
 path_to_lem_file:
 	Specify .lem file. E.g. in "build/output/embed"
+```
