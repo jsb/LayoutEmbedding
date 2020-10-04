@@ -18,19 +18,7 @@ make -j4
 
 # Run Experiments
 
-Run the following executables to replicate individual experiments:
-
-```
-./teaser_pig
-./homotopy_cube_figure
-./quad_animals_figure
-./optimization_timeline_figure
-./jitter_evaluation
-./quad_hands_figure
-./inter_surface_map_figure
-./disk_face_figure
-./disk_hand_figure
-```
+Run the following executables to replicate individual experiments.
 
 Output files can be found at "build/output".
 Some executables open one or multiple viewer windows:
@@ -39,6 +27,18 @@ Some executables open one or multiple viewer windows:
 * Close by pressing ESC.
 
 Edit the respective file in the "applications" folder to surpress the viewer window.
+
+```
+./teaser_pig				(output, viewer)
+./homotopy_cube_figure			(output, viewer)
+./quad_animals_figure			(output, viewer)
+./optimization_timeline_figure		(output, viewer)
+./jitter_evaluation			(output)
+./quad_hands_figure			(output, viewer)
+./inter_surface_map_figure		(output, viewer)
+./disk_face_figure			(output, viewer)
+./disk_hand_figure			(output, viewer)
+```
 
 To replicate the SHREC07 evaluation, run the following executables in the correct order:
 
