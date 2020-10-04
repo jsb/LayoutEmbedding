@@ -4,7 +4,7 @@
   * Instructions:
   *
   *     * Run shrec07_generate_layouts before running this file.
-  *     * Run shrec07_embed_layouts before running this file.
+  *     * Run shrec07_embed_layouts before running this file (~24h).
   *
   * Output files can be found in <build-folder>/output/shrec07_figure.
   *

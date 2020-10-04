@@ -6,7 +6,7 @@ std::string open_prefix = "284";
   * Instructions:
   *
   *     * Run shrec07_generate_layouts before running this file.
-  *     * Run shrec07_embed_layouts before running this file.
+  *     * Run shrec07_embed_layouts before running this file (~24h).
   *
   *     * Navigate through results using left and right arrow keys.
   *     * Mesh id and embedding algorithm are shown in bottom left corner.
