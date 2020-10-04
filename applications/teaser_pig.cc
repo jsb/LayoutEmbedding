@@ -38,8 +38,8 @@ int main()
 
     std::vector<std::string> algorithms =
     {
-        "greedy",
         "bnb",
+        "greedy",
     };
 
     // Layout screenshot
