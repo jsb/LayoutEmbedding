@@ -34,8 +34,8 @@ Run the following executables to replicate individual experiments:
 
 Output files can be found at "build/output".
 Some executables open one or multiple viewer windows:
-* Rotate camera via left mouse drag.
 * Center camera via double click.
+* Rotate camera via left mouse drag.
 * Close by pressing ESC.
 
 Edit the respective file in the "applications" folder to surpress the viewer window.
