@@ -46,7 +46,6 @@ void run_test_case(const TestCase& tc)
         "praun",
         "kraevoy",
         "schreiner",
-//        "greedy_brute_force",
         "bnb",
     };
 
@@ -97,9 +96,6 @@ void run_test_case(const TestCase& tc)
         }
         else if (algorithm == "schreiner") {
             embed_schreiner(em);
-        }
-        else if (algorithm == "greedy_brute_force") {
-            embed_greedy_brute_force(em);
         }
         else if (algorithm == "bnb") {
             BranchAndBoundSettings settings;

@@ -44,7 +44,6 @@ int main()
     while (true) {
         for (const auto& algorithm : {
             "greedy",
-            "greedy_brute_force",
             "bnb",
         }) {
             // Generate random matching vertices
@@ -55,9 +54,6 @@ int main()
             glow::timing::CpuTimer timer;
             if (algorithm == "greedy") {
                 embed_greedy(em);
-            }
-            else if (algorithm == "greedy_brute_force") {
-                embed_greedy_brute_force(em);
             }
             else if (algorithm == "bnb") {
                 BranchAndBoundSettings settings;
