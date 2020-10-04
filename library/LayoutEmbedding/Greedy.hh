@@ -51,7 +51,6 @@ GreedyResult embed_schreiner(Embedding& _em, const GreedySettings& _settings = G
 // Run multiple greedy variants
 std::vector<GreedyResult> embed_greedy(Embedding& _em, const std::vector<GreedySettings>& _all_settings);
 std::vector<GreedyResult> embed_competitors(Embedding& _em, const GreedySettings& _settings = GreedySettings());
-std::vector<GreedyResult> embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings = GreedySettings());
 
 const GreedyResult& best(const std::vector<GreedyResult>& _results);
 const GreedyResult& best(const std::vector<GreedyResult>& _results, int& best_idx);

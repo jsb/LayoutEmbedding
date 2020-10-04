@@ -518,24 +518,6 @@ std::vector<GreedyResult> embed_competitors(Embedding& _em, const GreedySettings
     return embed_greedy(_em, all_settings);
 }
 
-std::vector<GreedyResult> embed_greedy_brute_force(Embedding& _em, const GreedySettings& _settings)
-{
-    std::vector<GreedySettings> all_settings;
-    for (bool use_swirl_detection : { false, true }) {
-        for (bool use_vertex_repulsive_tracing : { false, true }) {
-            for (bool prefer_extremal_vertices : { false, true }) {
-                GreedySettings settings = _settings;
-                settings.use_swirl_detection = use_swirl_detection;
-                settings.use_vertex_repulsive_tracing = use_vertex_repulsive_tracing;
-                settings.prefer_extremal_vertices = prefer_extremal_vertices;
-                all_settings.push_back(settings);
-            }
-        }
-    }
-
-    return embed_greedy(_em, all_settings);
-}
-
 const GreedyResult& best(const std::vector<GreedyResult>& _results)
 {
     int best_idx;
