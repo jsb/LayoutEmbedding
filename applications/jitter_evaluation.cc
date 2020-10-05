@@ -102,8 +102,8 @@ int main()
         //{0, 0, "bnb"},
         //{8, 0, "bnb"},
         //{8, 0, "kraevoy"},
-        //{14, 0, "bnb"},
-        //{14, 0, "schreiner"},
+        //{13, 0, "bnb"},
+        //{13, 0, "schreiner"},
     };
 
     for (int jitter_iters = 0; jitter_iters < 40; ++jitter_iters) {
