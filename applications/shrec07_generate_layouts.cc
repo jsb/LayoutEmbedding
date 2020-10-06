@@ -14,8 +14,8 @@
 #include <typed-geometry/tg.hh>
 
 #include <LayoutEmbedding/EmbeddingInput.hh>
-#include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/Util/Assert.hh>
+#include <LayoutEmbedding/Util/StackTrace.hh>
 
 using namespace LayoutEmbedding;
 

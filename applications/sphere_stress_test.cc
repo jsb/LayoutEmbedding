@@ -9,8 +9,8 @@
 #include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/Util/Assert.hh>
+#include <LayoutEmbedding/Util/StackTrace.hh>
 
 #include <algorithm>
 #include <filesystem>

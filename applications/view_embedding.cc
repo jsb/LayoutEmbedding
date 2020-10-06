@@ -10,8 +10,8 @@
 #include <glow-extras/viewer/view.hh>
 
 #include <LayoutEmbedding/Embedding.hh>
+#include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
-#include <LayoutEmbedding/StackTrace.hh>
 
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;

@@ -15,8 +15,8 @@ const bool open_viewer = true;
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/QuadMeshing.hh>
+#include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
-#include <LayoutEmbedding/StackTrace.hh>
 
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;

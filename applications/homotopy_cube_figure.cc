@@ -10,8 +10,8 @@ const bool open_viewer = true;
   */
 
 #include <LayoutEmbedding/IO.hh>
-#include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
+#include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 
 using namespace LayoutEmbedding;

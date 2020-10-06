@@ -17,9 +17,9 @@ const bool open_viewer = true;
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
-#include <LayoutEmbedding/StackTrace.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/Util/Assert.hh>
+#include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 
 #include <algorithm>

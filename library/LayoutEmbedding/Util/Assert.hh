@@ -1,6 +1,6 @@
 #pragma once
 
-#include <LayoutEmbedding/StackTrace.hh>
+#include <LayoutEmbedding/Util/StackTrace.hh>
 
 #include <cmath>
 #include <iostream>

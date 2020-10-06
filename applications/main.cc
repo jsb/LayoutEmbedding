@@ -14,9 +14,9 @@
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/Util/Assert.hh>
+#include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
-#include <LayoutEmbedding/StackTrace.hh>
 
 #include <algorithm>
 #include <fstream>
