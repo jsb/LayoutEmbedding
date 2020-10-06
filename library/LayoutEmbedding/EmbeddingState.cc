@@ -1,8 +1,8 @@
 #include "EmbeddingState.hh"
 
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/UnionFind.hh>
 #include <LayoutEmbedding/VirtualPathConflictSentinel.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 
 namespace LayoutEmbedding {
 

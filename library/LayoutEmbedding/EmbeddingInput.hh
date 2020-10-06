@@ -1,8 +1,9 @@
 #pragma once
 
+#include <LayoutEmbedding/Util/Assert.hh>
+
 #include <polymesh/pm.hh>
 #include <typed-geometry/tg.hh>
-#include <LayoutEmbedding/Assert.hh>
 
 #include <fstream>
 #include <sstream>

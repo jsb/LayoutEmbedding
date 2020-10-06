@@ -1,6 +1,6 @@
 #include "VirtualPathConflictSentinel.hh"
 
-#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 
 #include <unordered_map>

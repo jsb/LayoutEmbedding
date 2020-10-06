@@ -1,6 +1,6 @@
 #include "LayoutGeneration.hh"
 
-#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 
 #include <polymesh/algorithms/decimate.hh>
 

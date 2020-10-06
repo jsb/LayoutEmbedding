@@ -3,9 +3,9 @@
   */
 
 #include <glow-extras/glfw/GlfwContext.hh>
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 
 using namespace LayoutEmbedding;

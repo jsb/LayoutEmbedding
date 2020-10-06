@@ -1,6 +1,6 @@
 #include "VirtualVertex.hh"
 
-#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 
 namespace LayoutEmbedding {
 

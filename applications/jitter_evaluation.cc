@@ -12,7 +12,6 @@
 #include <typed-geometry/tg.hh>
 
 #include <LayoutEmbedding/ApproximateGeodesicDistance.hh>
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/EmbeddingInput.hh>
@@ -20,6 +19,7 @@
 #include <LayoutEmbedding/LayoutGeneration.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/StackTrace.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
@@ -49,8 +49,8 @@ int main()
     load(data_path / "models/layouts/horse_layout.obj", input.l_m, input.l_pos);
     load(data_path / "models/target-meshes/horse_8078.obj", input.t_m, input.t_pos);
     find_matching_vertices_by_proximity(input);
-    input.normalize_surface_area();
-    input.center_translation();
+    //input.normalize_surface_area();
+    //input.center_translation();
 
     std::vector<pm::vertex_handle> matching_target_vertices;
     for (const auto l_v : input.l_m.vertices()) {
@@ -99,11 +99,11 @@ int main()
 
     // Uncomment to only compute selected configurations and skip the rest.
     std::set<std::tuple<int, int, std::string>> selected_configs = {
-        //{0, 0, "bnb"},
-        //{8, 0, "bnb"},
-        //{8, 0, "kraevoy"},
-        //{13, 0, "bnb"},
-        //{13, 0, "schreiner"},
+        {0, 0, "bnb"},
+        {8, 0, "bnb"},
+        {8, 0, "kraevoy"},
+        {13, 0, "bnb"},
+        {13, 0, "schreiner"},
     };
 
     for (int jitter_iters = 0; jitter_iters < 40; ++jitter_iters) {

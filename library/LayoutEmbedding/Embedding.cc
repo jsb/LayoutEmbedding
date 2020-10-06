@@ -1,10 +1,10 @@
 ﻿#include "Embedding.hh"
 
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 #include <LayoutEmbedding/VertexRepulsiveEnergy.hh>
 #include <LayoutEmbedding/VirtualVertexAttribute.hh>
 #include <LayoutEmbedding/Snake.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 
 #include <queue>
 

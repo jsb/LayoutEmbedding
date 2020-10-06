@@ -1,6 +1,6 @@
 #include "Harmonic.hh"
 
-#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 #include <Eigen/SparseLU>
 
 namespace LayoutEmbedding

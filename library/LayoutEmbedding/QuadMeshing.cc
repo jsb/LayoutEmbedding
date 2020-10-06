@@ -1,10 +1,9 @@
 #include "QuadMeshing.hh"
 
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Harmonic.hh>
 #include <LayoutEmbedding/Embedding.hh>
 #include <LayoutEmbedding/ExactPredicates.h>
-
+#include <LayoutEmbedding/Util/Assert.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 
 namespace LayoutEmbedding

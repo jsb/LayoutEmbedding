@@ -1,7 +1,7 @@
 #include "ApproximateGeodesicDistance.hh"
 
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/IGLMesh.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 
 #include <igl/heat_geodesics.h>
 

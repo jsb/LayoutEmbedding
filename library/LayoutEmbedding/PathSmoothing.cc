@@ -1,8 +1,9 @@
 #include "PathSmoothing.hh"
 
 #include <LayoutEmbedding/Snake.hh>
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Harmonic.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
+
 #include <glow-extras/timing/CpuTimer.hh>
 #include <queue>
 

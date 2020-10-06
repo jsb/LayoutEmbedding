@@ -1,6 +1,6 @@
 #include "Parametrization.hh"
 
-#include <LayoutEmbedding/Assert.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 #include <LayoutEmbedding/ExactPredicates.h>
 
 namespace LayoutEmbedding

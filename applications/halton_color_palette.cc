@@ -1,5 +1,5 @@
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/StackTrace.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 #include <LayoutEmbedding/Visualization/HaltonColorGenerator.hh>
 
 #include <algorithm>

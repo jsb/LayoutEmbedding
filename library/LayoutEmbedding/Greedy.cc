@@ -1,9 +1,9 @@
 #include "Greedy.hh"
 
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/IGLMesh.hh>
 #include <LayoutEmbedding/UnionFind.hh>
 #include <LayoutEmbedding/VirtualPort.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 
 #include <algorithm>
 #include <set>

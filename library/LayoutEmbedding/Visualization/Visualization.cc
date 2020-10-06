@@ -14,7 +14,7 @@ pm::face_attribute<tg::color3> generate_patch_colors(
         const double _brightness)
 {
     pm::face_attribute<tg::color3> colors(_m);
-    HaltonColorGenerator halton(0);
+    HaltonColorGenerator halton(4);
     RWTHColorGenerator rwth;
 
     for (const auto f : _m.faces())

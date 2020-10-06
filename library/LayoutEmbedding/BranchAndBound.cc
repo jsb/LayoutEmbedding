@@ -1,10 +1,10 @@
 #include "BranchAndBound.hh"
 
-#include <LayoutEmbedding/Assert.hh>
 #include <LayoutEmbedding/Connectivity.hh>
 #include <LayoutEmbedding/EmbeddingState.hh>
 #include <LayoutEmbedding/GetQueueContainer.hh>
 #include <LayoutEmbedding/Greedy.hh>
+#include <LayoutEmbedding/Util/Assert.hh>
 
 #include <glow-extras/timing/CpuTimer.hh>
 
