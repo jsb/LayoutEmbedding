@@ -51,7 +51,7 @@ bool harmonic(
 
     const int n = _pos.mesh().vertices().size();
     const int d = _constraint_values.cols();
-    LE_ASSERT(_constraint_values.rows() == n);
+    LE_ASSERT_EQ(_constraint_values.rows(), n);
 
     // Set up Laplace matrix and rhs
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(n, d);

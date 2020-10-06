@@ -18,7 +18,7 @@ void EmbeddingState::extend(const pm::edge_index& _l_ei, const VirtualPath& _pat
     const auto& l_e = em.layout_mesh().edges()[_l_ei];
     LE_ASSERT(!em.is_embedded(l_e));
 
-    LE_ASSERT(_path.size() >= 2);
+    LE_ASSERT_GEQ(_path.size(), 2);
 
     auto l_he = l_e.halfedgeA();
     LE_ASSERT(is_real_vertex(_path.front()));
@@ -74,7 +74,7 @@ void EmbeddingState::detect_candidate_path_conflicts()
         conflicts = vpcs.conflict_relation;
     }
 
-    LE_ASSERT(c_em.layout_mesh().edges().size() == embedded_edges().size() + conflicting_edges().size() + non_conflicting_edges().size());
+    LE_ASSERT_EQ(c_em.layout_mesh().edges().size(), embedded_edges().size() + conflicting_edges().size() + non_conflicting_edges().size());
 }
 
 std::vector<pm::edge_index> EmbeddingState::get_conflicting_candidates(const pm::edge_index& _l_ei)

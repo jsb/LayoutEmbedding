@@ -24,7 +24,7 @@ bool injective(
 
     for (auto f : _param.mesh().faces())
     {
-        LE_ASSERT(f.vertices().size() == 3);
+        LE_ASSERT_EQ(f.vertices().size(), 3);
         auto it = f.vertices().begin();
         const auto a = _param[*it];
         ++it;

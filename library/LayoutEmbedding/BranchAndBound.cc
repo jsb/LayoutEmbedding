@@ -127,7 +127,7 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         std::vector<const VirtualPath*> inserted_paths;
         HashValue current_state_hash = c.state_hash;
         while (current_state_hash != 0) {
-            LE_ASSERT(known_states.count(current_state_hash) > 0);
+            LE_ASSERT_G(known_states.count(current_state_hash), 0);
             const State& state = known_states[current_state_hash];
             insertion_sequence.push_back(state.l_e);
             inserted_paths.push_back(&state.path);
@@ -138,14 +138,14 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
 
         // Reconstruct the embedding associated with this state
         EmbeddingState es(_em, _settings);
-        LE_ASSERT(insertion_sequence.size() == inserted_paths.size());
+        LE_ASSERT_EQ(insertion_sequence.size(), inserted_paths.size());
         for (size_t i = 0; i < insertion_sequence.size(); ++i) {
             const pm::edge_index& l_e = insertion_sequence[i];
             const VirtualPath& path = *inserted_paths[i];
             es.extend(l_e, path);
         }
 
-        LE_ASSERT(es.hash() == c.state_hash);
+        LE_ASSERT_EQ(es.hash(), c.state_hash);
 
         // Reconstruct candidate paths
         auto& state = known_states[c.state_hash];

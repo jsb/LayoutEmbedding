@@ -136,7 +136,7 @@ int main()
                 for (const auto& l_v : input.l_m.vertices()) {
                     const int curr_idx = l_v.idx.value;
                     const int new_idx = l_m_landmark_id[l_v];
-                    LE_ASSERT(new_idx >= 0);
+                    LE_ASSERT_GEQ(new_idx, 0);
                     p[curr_idx] = new_idx;
                 }
                 input.l_m.vertices().permute(p);

@@ -33,8 +33,8 @@ struct UnionFind
 
     int representative(int x)
     {
-        LE_ASSERT(x >= 0);
-        LE_ASSERT(x < parents.size());
+        LE_ASSERT_GEQ(x, 0);
+        LE_ASSERT_L(x, parents.size());
         if (x != parents[x]) {
             parents[x] = representative(parents[x]);
         }
@@ -43,8 +43,8 @@ struct UnionFind
 
     int representative(int x) const
     {
-        LE_ASSERT(x >= 0);
-        LE_ASSERT(x < parents.size());
+        LE_ASSERT_GEQ(x, 0);
+        LE_ASSERT_L(x, parents.size());
         if (x == parents[x]) {
             return x;
         }

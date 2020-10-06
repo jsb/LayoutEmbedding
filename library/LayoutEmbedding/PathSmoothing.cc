@@ -264,11 +264,11 @@ void constrain_flap_boundary(
         auto angle_from = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
         boundary_length_acc += side_lengths[i_side];
         auto angle_to = boundary_length_acc / boundary_length_total * 2.0 * M_PI;
-        LE_ASSERT(angle_from >= 0.0);
-        LE_ASSERT(angle_from < 2.0 * M_PI);
-        LE_ASSERT(angle_to >= 0.0);
-        LE_ASSERT(angle_to <= 2.0 * M_PI);
-        LE_ASSERT(angle_from < angle_to);
+        LE_ASSERT_GEQ(angle_from, 0.0);
+        LE_ASSERT_L(angle_from, 2.0 * M_PI);
+        LE_ASSERT_GEQ(angle_to, 0.0);
+        LE_ASSERT_LEQ(angle_to, 2.0 * M_PI);
+        LE_ASSERT_L(angle_from, angle_to);
         auto p_from = tg::dpos2(cos(angle_from), sin(angle_from));
         auto p_to = tg::dpos2(cos(angle_to), sin(angle_to));
 

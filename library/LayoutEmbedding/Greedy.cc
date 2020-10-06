@@ -65,8 +65,8 @@ bool swirl_detection(Embedding& _em, const pm::halfedge_handle& _l_he, const Vir
             }
         }
         else if (is_real_edge(vv)) {
-            LE_ASSERT(i > 0);
-            LE_ASSERT(i < _path.size() - 1);
+            LE_ASSERT_G(i, 0);
+            LE_ASSERT_L(i, _path.size() - 1);
 
             const auto& e = real_edge(vv, t_m);
             auto he = pm::halfedge_handle::invalid;
@@ -534,7 +534,7 @@ const GreedyResult& best(const std::vector<GreedyResult>& _results, int& best_id
             best_idx = i;
         }
     }
-    LE_ASSERT(best_idx >= 0);
+    LE_ASSERT_GEQ(best_idx, 0);
 
     return _results[best_idx];
 }

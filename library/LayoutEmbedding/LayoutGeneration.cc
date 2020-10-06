@@ -10,7 +10,7 @@ namespace LayoutEmbedding {
 
 void make_layout_by_decimation(EmbeddingInput& _input, int _n_vertices)
 {
-    LE_ASSERT(_input.t_m.vertices().size() > 0);
+    LE_ASSERT_G(_input.t_m.vertices().size(), 0);
 
     _input.l_m.copy_from(_input.t_m);
     _input.l_pos.copy_from(_input.t_pos);

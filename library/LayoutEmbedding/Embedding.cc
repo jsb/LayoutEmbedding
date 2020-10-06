@@ -515,7 +515,7 @@ VirtualPath Embedding::find_shortest_path(const pm::edge_handle& _l_e, ShortestP
 
 double Embedding::path_length(const VirtualPath& _path) const
 {
-    LE_ASSERT(_path.size() >= 2);
+    LE_ASSERT_GEQ(_path.size(), 2);
     double length = 0.0;
     for (int i = 0; i < _path.size() - 1; ++i) {
         const auto& vv_i = _path[i];
@@ -530,7 +530,7 @@ double Embedding::path_length(const VirtualPath& _path) const
 void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& _path)
 {
     LE_ASSERT(!get_embedded_target_halfedge(_l_he).is_valid());
-    LE_ASSERT(_path.size() >= 2);
+    LE_ASSERT_GEQ(_path.size(), 2);
 
     // Turn the VertexEdgePath into a pure vertex path by splitting edges
     std::vector<pm::vertex_handle> vertex_path;
@@ -574,7 +574,7 @@ void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& 
 void Embedding::embed_path(const pm::halfedge_handle& _l_he, const Snake& _snake)
 {
     LE_ASSERT(!get_embedded_target_halfedge(_l_he).is_valid());
-    LE_ASSERT(_snake.vertices.size() >= 2);
+    LE_ASSERT_GEQ(_snake.vertices.size(), 2);
 
     // Turn the Snake into a pure vertex path by splitting edges
     const auto vertex_path = embed_snake(_snake, t_m, t_pos);
@@ -636,7 +636,7 @@ std::vector<pm::vertex_handle> Embedding::get_embedded_path(const pm::halfedge_h
             }
         }
         LE_ASSERT(next_vertex_found);
-        LE_ASSERT(safeguard < 1e7);
+        LE_ASSERT_L(safeguard, 1e7);
         ++safeguard;
     }
     result.push_back(t_v_end);
@@ -680,7 +680,7 @@ double Embedding::embedded_path_length(const pm::halfedge_handle& _l_he) const
 {
     LE_ASSERT(is_embedded(_l_he));
     const auto& path = get_embedded_path(_l_he);
-    LE_ASSERT(path.size() >= 2);
+    LE_ASSERT_GEQ(path.size(), 2);
     double length = 0.0;
     for (int i = 0; i < path.size() - 1; ++i) {
         const auto& v_i = path[i];

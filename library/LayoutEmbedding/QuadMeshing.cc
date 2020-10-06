@@ -71,7 +71,7 @@ pm::edge_attribute<int> choose_loop_subdivisions(
     // Assert embedded quad layout
     LE_ASSERT(_em.is_complete());
     for (auto f : _em.layout_mesh().faces())
-        LE_ASSERT(f.vertices().size() == 4);
+        LE_ASSERT_EQ(f.vertices().size(), 4);
 
     auto subdivisions = _em.layout_mesh().edges().make_attribute<int>(0);
 
@@ -126,7 +126,7 @@ HalfedgeParam parametrize_patches(
 
     for (auto l_f : _em.layout_mesh().faces())
     {
-        LE_ASSERT(l_f.vertices().size() == 4);
+        LE_ASSERT_EQ(l_f.vertices().size(), 4);
 
         // Extract patch mesh
         pm::Mesh p_m;
@@ -198,8 +198,8 @@ tg::ipos2 snap(
         const tg::dpos2& uv)
 {
     const auto res = tg::ipos2(lround(uv.x), lround(uv.y));
-    LE_ASSERT(fabs(res.x - uv.x) < 1e-6);
-    LE_ASSERT(fabs(res.y - uv.y) < 1e-6);
+    LE_ASSERT_EPS(res.x, uv.x, 1e-6);
+    LE_ASSERT_EPS(res.y, uv.y, 1e-6);
 
     return res;
 }
@@ -287,7 +287,7 @@ tg::pos3 point_on_surface(
     {
         for (auto t_f : _t_patch)
         {
-            LE_ASSERT(t_f.halfedges().size() == 3);
+            LE_ASSERT_EQ(t_f.halfedges().size(), 3);
             const auto ha = t_f.halfedges().first(); // pointing to vertex a
             const auto hb = ha.next(); // pointing to vertex b
             const auto hc = hb.next(); // pointing to vertex c
@@ -408,8 +408,8 @@ pm::vertex_attribute<tg::pos3> extract_quad_mesh(
                     }
                     else
                         LE_ERROR_THROW("");
-                    LE_ASSERT(idx >= 1);
-                    LE_ASSERT(idx < n - 1);
+                    LE_ASSERT_GEQ(idx, 1);
+                    LE_ASSERT_L(idx, n - 1);
 
                     // Init halfedge cache vectors
                     if (hv_cache[l_h].empty())

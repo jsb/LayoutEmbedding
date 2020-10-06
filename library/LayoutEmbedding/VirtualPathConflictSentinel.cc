@@ -97,7 +97,7 @@ void VirtualPathConflictSentinel::insert_segment(const VirtualVertex& _vv0, cons
 
 void VirtualPathConflictSentinel::insert_path(const VirtualPath& _path, const VirtualPathConflictSentinel::Label& _l)
 {
-    LE_ASSERT(_path.size() >= 2);
+    LE_ASSERT_GEQ(_path.size(), 2);
 
     // Note: We deliberately skip the first and last element
     for (int i = 1; i < _path.size() - 1; ++i) {
@@ -181,7 +181,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
                         }
 
                         // Store positions
-                        LE_ASSERT(labels_in_sector.size() == embedded_ports_in_sector.size());
+                        LE_ASSERT_EQ(labels_in_sector.size(), embedded_ports_in_sector.size());
                         for (std::size_t i = 0; i < labels_in_sector.size(); ++i) {
                             const auto& label = labels_in_sector[i];
                             const auto& embedded_port = embedded_ports_in_sector[i];
@@ -195,7 +195,7 @@ void VirtualPathConflictSentinel::check_path_ordering()
                     }
                 }
                 // All incident edges in the layout sector should have a corresponding port in the target sector!
-                LE_ASSERT(labels_in_sector.size() == embedded_port_pos.size());
+                LE_ASSERT_EQ(labels_in_sector.size(), embedded_port_pos.size());
 
                 // Detect conflicting edges
                 for (std::size_t i = 0; i < labels_in_sector.size(); ++i) {

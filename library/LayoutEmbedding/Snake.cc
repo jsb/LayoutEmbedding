@@ -173,7 +173,7 @@ Snake snake_from_parametrization(
         const auto h = snake.vertices.back().h;
         snake.vertices.push_back(find_next_intersection(h.face(), h, _param, _v_from, _v_to));
 
-        LE_ASSERT(safeguard < 1e7);
+        LE_ASSERT_L(safeguard, 1e7);
         ++safeguard;
     }
 
@@ -192,7 +192,7 @@ std::vector<pm::vertex_handle> embed_snake(
     {
         const auto& sv = _snake.vertices[i];
         if (i == 0 || i == _snake.vertices.size() - 1) {
-            LE_ASSERT(sv.lambda == 0.0);
+            LE_ASSERT_EQ(sv.lambda, 0.0);
             vertex_path.push_back(sv.h.vertex_from());
         }
         else {
@@ -203,7 +203,7 @@ std::vector<pm::vertex_handle> embed_snake(
         }
         LE_ASSERT(vertex_path.back().mesh == &_mesh);
     }
-    LE_ASSERT(vertex_path.size() == _snake.vertices.size());
+    LE_ASSERT_EQ(vertex_path.size(), _snake.vertices.size());
 
     return vertex_path;
 }
