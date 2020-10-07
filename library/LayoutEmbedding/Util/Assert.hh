@@ -26,35 +26,35 @@
 #define LE_ASSERT_EQ(a, b) \
     {if (!((a) == (b))) LE_ERROR_THROW("Assertion failed: " #a " == " #b "\n" \
                                        "    " #a " = " << (a) << "\n" \
-                                       "    " #b " = " << (b));}
+                                       "    " #b " = " << (b) << "\n");}
 
 #define LE_ASSERT_NEQ(a, b) \
     {if (!((a) != (b))) LE_ERROR_THROW("Assertion failed: " #a " != " #b "\n" \
                                        "    " #a " = " << (a) << "\n" \
-                                       "    " #b " = " << (b));}
+                                       "    " #b " = " << (b) << "\n");}
 
 #define LE_ASSERT_G(a, b) \
     {if (!((a) > (b))) LE_ERROR_THROW("Assertion failed: " #a " > " #b "\n" \
                                       "    " #a " = " << (a) << "\n" \
-                                      "    " #b " = " << (b));}
+                                      "    " #b " = " << (b) << "\n");}
 
 #define LE_ASSERT_GEQ(a, b) \
     {if (!((a) >= (b))) LE_ERROR_THROW("Assertion failed: " #a " >= " #b "\n" \
                                        "    " #a " = " << (a) << "\n" \
-                                       "    " #b " = " << (b));}
+                                       "    " #b " = " << (b) << "\n");}
 
 #define LE_ASSERT_L(a, b) \
     {if (!((a) < (b))) LE_ERROR_THROW("Assertion failed: " #a " < " #b "\n" \
                                       "    " #a " = " << (a) << "\n" \
-                                      "    " #b " = " << (b));}
+                                      "    " #b " = " << (b) << "\n");}
 
 #define LE_ASSERT_LEQ(a, b) \
     {if (!((a) <= (b))) LE_ERROR_THROW("Assertion failed: " #a " <= " #b "\n" \
                                        "    " #a " = " << (a) << "\n" \
-                                       "    " #b " = " << (b));}
+                                       "    " #b " = " << (b) << "\n");}
 
 #define LE_ASSERT_EPS(a, b, eps) \
     {if (std::abs((a) - (b)) >= (eps)) LE_ERROR_THROW("Assertion failed: |" #a " - " #b "| < " #eps "\n" \
                                                       "    " #a " = " << (a) << "\n" \
                                                       "    " #b " = " << (b) << "\n" \
-                                                      "    |" #a " - " #b "| = " << std::abs((a) - (b)));}
+                                                      "    |" #a " - " #b "| = " << std::abs((a) - (b)) << "\n");}
