@@ -8,6 +8,8 @@
 namespace LayoutEmbedding
 {
 
+std::string format_frame_number(int _frame_number);
+
 void render_video(
         const std::filesystem::path& _path,
         const int _fps,

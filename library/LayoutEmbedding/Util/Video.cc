@@ -3,10 +3,23 @@
  */
 #include "Video.hh"
 
+#include <LayoutEmbedding/Util/Assert.hh>
 #include <LayoutEmbedding/Util/Debug.hh>
+
+#include <cstdio>
 
 namespace LayoutEmbedding
 {
+
+std::string format_frame_number(int _frame_number)
+{
+    LE_ASSERT_GEQ(_frame_number, 0);
+    std::string result = std::to_string(_frame_number);
+    while (result.size() < 6) {
+        result = "0" + result;
+    }
+    return result;
+}
 
 void render_video(
         const std::filesystem::path& _path,
