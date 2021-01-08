@@ -11,24 +11,29 @@ namespace
 std::string escape_string(const std::string& _input)
 {
     std::string output;
-    for (const char c : _input)
-    {
-        if (c == '"')
+    for (const char c : _input) {
+        if (c == '"') {
             output += "\\\"";
-        else if (c == '\\')
+        }
+        else if (c == '\\') {
             output += "\\\\";
-        else if (c == '\n')
+        }
+        else if (c == '\n') {
             output += "\\n";
-        else if (c == '\t')
+        }
+        else if (c == '\t') {
             output += "\\t";
-        else if (c == '\r')
+        }
+        else if (c == '\r') {
             output += "\\r";
-        else if (c == '%')
+        }
+        else if (c == '%') {
             output += "%%";
-        else if (std::isprint(c))
+        }
+        else if (std::isprint(c)) {
             output += c;
-        else
-        {
+        }
+        else {
             output += c;
             /*
             constexpr char const* const hex_digits = "0123456789ABCDEF";
