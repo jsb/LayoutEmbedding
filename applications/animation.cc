@@ -1,4 +1,5 @@
 #include <LayoutEmbedding/Util/StackTrace.hh>
+#include <LayoutEmbedding/Util/Video.hh>
 #include <LayoutEmbedding/Visualization/UniformBSpline.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 
@@ -16,7 +17,8 @@ int main()
 
     EmbeddingInput input;
     Embedding em(input);
-    em.load("/local/born/layout-embedding-output/shrec07_results/saved_embeddings/381_bnb_smoothed");
+    em.load(fs::path(LE_OUTPUT_PATH) / "teaser_pig/embeddings/teaser_pig_greedy");
+
 
     const fs::path output_path = fs::path(LE_OUTPUT_PATH) / "animation";
     fs::create_directories(output_path);
@@ -33,7 +35,7 @@ int main()
     const int screenshot_samples = 64;
 
     for (const auto& [i, t] : bsa.frames(61)) {
-        const fs::path screenshot_path = output_path / ("frame" + std::to_string(i) + ".png");
+        const fs::path screenshot_path = output_path / (format_frame_number(i) + ".png");
 
         auto cfg_style = default_style();
         auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGB8));
@@ -41,4 +43,5 @@ int main()
 
         view_target(em);
     }
+    render_video(output_path, 30);
 }
