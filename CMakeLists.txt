@@ -19,14 +19,10 @@ add_subdirectory(extern/cxxopts)
 
 find_package(OpenMP REQUIRED)
 
-# tinyfiledialogs Library
-add_library(tinyfiledialogs extern/tinyfiledialogs/tinyfiledialogs.c)
-target_include_directories(tinyfiledialogs PUBLIC extern/tinyfiledialogs)
-
 # LayoutEmbedding Library (library directory)
 file(GLOB_RECURSE LE_LIBRARY_SOURCE_FILES "library/LayoutEmbedding/*.cc" "library/LayoutEmbedding/*.hh" "library/LayoutEmbedding/*.c" "library/LayoutEmbedding/*.h")
 add_library(LayoutEmbedding ${LE_LIBRARY_SOURCE_FILES})
-target_link_libraries(LayoutEmbedding PUBLIC imgui typed-geometry polymesh glow-extras eigen OpenMP::OpenMP_CXX tinyfiledialogs)
+target_link_libraries(LayoutEmbedding PUBLIC imgui typed-geometry polymesh glow-extras eigen OpenMP::OpenMP_CXX)
 target_include_directories(LayoutEmbedding PUBLIC library)
 target_compile_definitions(LayoutEmbedding PUBLIC LE_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_compile_definitions(LayoutEmbedding PUBLIC LE_OUTPUT_PATH="${LE_OUTPUT_PATH}")
@@ -40,12 +36,5 @@ foreach(LE_APP_SOURCE_FILE ${LE_APP_SOURCE_FILES})
   message("Executable target: ${LE_APP_NAME}")
 
   add_executable(${LE_APP_NAME} ${LE_APP_SOURCE_FILE})
-  target_link_libraries(${LE_APP_NAME} PRIVATE LayoutEmbedding)
-  target_link_libraries(${LE_APP_NAME} PRIVATE cxxopts::cxxopts)
+  target_link_libraries(${LE_APP_NAME} PRIVATE LayoutEmbedding cxxopts::cxxopts)
 endforeach()
-
-# Test target (tests directory)
-add_subdirectory(extern/googletest)
-file(GLOB LE_TEST_SOURCE_FILES "tests/*.cc")
-add_executable(tests ${LE_TEST_SOURCE_FILES})
-target_link_libraries(tests PRIVATE gtest gtest_main LayoutEmbedding)

@@ -25,12 +25,7 @@
 [submodule "data"]
 	path = data
 	url = https://www.graphics.rwth-aachen.de:9000/born/layout-embedding-data.git
-[submodule "extern/googletest"]
-	path = extern/googletest
-	url = https://github.com/google/googletest.git
-[submodule "extern/tinyfiledialogs"]
-	path = extern/tinyfiledialogs
-	url = https://github.com/native-toolkit/tinyfiledialogs.git
 [submodule "extern/cxxopts"]
 	path = extern/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
+
