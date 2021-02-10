@@ -1,30 +1,5 @@
 /**
   * Command line interface to our algorithm.
-  * Opens a window to inspect the resulting embedding.
-  *
-  * Usage:
-  *     ./embed <path-to-layout> <path-to-target> <flags>
-  *
-  * <path-to-layout>:
-  *     Layout connectivity as polygonal mesh (e.g. obj).
-  *     Vertices are projected to target surface
-  *     to define landmark positions.
-  *
-  * <path-to-target>:
-  *     Target triangle mesh (e.g. obj).
-  *
-  * <flags>:
-  *     --greedy: Run greedy algorithm, always choosing shortest path.
-  *     --praun: Run greedy algorithm w/ heuristic based on [Praun2001].
-  *     --kraevoy: Run greedy algorithm w/ heuristic based on [Kraevoy2003] / [Kraevoy2004].
-  *     --schreiner: Run greedy algorithm w/ heuristic based on [Schreiner2004].
-  *
-  *     --smooth: Smoothing post-process based on [Praun2001].
-  *
-  *     --noview: Don't open viewer window.
-  *
-  * Output files can be found in <build-folder>/output/embed.
-  *
   */
 
 #include <LayoutEmbedding/IO.hh>
@@ -32,6 +7,8 @@
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
+
+#include <cxxopts.hpp>
 
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;
@@ -42,6 +19,56 @@ const int screenshot_samples = 64;
 int main(int argc, char** argv)
 {
     register_segfault_handler();
+
+    std::string algo = "bnb";
+    bool smooth = false;
+    bool open_viewer = false;
+
+    cxxopts::Options opts("embed",
+        "Embeds a given layout into a target mesh.\n"
+        "Layout connectivity is provided as a polygon mesh.\n"
+        "Layout vertices are projected to target surface to define landmark positions.\n"
+        "\n"
+        "Output files are written to <build-folder>/output/embed.\n"
+        "\n"
+        "Supported algorithms are:\n"
+        "    bnb:       Branch-and-bound algorithm (default)\n"
+        "    greedy:    Greedy algorithm, always choosing shortest path\n"
+        "    praun:     Greedy algorithm with heuristic based on [Praun2001]\n"
+        "    kraevoy:   Greedy algorithm with heuristic based on [Kraevoy2003] / [Kraevoy2004]\n"
+        "    schreiner: Greedy algorithm with heuristic based on [Schreiner2004]\n");
+    opts.add_options()("l,layout", "Path to layout mesh.", cxxopts::value<std::string>());
+    opts.add_options()("t,target", "Path to target mesh. Must be a triangle mesh.", cxxopts::value<std::string>());
+    opts.add_options()("a,algo", "Algorithm, one of: bnb, greedy, praun, kraevoy, schreiner.", cxxopts::value<std::string>()->default_value("bnb"));
+    opts.add_options()("s,smooth", "Apply smoothing post-process based on [Praun2001].", cxxopts::value<bool>());
+    opts.add_options()("v,viewer", "Open a window to inspect the resulting embedding.", cxxopts::value<bool>());
+    opts.add_options()("h,help", "Help.");
+    opts.parse_positional({"layout", "target"});
+    opts.positional_help("[layout] [target]");
+    opts.show_positional_help();
+    try {
+        auto args = opts.parse(argc, argv);
+
+        algo = args["algo"].as<std::string>();
+        const std::set<std::string> valid_algos = { "bnb", "greedy", "praun", "kraevoy", "schreiner" };
+        if (valid_algos.count(algo) == 0) {
+            throw cxxopts::OptionException("Invalid algo: " + algo);
+        }
+
+        smooth = args["smooth"].as<bool>();
+        open_viewer = args["viewer"].as<bool>();
+
+        if (args.count("help") || args.count("layout") == 0 || args.count("target") == 0) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+    }
+    catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
+
     glow::glfw::GlfwContext ctx;
 
     // Load input
@@ -51,19 +78,21 @@ int main(int argc, char** argv)
 
     // Compute embedding
     Embedding em(input);
-    if (flag("--greedy", argc, argv))
+    if (algo == "greedy")
         embed_greedy(em);
-    else if (flag("--praun", argc, argv))
+    else if (algo == "praun")
         embed_praun(em);
-    else if (flag("--kraevoy", argc, argv))
+    else if (algo == "kraevoy")
         embed_kraevoy(em);
-    else if (flag("--schreiner", argc, argv))
+    else if (algo == "schreiner")
         embed_schreiner(em);
-    else
+    else if (algo == "bnb")
         branch_and_bound(em);
+    else
+        LE_ASSERT(false);
 
     // Smooth embedding
-    if (flag("--smooth", argc, argv))
+    if (smooth)
         em = smooth_paths(em);
 
     // Save embedding
@@ -80,8 +109,7 @@ int main(int argc, char** argv)
     }
 
     // View embedding
-    if (!flag("--noview", argc, argv))
-    {
+    if (open_viewer) {
         auto style = default_style();
         view_embedding(em);
     }
