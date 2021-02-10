@@ -97,9 +97,6 @@ public:
     double get_vertex_repulsive_energy(const pm::vertex_handle& _t_v, const pm::vertex_handle& _l_v) const;
     double get_vertex_repulsive_energy(const VirtualVertex& _t_vv, const pm::vertex_handle& _l_v) const;
 
-public:
-    double path_length_norm = 1.0; // TODO: find a suitable place for this
-
 private:
     EmbeddingInput* input;
     pm::Mesh t_m; // Target mesh. Copy.

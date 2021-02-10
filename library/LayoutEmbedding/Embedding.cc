@@ -39,9 +39,8 @@ Embedding::Embedding(const Embedding& _em)
     *this = _em;
 }
 
-Embedding& Embedding::operator=(const Embedding& _em) {
-
-    path_length_norm = _em.path_length_norm;
+Embedding& Embedding::operator=(const Embedding& _em)
+{
     input = _em.input;
     t_m.copy_from(_em.t_m);
 
@@ -524,7 +523,7 @@ double Embedding::path_length(const VirtualPath& _path) const
         const auto p_j = element_pos(vv_j);
         length += tg::distance(p_i, p_j);
     }
-    return std::pow(length, path_length_norm);
+    return length;
 }
 
 void Embedding::embed_path(const pm::halfedge_handle& _l_he, const VirtualPath& _path)
@@ -689,7 +688,7 @@ double Embedding::embedded_path_length(const pm::halfedge_handle& _l_he) const
         const auto& p_j = t_pos[v_j];
         length += tg::distance(p_i, p_j);
     }
-    return std::pow(length, path_length_norm);
+    return length;
 }
 
 double Embedding::embedded_path_length(const polymesh::edge_handle& _l_e) const
