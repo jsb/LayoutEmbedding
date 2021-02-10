@@ -15,13 +15,13 @@
 	url = https://graphics.rwth-aachen.de:9000/pschmidt/imgui-lean.git
 [submodule "extern/glfw"]
 	path = extern/glfw
-	url = https://github.com/glfw/glfw
+	url = https://github.com/glfw/glfw.git
 [submodule "extern/eigen-lean"]
 	path = extern/eigen-lean
 	url = https://graphics.rwth-aachen.de:9000/ptrettner/eigen-lean.git
 [submodule "extern/libigl"]
 	path = extern/libigl
-	url = https://github.com/libigl/libigl
+	url = https://github.com/libigl/libigl.git
 [submodule "data"]
 	path = data
 	url = https://graphics.rwth-aachen.de:9000/born/layout-embedding-data.git
