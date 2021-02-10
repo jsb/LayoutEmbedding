@@ -19,6 +19,8 @@ int main(int argc, char** argv)
 {
     register_segfault_handler();
 
+    fs::path layout_path;
+    fs::path target_path;
     std::string algo = "bnb";
     bool smooth = false;
     bool open_viewer = false;
@@ -48,6 +50,9 @@ int main(int argc, char** argv)
     try {
         auto args = opts.parse(argc, argv);
 
+        layout_path = args["layout"].as<std::string>();
+        target_path = args["target"].as<std::string>();
+
         algo = args["algo"].as<std::string>();
         const std::set<std::string> valid_algos = { "bnb", "greedy", "praun", "kraevoy", "schreiner" };
         if (valid_algos.count(algo) == 0) {
@@ -71,9 +76,8 @@ int main(int argc, char** argv)
     glow::glfw::GlfwContext ctx;
 
     // Load input
-    LE_ASSERT(argc > 2);
     EmbeddingInput input;
-    input.load(argv[1], argv[2]);
+    input.load(layout_path, target_path);
 
     // Compute embedding
     Embedding em(input);
@@ -97,12 +101,12 @@ int main(int argc, char** argv)
     // Save embedding
     const auto output_dir = fs::path(LE_OUTPUT_PATH) / "embed";
     fs::create_directories(output_dir);
-    em.save(output_dir / fs::path(argv[2]).stem());
+    em.save(output_dir / target_path.stem());
 
     // Save screenshot
     {
         auto style = default_style();
-        const auto screenshot_path = output_dir / (fs::path(argv[2]).stem().string() + ".png");
+        const auto screenshot_path = output_dir / (target_path.stem().string() + ".png");
         auto cfg_screenshot = gv::config(gv::headless_screenshot(screenshot_size, screenshot_samples, screenshot_path.string(), GL_RGBA8));
         view_embedding(em);
     }
