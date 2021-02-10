@@ -101,7 +101,7 @@ void register_segfault_handler()
     std::signal(SIGILL,  handle_segfault);
     std::signal(SIGABRT, handle_segfault);
     std::signal(SIGFPE,  handle_segfault);
-    std::cout << "Registered handler for SIGSEGV, SIGILL, SIGABRT, SIGFPE: handle_segfault" << std::endl;
+    // std::cout << "Registered handler for SIGSEGV, SIGILL, SIGABRT, SIGFPE: handle_segfault" << std::endl;
 }
 
 }
