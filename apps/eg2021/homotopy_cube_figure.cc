@@ -7,7 +7,6 @@
   * Output files can be found in <build-folder>/output/homotopy_cube_figure.
   */
 
-#include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>

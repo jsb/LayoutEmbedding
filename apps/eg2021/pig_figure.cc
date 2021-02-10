@@ -7,7 +7,6 @@
   * Output files can be found in <build-folder>/output/pig_figure.
   */
 
-#include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>

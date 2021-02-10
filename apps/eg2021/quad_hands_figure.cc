@@ -10,7 +10,6 @@
 
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Greedy.hh>
-#include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/QuadMeshing.hh>
 #include <LayoutEmbedding/Util/StackTrace.hh>

@@ -4,7 +4,6 @@
   * Output files can be found in <build-folder>/output/disk_figure.
   */
 
-#include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>

@@ -2,7 +2,6 @@
   * Command line interface to our algorithm.
   */
 
-#include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
