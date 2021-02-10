@@ -31,3 +31,6 @@
 [submodule "extern/tinyfiledialogs"]
 	path = extern/tinyfiledialogs
 	url = https://github.com/native-toolkit/tinyfiledialogs.git
+[submodule "extern/cxxopts"]
+	path = extern/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
