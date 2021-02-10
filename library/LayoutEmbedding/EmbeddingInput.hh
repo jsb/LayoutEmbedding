@@ -79,9 +79,6 @@ struct EmbeddingInput
     void invert_layout();
 };
 
-bool write_obj_file(std::string file_name, const pm::Mesh & mesh,
-                    const pm::vertex_attribute<tg::pos3>& t_pos);
-
 std::vector<int> load_landmarks(const fs::path& _file_path, const LandmarkFormat& _format);
 
 }

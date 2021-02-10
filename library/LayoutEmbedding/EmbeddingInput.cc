@@ -69,14 +69,12 @@ bool EmbeddingInput::save(std::string filename,
 
     if(write_target_input_mesh) // default argument: true
     {
-        bool success = write_obj_file(t_m_write_file_name, t_m, t_pos);
-        LE_ASSERT(success == true);
+        pm::save(t_m_write_file_name, t_pos);
     }
 
     if(write_layout_mesh) // default argument: true
     {
-        bool success = write_obj_file(l_m_write_file_name, l_m, l_pos);
-        LE_ASSERT(success == true);
+        pm::save(l_m_write_file_name, l_pos);
     }
 
     // Prepare writing embedded mesh. See file "lem" file format for more information
@@ -318,43 +316,6 @@ void EmbeddingInput::invert_layout()
     }
 
     l_m.compactify();
-}
-
-// Adopted from obj_writer::write_mesh from polymesh.
-// Currently, the Pos3-based vertex-attributes used in LayoutEmbedding are incompatible with
-//            the obj_writer
-bool write_obj_file(std::string file_name, const pm::Mesh& mesh,
-                                     const pm::vertex_attribute<tg::pos3>& position)
-{
-    std::ofstream file_stream(file_name);
-
-    int vertex_idx = 1;
-    auto base_v = vertex_idx;
-
-    // Only write vertex positions
-    for (auto v : mesh.all_vertices())
-    {
-        auto pos = v[position];
-        file_stream << "v " << pos[0] << " " << pos[1] << " " << pos[2] << "\n";
-        ++vertex_idx;
-    }
-
-    // Write connectivity (faces)
-    for (auto f : mesh.faces())
-    {
-        file_stream << "f";
-        for (auto v : f.vertices())
-        {
-            auto i = v.idx.value;
-            file_stream << " ";
-            file_stream << base_v + i;
-        }
-        file_stream << "\n";
-    }
-
-    file_stream.close();
-
-    return true;
 }
 
 std::vector<int> load_landmarks(const fs::path& _file_path, const LandmarkFormat& _format)

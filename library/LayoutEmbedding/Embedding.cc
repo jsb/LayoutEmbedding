@@ -195,8 +195,7 @@ bool Embedding::save(std::string filename, bool write_target_mesh,
 
     if(write_target_mesh) // default argument: true
     {
-        //write_obj_file(t_m_write_file_name, t_m, target_pos());
-        write_obj_file(t_m_write_file_name, t_m, target_pos());
+        pm::save(t_m_write_file_name, target_pos());
     }
 
     // Write EmbeddingInput
