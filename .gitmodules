@@ -1,30 +1,30 @@
 [submodule "extern/glow"]
 	path = extern/glow
-	url = https://graphics.rwth-aachen.de:9000/Glow/glow
+	url = https://graphics.rwth-aachen.de:9000/Glow/glow.git
 [submodule "extern/polymesh"]
 	path = extern/polymesh
-	url = https://graphics.rwth-aachen.de:9000/ptrettner/polymesh
+	url = https://graphics.rwth-aachen.de:9000/ptrettner/polymesh.git
 [submodule "extern/glow-extras"]
 	path = extern/glow-extras
-	url = https://graphics.rwth-aachen.de:9000/Glow/glow-extras
+	url = https://graphics.rwth-aachen.de:9000/Glow/glow-extras.git
 [submodule "extern/typed-geometry"]
 	path = extern/typed-geometry
 	url = https://graphics.rwth-aachen.de:9000/ptrettner/typed-geometry
 [submodule "extern/imgui"]
 	path = extern/imgui
-	url = https://www.graphics.rwth-aachen.de:9000/pschmidt/imgui-lean.git
+	url = https://graphics.rwth-aachen.de:9000/pschmidt/imgui-lean.git
 [submodule "extern/glfw"]
 	path = extern/glfw
 	url = https://github.com/glfw/glfw
 [submodule "extern/eigen-lean"]
 	path = extern/eigen-lean
-	url = https://www.graphics.rwth-aachen.de:9000/ptrettner/eigen-lean.git
+	url = https://graphics.rwth-aachen.de:9000/ptrettner/eigen-lean.git
 [submodule "extern/libigl"]
 	path = extern/libigl
 	url = https://github.com/libigl/libigl
 [submodule "data"]
 	path = data
-	url = https://www.graphics.rwth-aachen.de:9000/born/layout-embedding-data.git
+	url = https://graphics.rwth-aachen.de:9000/born/layout-embedding-data.git
 [submodule "extern/cxxopts"]
 	path = extern/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
