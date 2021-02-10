@@ -1,4 +1,3 @@
-const bool open_viewer = true;
 /**
   * Loads two different inter-surface maps from file and takes screenshots.
   *
@@ -10,12 +9,13 @@ const bool open_viewer = true;
   * If "open_viewer" is enabled, multiple windows will open successively.
   * Press ESC to close the current window.
   *
-  * Output files can be found in <build-folder>/output/inter_surface_map.
-  *
+  * Output files can be found in <build-folder>/output/inter_surface_map_figure.
   */
 
 #include <LayoutEmbedding/Visualization/Visualization.hh>
+
 #include <omp.h>
+#include <cxxopts.hpp>
 
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;
@@ -25,7 +25,7 @@ namespace
 
 const auto screenshot_size = tg::ivec2(2560, 1440);
 const int screenshot_samples = 64;
-const auto output_dir = fs::path(LE_OUTPUT_PATH) / "inter_surface_map";
+const auto output_dir = fs::path(LE_OUTPUT_PATH) / "inter_surface_map_figure";
 const auto cam_pos_A = glow::viewer::camera_transform(tg::pos3(-0.920128f, 0.235564f, 1.267972f), tg::pos3(-0.618207f, 0.128431f, 0.897975f));
 const auto cam_pos_B = glow::viewer::camera_transform(tg::pos3(-1.427252f, 0.205623f, -0.015807f), tg::pos3(-0.982034f, 0.118342f, 0.014635f));
 
@@ -142,7 +142,8 @@ void show_ism(
         const fs::path& _embedding_path_B,
         const fs::path& _ism_path_A,
         const fs::path& _ism_path_B,
-        const std::string& _algorithm)
+        const std::string& _algorithm,
+        bool _open_viewer)
 {
     // Load layout embeddings from file
     EmbeddingInput input_A;
@@ -232,7 +233,7 @@ void show_ism(
         view_vertices_and_paths(em_B, false);
     }
 
-    if (open_viewer)
+    if (_open_viewer)
     {
         auto style = default_style();
         auto g = gv::grid();
@@ -255,9 +256,27 @@ void show_ism(
 
 }
 
-int main()
+int main(int argc, char** argv)
 {
     register_segfault_handler();
+
+    bool open_viewer = false;
+    cxxopts::Options opts("inter_surface_map_figure", "Generates Fig. 15");
+    opts.add_options()("v,viewer", "Open viewer widget", cxxopts::value<bool>()->default_value("false"));
+    opts.add_options()("h,help", "Help");
+    try {
+        auto args = opts.parse(argc, argv);
+        if (args.count("help")) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+        open_viewer = args["viewer"].as<bool>();
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
+
     glow::glfw::GlfwContext ctx;
 
     fs::create_directories(output_dir);
@@ -266,11 +285,13 @@ int main()
              fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "13_kraevoy",
              fs::path(LE_DATA_PATH) / "maps" / "kraevoy" / "BonA_overlay.obj",
              fs::path(LE_DATA_PATH) / "maps" / "kraevoy" / "AonB_overlay.obj",
-             "kraevoy");
+             "kraevoy",
+             open_viewer);
 
     show_ism(fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "2_bnb",
              fs::path(LE_OUTPUT_PATH) / "shrec07_results" / "saved_embeddings" / "13_bnb",
              fs::path(LE_DATA_PATH) / "maps" / "bnb" / "BonA_overlay.obj",
              fs::path(LE_DATA_PATH) / "maps" / "bnb" / "AonB_overlay.obj",
-             "bnb");
+             "bnb",
+             open_viewer);
 }

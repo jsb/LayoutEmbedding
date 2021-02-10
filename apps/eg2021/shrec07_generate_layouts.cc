@@ -3,7 +3,6 @@
   * of the SHREC07 dataset.
   *
   * Output files can be found in <build-folder>/output/shrec07_layouts.
-  *
   */
 
 #include "shrec07.hh"

@@ -1,22 +1,22 @@
-const bool open_viewer = true;
 /**
   * Embeds quad layout into hands in different poses using challenging landmark positions
   * and computes quad meshes.
   *
-  * If "open_viewer" is enabled, multiple windows will open successively.
+  * If "--viewer" is enabled, multiple windows will open successively.
   * Press ESC to close the current window.
   *
-  * Output files can be found in <build-folder>/output/quad_hands.
-  *
+  * Output files can be found in <build-folder>/output/quad_hands_figure.
   */
 
-#include <LayoutEmbedding/IO.hh>
-#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
+#include <LayoutEmbedding/Greedy.hh>
+#include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/QuadMeshing.hh>
 #include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
+
+#include <cxxopts.hpp>
 
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;
@@ -27,9 +27,27 @@ struct TestCase
     glow::viewer::camera_transform camera;
 };
 
-int main()
+int main(int argc, char** argv)
 {
     register_segfault_handler();
+
+    bool open_viewer = false;
+    cxxopts::Options opts("quad_hands_figure", "Generates Fig. 14");
+    opts.add_options()("v,viewer", "Open viewer widget", cxxopts::value<bool>()->default_value("false"));
+    opts.add_options()("h,help", "Help");
+    try {
+        auto args = opts.parse(argc, argv);
+        if (args.count("help")) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+        open_viewer = args["viewer"].as<bool>();
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
+
     glow::glfw::GlfwContext ctx;
 
     std::vector<TestCase> tests =
@@ -57,7 +75,7 @@ int main()
 
     const auto layout_path = fs::path(LE_DATA_PATH) / "models/layouts/hand_TMBF_003.obj";
     const auto input_dir = fs::path(LE_DATA_PATH) / "models/target-meshes/TMBF_hands/";
-    const auto output_dir = fs::path(LE_OUTPUT_PATH) / "quad_hands";
+    const auto output_dir = fs::path(LE_OUTPUT_PATH) / "quad_hands_figure";
     fs::create_directories(output_dir);
 
     const auto screenshot_size = tg::ivec2(2560, 1440);

@@ -1,19 +1,19 @@
-const bool open_viewer = true;
 /**
   * Embeds quad layout into three animals and computes quad meshes.
   *
-  * If "open_viewer" is enabled, multiple windows will open successively.
+  * If "--viewer" is enabled, multiple windows will open successively.
   * Press ESC to close the current window.
   *
-  * Output files can be found in <build-folder>/output/quad_animals.
-  *
+  * Output files can be found in <build-folder>/output/quad_animals_figure.
   */
 
-#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/BranchAndBound.hh>
+#include <LayoutEmbedding/Greedy.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/QuadMeshing.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
+
+#include <cxxopts.hpp>
 
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;
@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 const auto screenshot_size = tg::ivec2(1920, 1080) * 2;
 const int screenshot_samples = 64;
 
-const auto output_dir = fs::path(LE_OUTPUT_PATH) / "quad_animals";
+const auto output_dir = fs::path(LE_OUTPUT_PATH) / "quad_animals_figure";
 const auto input_dir = fs::path(LE_DATA_PATH) / "models";
 const auto layout_rest_path = input_dir / "layouts/quad_animals/box_animal.obj";
 
@@ -31,7 +31,8 @@ namespace
 void quad_greedy(
         const fs::path& _layout_path,
         const fs::path& _target_path,
-        const glow::viewer::camera_transform& _cam_pos)
+        const glow::viewer::camera_transform& _cam_pos,
+        bool _open_viewer)
 {
     // Compute embedding
     EmbeddingInput input;
@@ -76,7 +77,7 @@ void quad_greedy(
 //        view_quad_mesh(q_pos, q_matching_layout_face, 256); // Enable this and check out quad-animals branch to achieve paper style
     }
 
-    if (open_viewer)
+    if (_open_viewer)
     {
         auto style = default_style();
         auto g = gv::columns();
@@ -89,7 +90,8 @@ void quad_greedy(
 void quad_bnb(
         const fs::path& _layout_path,
         const fs::path& _target_path,
-        const glow::viewer::camera_transform& _cam_pos)
+        const glow::viewer::camera_transform& _cam_pos,
+        bool _open_viewer)
 {
     // Compute embedding
     EmbeddingInput input;
@@ -146,7 +148,7 @@ void quad_bnb(
         view_layout(em_rest, true, 0, 0, true);
     }
 
-    if (open_viewer)
+    if (_open_viewer)
     {
         auto style = default_style();
         auto g = gv::columns();
@@ -158,24 +160,48 @@ void quad_bnb(
 
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    register_segfault_handler();
+
+    bool open_viewer = false;
+    cxxopts::Options opts("quad_animals_figure", "Generates Fig. 3");
+    opts.add_options()("v,viewer", "Open viewer widget", cxxopts::value<bool>()->default_value("false"));
+    opts.add_options()("h,help", "Help");
+    try {
+        auto args = opts.parse(argc, argv);
+        if (args.count("help")) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+        open_viewer = args["viewer"].as<bool>();
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
+
     glow::glfw::GlfwContext ctx;
+
     fs::create_directories(output_dir);
 
     quad_bnb(input_dir / "layouts/horse_layout.obj",
          input_dir / "target-meshes/horse_8078.obj",
-         glow::viewer::camera_transform(tg::pos3(1.867239f, 0.896712f, 0.666981f), tg::pos3(0.137403f, 0.053328f, 0.117139f)));
+         glow::viewer::camera_transform(tg::pos3(1.867239f, 0.896712f, 0.666981f), tg::pos3(0.137403f, 0.053328f, 0.117139f)),
+         open_viewer);
 
     quad_bnb(input_dir / "layouts/quad_animals/pig.obj",
          input_dir / "target-meshes/quad_animals/pig.obj",
-         glow::viewer::camera_transform(tg::pos3(0.741345f, 0.500829f, -1.333263f), tg::pos3(0.573432f, 0.380441f, -1.032823f)));
+         glow::viewer::camera_transform(tg::pos3(0.741345f, 0.500829f, -1.333263f), tg::pos3(0.573432f, 0.380441f, -1.032823f)),
+         open_viewer);
 
     quad_bnb(input_dir / "layouts/quad_animals/giraffe.obj",
          input_dir / "target-meshes/quad_animals/giraffe.obj",
-         glow::viewer::camera_transform(tg::pos3(1.386245f, 0.558812f, 0.649098f), tg::pos3(0.936166f, 0.374987f, 0.453374f)));
+         glow::viewer::camera_transform(tg::pos3(1.386245f, 0.558812f, 0.649098f), tg::pos3(0.936166f, 0.374987f, 0.453374f)),
+         open_viewer);
 
     quad_greedy(input_dir / "layouts/quad_animals/giraffe.obj",
          input_dir / "target-meshes/quad_animals/giraffe.obj",
-         glow::viewer::camera_transform(tg::pos3(1.386245f, 0.558812f, 0.649098f), tg::pos3(0.936166f, 0.374987f, 0.453374f)));
+         glow::viewer::camera_transform(tg::pos3(1.386245f, 0.558812f, 0.649098f), tg::pos3(0.936166f, 0.374987f, 0.453374f)),
+         open_viewer);
 }

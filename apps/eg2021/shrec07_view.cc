@@ -1,5 +1,3 @@
-#include <string>
-std::string open_prefix = "284";
 /**
   * View results of the evaluation on the SHREC07 dataset.
   *
@@ -11,13 +9,17 @@ std::string open_prefix = "284";
   *     * Navigate through results using left and right arrow keys.
   *     * Mesh id and embedding algorithm are shown in bottom left corner.
   *     * Close window by pressing ESC
-  *     * Set "open_prefix" to start at a specific mesh id.
+  *     * Pass a number (e.g. 284) as a command-line argument to start at a specific mesh ID.
   *
   */
 
 #include "shrec07.hh"
 #include <LayoutEmbedding/Visualization/Visualization.hh>
+
 #include <GLFW/glfw3.h>
+#include <cxxopts.hpp>
+
+#include <string>
 
 using namespace LayoutEmbedding;
 
@@ -39,9 +41,30 @@ bool ends_with(const std::string& str, const std::string& suffix)
 
 }
 
-int main()
+int main(int argc, char** argv)
 {
     register_segfault_handler();
+
+    std::string open_prefix = "284";
+    cxxopts::Options opts("shrec07_view", "Shows SHREC07 embedding results in an interactive viewer");
+    opts.add_options()("i,id", "SHREC07 mesh ID to show", cxxopts::value<std::string>());
+    opts.add_options()("h,help", "Help");
+    opts.parse_positional({"id"});
+    try {
+        auto args = opts.parse(argc, argv);
+        if (args.count("help")) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+        if (args.count("id")) {
+            open_prefix = args["id"].as<std::string>();
+        }
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
+
     glow::glfw::GlfwContext ctx;
 
     // Find all files with suffix

@@ -1,9 +1,7 @@
-const bool open_viewer = true;
 /**
   * Embeds a disk topology layout into a genus 0 target surface.
   *
   * Output files can be found in <build-folder>/output/disk_figure.
-  *
   */
 
 #include <LayoutEmbedding/IO.hh>
@@ -13,15 +11,35 @@ const bool open_viewer = true;
 #include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 
+#include <cxxopts.hpp>
+
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;
 
 const auto screenshot_size = tg::ivec2(1920, 1080) * 3;
 const int screenshot_samples = 64;
 
-int main()
+int main(int argc, char** argv)
 {
     register_segfault_handler();
+
+    bool open_viewer = false;
+    cxxopts::Options opts("disk_hand_figure", "Generates Fig. 16");
+    opts.add_options()("v,viewer", "Open viewer widget", cxxopts::value<bool>()->default_value("false"));
+    opts.add_options()("h,help", "Help");
+    try {
+        auto args = opts.parse(argc, argv);
+        if (args.count("help")) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+        open_viewer = args["viewer"].as<bool>();
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
+
     glow::glfw::GlfwContext ctx;
 
     const auto output_dir = fs::path(LE_OUTPUT_PATH) / "disk_figure";

@@ -1,18 +1,18 @@
-const bool open_viewer = true;
 /**
   * Loads different embeddings on a cube from file.
   *
-  * If "open_viewer" is enabled, multiple windows will open successively.
+  * If "--viewer" is enabled, multiple windows will open successively.
   * Press ESC to close the current window.
   *
-  * Output files can be found in <build-folder>/output/homotopy_cube.
-  *
+  * Output files can be found in <build-folder>/output/homotopy_cube_figure.
   */
 
 #include <LayoutEmbedding/IO.hh>
 #include <LayoutEmbedding/PathSmoothing.hh>
 #include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
+
+#include <cxxopts.hpp>
 
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;
@@ -21,14 +21,32 @@ const auto screenshot_size = tg::ivec2(1920, 1080) * 3;
 const int screenshot_samples = 64;
 const auto cam_pos = glow::viewer::camera_transform(tg::pos3(5.743672f, 3.705137f, 5.629703f), tg::pos3(0.922786f, 0.451209f, 0.929011f));
 
-int main()
+int main(int argc, char** argv)
 {
     register_segfault_handler();
+
+    bool open_viewer = false;
+    cxxopts::Options opts("homotopy_cube_figure", "Generates Fig. 2");
+    opts.add_options()("v,viewer", "Open viewer widget", cxxopts::value<bool>()->default_value("false"));
+    opts.add_options()("h,help", "Help");
+    try {
+        auto args = opts.parse(argc, argv);
+        if (args.count("help")) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+        open_viewer = args["viewer"].as<bool>();
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
+
     glow::glfw::GlfwContext ctx;
 
     // Paths
     const auto embedding_base_dir = fs::path(LE_DATA_PATH) / "embeddings/homotopy_cube";
-    const auto output_dir = fs::path(LE_OUTPUT_PATH) / "homotopy_cube";
+    const auto output_dir = fs::path(LE_OUTPUT_PATH) / "homotopy_cube_figure";
     fs::create_directories(output_dir);
 
     std::vector<std::string> names

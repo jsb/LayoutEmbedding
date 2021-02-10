@@ -15,6 +15,7 @@ add_subdirectory(extern/glow)
 add_subdirectory(extern/imgui)
 add_subdirectory(extern/glow-extras)
 add_subdirectory(extern/eigen-lean)
+add_subdirectory(extern/cxxopts)
 
 find_package(OpenMP REQUIRED)
 
@@ -32,14 +33,15 @@ target_compile_definitions(LayoutEmbedding PUBLIC LE_OUTPUT_PATH="${LE_OUTPUT_PA
 target_include_directories(LayoutEmbedding PRIVATE extern/libigl/include) # We use libigl header-only
 target_link_libraries(LayoutEmbedding PRIVATE stdc++fs)
 
-# Executable targets (applications directory)
-file(GLOB LE_APP_SOURCE_FILES "applications/*.cc")
+# Executable targets (apps directory)
+file(GLOB_RECURSE LE_APP_SOURCE_FILES "apps/*.cc")
 foreach(LE_APP_SOURCE_FILE ${LE_APP_SOURCE_FILES})
   get_filename_component(LE_APP_NAME ${LE_APP_SOURCE_FILE} NAME_WE)
   message("Executable target: ${LE_APP_NAME}")
 
   add_executable(${LE_APP_NAME} ${LE_APP_SOURCE_FILE})
   target_link_libraries(${LE_APP_NAME} PRIVATE LayoutEmbedding)
+  target_link_libraries(${LE_APP_NAME} PRIVATE cxxopts::cxxopts)
 endforeach()
 
 # Test target (tests directory)

@@ -8,7 +8,6 @@
   *     * Running this experiment might take a while (~24h).
   *
   * Output files can be found in <build-folder>/output/shrec07_results.
-  *
   */
 
 #include "shrec07.hh"

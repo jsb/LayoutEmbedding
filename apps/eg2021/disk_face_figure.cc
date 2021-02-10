@@ -1,9 +1,7 @@
-const bool open_viewer = true;
 /**
   * Embeds a disk topology layout into a disk topology target surface.
   *
   * Output files can be found in <build-folder>/output/disk_figure.
-  *
   */
 
 #include <LayoutEmbedding/IO.hh>
@@ -12,6 +10,8 @@ const bool open_viewer = true;
 #include <LayoutEmbedding/BranchAndBound.hh>
 #include <LayoutEmbedding/Util/StackTrace.hh>
 #include <LayoutEmbedding/Visualization/Visualization.hh>
+
+#include <cxxopts.hpp>
 
 using namespace LayoutEmbedding;
 namespace fs = std::filesystem;
@@ -25,8 +25,7 @@ void project_to_plane(
     const auto n = pos.mesh().faces().avg([&] (auto f) { return pm::face_normal(f, pos); });
     const auto b1 = tg::normalize(tg::cross(n, tg::vec3(0, 0, 1)));
     const auto b2 = tg::normalize(tg::cross(n, b1));
-    for (auto& p : pos)
-    {
+    for (auto& p : pos) {
         const auto u = tg::dot((p - tg::pos3::zero), b1);
         const auto v = tg::dot((p - tg::pos3::zero), b2);
         p = tg::pos3::zero + u * b1 + v * b2;
@@ -39,23 +38,36 @@ void smooth(
     const int iters = 5;
     const double damp = 0.125;
 
-    for (int iter = 0; iter < iters; ++iter)
-    {
+    for (int iter = 0; iter < iters; ++iter) {
         const auto pos_prev = pos;
-        for (auto v : pos.mesh().vertices())
-        {
-//            if (v.is_boundary())
-//                continue;
-
+        for (auto v : pos.mesh().vertices()) {
             const auto avg = v.adjacent_vertices().avg([&] (auto neigh) { return pos_prev[neigh]; });
             pos[v] += damp * (avg - pos[v]);
         }
     }
 }
 
-int main()
+int main(int argc, char** argv)
 {
     register_segfault_handler();
+
+    bool open_viewer = false;
+    cxxopts::Options opts("disk_face_figure", "Generates Fig. 16");
+    opts.add_options()("v,viewer", "Open viewer widget", cxxopts::value<bool>()->default_value("false"));
+    opts.add_options()("h,help", "Help");
+    try {
+        auto args = opts.parse(argc, argv);
+        if (args.count("help")) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+        open_viewer = args["viewer"].as<bool>();
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
+
     glow::glfw::GlfwContext ctx;
 
     const auto output_dir = fs::path(LE_OUTPUT_PATH) / "disk_figure";

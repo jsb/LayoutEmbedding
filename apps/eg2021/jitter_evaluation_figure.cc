@@ -1,8 +1,7 @@
 /**
   * Evaluates our method and greedy methods on randomly perturbed landmarks.
   *
-  * Output files can be found in <build-folder>/output/jitter_evaluation.
-  *
+  * Output files can be found in <build-folder>/output/jitter_evaluation_figure.
   */
 
 #include <glow-extras/timing/CpuTimer.hh>
@@ -23,23 +22,37 @@
 #include <LayoutEmbedding/Visualization/Visualization.hh>
 #include <LayoutEmbedding/Visualization/RWTHColors.hh>
 
+#include <cxxopts.hpp>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 
 using namespace LayoutEmbedding;
+namespace fs = std::filesystem;
 
-int main()
+int main(int argc, char** argv)
 {
-    namespace fs = std::filesystem;
-
     register_segfault_handler();
+
+    cxxopts::Options opts("jitter_evaluation_figure", "Generates Fig. 13");
+    opts.add_options()("h,help", "Help");
+    try {
+        auto args = opts.parse(argc, argv);
+        if (args.count("help")) {
+            std::cout << opts.help() << std::endl;
+            return 0;
+        }
+    } catch (const cxxopts::OptionException& e) {
+        std::cout << e.what() << "\n\n";
+        std::cout << opts.help() << std::endl;
+        return 1;
+    }
 
     glow::glfw::GlfwContext ctx;
 
     const fs::path data_path = LE_DATA_PATH;
     const fs::path output_dir = LE_OUTPUT_PATH;
-    const fs::path jitter_evaluation_output_dir = output_dir / "jitter_evaluation";
+    const fs::path jitter_evaluation_output_dir = output_dir / "jitter_evaluation_figure";
     const fs::path jitter_evaluation_screenshots_dir = jitter_evaluation_output_dir / "screenshots";
     const fs::path jitter_evaluation_embeddings_dir = jitter_evaluation_output_dir / "embeddings";
 
