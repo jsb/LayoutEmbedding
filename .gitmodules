@@ -9,7 +9,7 @@
 	url = https://graphics.rwth-aachen.de:9000/Glow/glow-extras.git
 [submodule "extern/typed-geometry"]
 	path = extern/typed-geometry
-	url = https://graphics.rwth-aachen.de:9000/ptrettner/typed-geometry
+	url = https://graphics.rwth-aachen.de:9000/ptrettner/typed-geometry.git
 [submodule "extern/imgui"]
 	path = extern/imgui
 	url = https://graphics.rwth-aachen.de:9000/pschmidt/imgui-lean.git
