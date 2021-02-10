@@ -1,13 +1,22 @@
-# Prerequisites
+# LayoutEmbedding
 
-This code was tested on Linux (Debian).
+This is an implementation of the method presented in "**Layout Embedding via Combinatorial Optimization**" at Eurographics 2021.
+
+This repository contains:
+* The core `LayoutEmbedding` library.
+* Example applications that replicate experiments and figures from the Eurographics 2021 paper.
+* Command-line utilities.
+
+## Build Instructions
+
+Make sure to checkout all Git submodules:
+Clone via `git clone --recursive https://github.com/jsb/LayoutEmbedding.git`
+or do `git submodule update --init --recursive` afterwards.
 
 If not already present, install a C++17 compiler (GCC >= 8) and the following dependencies:
-* CMake (`sudo apt-get install cmake`)
-* OpenGL (`sudo apt-get install libgl1-mesa-dev mesa-utils`)
-* GLFW build dependencies (`sudo apt-get build-dep glfw3`)
-
-# Build Instructions
+* CMake (`sudo apt install cmake`)
+* OpenGL (`sudo apt install libgl1-mesa-dev mesa-utils`)
+* GLFW build dependencies (`sudo apt install build-dep glfw3`)
 
 ```
 mkdir build
@@ -16,45 +25,42 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 ```
 
-# Run Experiments
+## Replication of Results
 
-Run the following executables to replicate individual experiments.
+Source code for experiments and figures in the paper is found in the `apps/eg2021` folder.
+Run the following executables to replicate the results:
 
-Output files can be found at "build/output".
-Some executables open one or multiple viewer windows:
+* `pig_figure` (Fig. 1)
+* `homotopy_cube_figure` (Fig. 2)
+* `quad_animals_figure` (Fig. 3)
+* `optimization_timeline_figure` (Fig. 7)
+* `jitter_evaluation_figure` (Fig. 13)
+* `quad_hands_figure` (Fig. 14)
+* `inter_surface_map_figure` (Fig. 15)
+* `disk_face_figure` (Fig. 16)
+* `disk_hand_figure` (Fig. 16)
+
+Output files and images will be written to the `build/output` directory.
+The above executables accept an optional `--viewer` argument to open an interactive viewer widget.
+Executables that produce multiple images will open several viewer widgets successively.
+Use the following controls:
 * Center camera via double click.
 * Rotate camera via left mouse drag.
-* Close by pressing ESC.
+* Close by pressing Esc.
 
-Edit the respective file in the "applications" folder to surpress the viewer window.
-
-```
-./teaser_pig				(output, viewer)
-./homotopy_cube_figure			(output, viewer)
-./quad_animals_figure			(output, viewer)
-./optimization_timeline_figure		(output, viewer)
-./jitter_evaluation			(output)
-./quad_hands_figure			(output, viewer)
-./inter_surface_map_figure		(output, viewer)
-./disk_face_figure			(output, viewer)
-./disk_hand_figure			(output, viewer)
-```
-
-To replicate the SHREC07 evaluation, run the following executables in the correct order.
+To replicate the SHREC07 evaluation (Figs. 10, 11, and 12), run the following executables in the correct order.
 Note that `shrec07_embed_layouts` takes ~24h to run.
 
-```
-./shrec07_generate_layouts
-./shrec07_embed_layouts			(requires shrec07_generate_layouts)
-./shrec07_figure			(requires shrec07_embed_layouts)
-./shrec07_ablation			(requires shrec07_generate_layouts)
-```
- 
-Run `./shrec07_view` to inspect the results of `shrec07_embed_layouts`.
-Use the left and right arrow keys to navigate through the results.
-Edit applications/shrec07_view.cc to start the viewer at a different result.
+* `shrec07_generate_layouts`
+* `shrec07_embed_layouts` (data for Fig. 10, requires `shrec07_generate_layouts`)
+* `shrec07_figure` (Fig. 11, requires `shrec07_embed_layouts`)
+* `shrec07_ablation` (Fig. 12, requires `shrec07_generate_layouts`)
 
-# Command Line Interface
+Run `shrec07_view` to inspect the results of `shrec07_embed_layouts`.
+Use the left and right arrow keys to navigate through the results.
+You can pass the SHREC07 mesh ID as a command line argument to start at a specific model.
+
+## Command Line Interface
 
 ```
 ./embed <path-to-layout> <path-to-target> <flags>
@@ -84,5 +90,5 @@ Output files can be found in "build/output/embed".
 ./view_embedding <path_to_lem_file>
 
 <path_to_lem_file>:
-	Specify .lem file. E.g. in "build/output/embed"
+        Specify .lem file. E.g. in "build/output/embed"
 ```
