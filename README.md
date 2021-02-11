@@ -66,3 +66,10 @@ The `embed` command provides a command-line interface to our algorithm.
 Use `view_embedding` to inspect previously computed embeddings.
 
 Both commands provide a `--help` argument for further details.
+
+## Authors and Contributors
+
+* Janis Born
+* Patrick Schmidt
+* Sasa Lukic
+* Leif Kobbelt
