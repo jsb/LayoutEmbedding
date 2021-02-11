@@ -10,7 +10,7 @@ This repository contains:
 ## Build Instructions
 
 Make sure to checkout all Git submodules:
-Clone via `git clone --recursive https://github.com/jsb/LayoutEmbedding.git`
+Clone via `git clone --recursive ...`
 or do `git submodule update --init --recursive` afterwards.
 
 If not already present, install a C++17 compiler (GCC >= 8) and the following dependencies:
