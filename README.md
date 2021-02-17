@@ -2,6 +2,8 @@
 
 This is an implementation of the method presented in the paper [Layout Embedding via Combinatorial Optimization](https://www.graphics.rwth-aachen.de/publication/03329/) at Eurographics 2021.
 
+![Teaser](teaser.png)
+
 This repository contains:
 * The core `LayoutEmbedding` library.
 * Example applications that replicate experiments and figures from the Eurographics 2021 paper.
