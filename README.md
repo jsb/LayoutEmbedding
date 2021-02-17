@@ -1,6 +1,6 @@
 # LayoutEmbedding
 
-This is an implementation of the method presented in "**Layout Embedding via Combinatorial Optimization**" at Eurographics 2021.
+This is an implementation of the method presented in the paper [Layout Embedding via Combinatorial Optimization](https://www.graphics.rwth-aachen.de/publication/03329/) at Eurographics 2021.
 
 This repository contains:
 * The core `LayoutEmbedding` library.
@@ -69,10 +69,10 @@ Both commands provide a `--help` argument for further details.
 
 ## Authors and Contributors
 
-* Janis Born
-* Patrick Schmidt
-* Sasa Lukic
-* Leif Kobbelt
+* [Janis Born](https://www.graphics.rwth-aachen.de/person/97/)
+* [Patrick Schmidt](https://www.graphics.rwth-aachen.de/person/232/)
+* [Sasa Lukic](https://www.graphics.rwth-aachen.de/person/300/)
+* [Leif Kobbelt](https://www.graphics.rwth-aachen.de/person/3/)
 
 ## License
 
