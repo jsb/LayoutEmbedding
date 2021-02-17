@@ -73,3 +73,7 @@ Both commands provide a `--help` argument for further details.
 * Patrick Schmidt
 * Sasa Lukic
 * Leif Kobbelt
+
+## License
+
+This project is released under the **MIT License**.
