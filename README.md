@@ -11,6 +11,9 @@ This repository contains:
 
 ## Build Instructions
 
+The following instructions have been tested on Linux (Debian 10 and Linux Mint 19.3).
+Other platforms might require slightly different build steps.
+
 Make sure to checkout all Git submodules:
 Clone via `git clone --recursive ...`
 or do `git submodule update --init --recursive` afterwards.
