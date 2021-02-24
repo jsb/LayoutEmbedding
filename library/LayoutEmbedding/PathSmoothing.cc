@@ -377,7 +377,7 @@ Embedding smooth_paths(
         }
     }
 
-    std::cout << "Smoothing paths (" << _n_iters << " iterations ) took "
+    std::cout << "Smoothing paths (" << _n_iters << " iterations) took "
               << timer.elapsedSecondsD() << " s. "
               << "Resulting mesh has " << em.target_mesh().vertices().size() << " vertices."
               << std::endl;
