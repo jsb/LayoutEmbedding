@@ -51,7 +51,7 @@ Executables that produce multiple images will open several viewer widgets succes
 Use the following controls:
 * Center camera via double click.
 * Rotate camera via left mouse drag.
-* Close by pressing Esc.
+* Close by pressing <kbd>Esc</kbd>.
 
 To replicate the SHREC07 evaluation (Figs. 10, 11, and 12), run the following executables in the correct order.
 Note that `shrec07_embed_layouts` takes ~24h to run.
@@ -62,7 +62,7 @@ Note that `shrec07_embed_layouts` takes ~24h to run.
 * `shrec07_ablation` (Fig. 12, requires `shrec07_generate_layouts`)
 
 Run `shrec07_view` to inspect the results of `shrec07_embed_layouts`.
-Use the left and right arrow keys to navigate through the results.
+Use the <kbd>Left</kbd> and <kbd>Right</kbd> arrow keys to navigate through the results.
 You can pass the SHREC07 mesh ID as a command line argument to start at a specific model.
 
 ## Command Line Interface
