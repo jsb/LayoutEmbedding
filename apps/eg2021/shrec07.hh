@@ -6,7 +6,7 @@
 #include <set>
 
 // Where to find the input data: The SHREC07 dataset (with landmarks provided by BIM).
-const std::filesystem::path shrec_dir = "/servers/ash/hdd-storage1/pschmidt/Backups/SurfaceMapsMeshes/bim/Data/watertight_shrec07";
+const std::filesystem::path shrec_dir = std::filesystem::path(LE_DATA_PATH) / "watertight_shrec07";
 const std::filesystem::path shrec_corrs_dir = shrec_dir / "Corrs";
 const std::filesystem::path shrec_meshes_dir = shrec_dir / "Meshes";
 
