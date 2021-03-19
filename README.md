@@ -30,7 +30,14 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 ```
 
-## Replication of Results
+## Command Line Interface
+
+The `embed` command provides a command-line interface to our algorithm.
+Use `view_embedding` to inspect previously computed embeddings.
+
+Both commands provide a `--help` argument for further details.
+
+## Replicating Experiments
 
 Source code for experiments and figures in the paper is found in the `apps/eg2021` folder.
 Run the following executables to replicate the results:
@@ -64,13 +71,6 @@ Note that `shrec07_embed_layouts` takes ~24h to run.
 Run `shrec07_view` to inspect the results of `shrec07_embed_layouts`.
 Use the <kbd>Left</kbd> and <kbd>Right</kbd> arrow keys to navigate through the results.
 You can pass the SHREC07 mesh ID as a command line argument to start at a specific model.
-
-## Command Line Interface
-
-The `embed` command provides a command-line interface to our algorithm.
-Use `view_embedding` to inspect previously computed embeddings.
-
-Both commands provide a `--help` argument for further details.
 
 ## Authors and Contributors
 
