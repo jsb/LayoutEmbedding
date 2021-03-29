@@ -247,7 +247,7 @@ bool Embedding::save(std::string filename, bool write_target_mesh,
 tg::pos3 Embedding::element_pos(const pm::edge_handle& _t_e) const
 {
     LE_ASSERT(_t_e.mesh == &target_mesh());
-    return tg::centroid(t_pos[_t_e.vertexA()], t_pos[_t_e.vertexB()]);
+    return tg::centroid_of(t_pos[_t_e.vertexA()], t_pos[_t_e.vertexB()]);
 }
 
 tg::pos3 Embedding::element_pos(const pm::vertex_handle& _t_v) const
