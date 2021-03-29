@@ -8,14 +8,38 @@ set(CMAKE_CXX_STANDARD 17)
 # Dependencies
 # Warning: The order of these add_subdirectories matters, there are interdependencies.
 set(GLOW_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}) # Viewer fonts will be placed here
-add_subdirectory(extern/glfw)
-add_subdirectory(extern/typed-geometry)
-add_subdirectory(extern/polymesh)
-add_subdirectory(extern/glow)
-add_subdirectory(extern/imgui)
-add_subdirectory(extern/glow-extras)
-add_subdirectory(extern/eigen-lean)
-add_subdirectory(extern/cxxopts)
+
+if (NOT TARGET glfw)
+    add_subdirectory(extern/glfw)
+endif()
+
+if (NOT TARGET typed-geometry)
+    add_subdirectory(extern/typed-geometry)
+endif()
+
+if (NOT TARGET polymesh)
+    add_subdirectory(extern/polymesh)
+endif()
+
+if (NOT TARGET glow)
+    add_subdirectory(extern/glow)
+endif()
+
+if (NOT TARGET imgui)
+    add_subdirectory(extern/imgui)
+endif()
+
+if (NOT TARGET glow-extras)
+    add_subdirectory(extern/glow-extras)
+endif()
+
+if (NOT TARGET Eigen3::Eigen)
+    add_subdirectory(extern/eigen-lean)
+endif()
+
+if (NOT TARGET cxxopts)
+    add_subdirectory(extern/cxxopts)
+endif()
 
 find_package(OpenMP REQUIRED)
 
