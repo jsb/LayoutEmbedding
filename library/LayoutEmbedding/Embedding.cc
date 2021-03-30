@@ -721,6 +721,12 @@ const pm::Mesh& Embedding::layout_mesh() const
     return input->l_m;
 }
 
+pm::Mesh& Embedding::layout_mesh()
+{
+    return input->l_m;
+}
+
+
 const pm::vertex_attribute<tg::pos3>& Embedding::layout_pos() const
 {
     return input->l_pos;
@@ -751,13 +757,25 @@ pm::vertex_attribute<tg::pos3> &Embedding::target_pos()
     return t_pos;
 }
 
-const pm::vertex_handle Embedding::matching_target_vertex(const pm::vertex_handle& _l_v) const
+const pm::vertex_handle& Embedding::matching_target_vertex(const pm::vertex_handle& _l_v) const
 {
     LE_ASSERT(_l_v.mesh == &layout_mesh());
     return l_matching_vertex[_l_v];
 }
 
-const pm::vertex_handle Embedding::matching_layout_vertex(const pm::vertex_handle& _t_v) const
+pm::vertex_handle& Embedding::matching_target_vertex(const pm::vertex_handle& _l_v)
+{
+    LE_ASSERT(_l_v.mesh == &layout_mesh());
+    return l_matching_vertex[_l_v];
+}
+
+const pm::vertex_handle& Embedding::matching_layout_vertex(const pm::vertex_handle& _t_v) const
+{
+    LE_ASSERT(_t_v.mesh == &target_mesh());
+    return t_matching_vertex[_t_v];
+}
+
+pm::vertex_handle& Embedding::matching_layout_vertex(const pm::vertex_handle& _t_v)
 {
     LE_ASSERT(_t_v.mesh == &target_mesh());
     return t_matching_vertex[_t_v];
