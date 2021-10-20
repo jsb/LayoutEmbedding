@@ -11,18 +11,23 @@ This repository contains:
 
 ## Build Instructions
 
-The following instructions have been tested on Linux (Debian 10 and Linux Mint 19.3).
+The following instructions have been tested on Linux (Debian 10, Linux Mint 19.3 and Ubuntu LTS 20.04).
 Other platforms might require slightly different build steps.
 
 Make sure to checkout all Git submodules:
 Clone via `git clone --recursive ...`
 or do `git submodule update --init --recursive` afterwards.
 
-If not already present, install a C++17 compiler (GCC >= 8) and the following dependencies:
+**If your plaform is Ubuntu, you can simply run the script** `install_le.sh` **at the toplevel of the repository to install the required dependencies and build the project.**
+
+Otherwise, you first have to make sure that the following dependencies are satisfied:
+* C++17 compiler (GCC >= 8) (`sudo apt install build-essential`)
 * CMake (`sudo apt install cmake`)
 * OpenGL (`sudo apt install libgl1-mesa-dev mesa-utils`)
-* GLFW build dependencies (`sudo apt install build-dep glfw3`)
+* GLFW build dependencies (`sudo apt install libglfw3 libglfw3-dev`)
+* libxi dependencies (`sudo apt install libxinerama-dev libxcursor-dev libxi-dev`)
 
+Then, run the following commands in the cloned repository:
 ```
 mkdir build
 cd build
@@ -30,17 +35,9 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 ```
 
-## Command Line Interface
+## Replication of Results
 
-The `embed` command provides a command-line interface to our algorithm.
-Use `view_embedding` to inspect previously computed embeddings.
-
-Both commands provide a `--help` argument for further details.
-
-## Replicating Experiments
-
-Source code for experiments and figures in the paper is found in the `apps/eg2021` folder.
-Run the following executables to replicate the results:
+Source code for experiments and figures in the paper is found in the `apps/eg2021` folder.Run the following executables to replicate the results:
 
 * `pig_figure` (Fig. 1)
 * `homotopy_cube_figure` (Fig. 2)
@@ -71,6 +68,13 @@ Note that `shrec07_embed_layouts` takes ~24h to run.
 Run `shrec07_view` to inspect the results of `shrec07_embed_layouts`.
 Use the <kbd>Left</kbd> and <kbd>Right</kbd> arrow keys to navigate through the results.
 You can pass the SHREC07 mesh ID as a command line argument to start at a specific model.
+
+## Command Line Interface
+
+The `embed` command provides a command-line interface to our algorithm.
+Use `view_embedding` to inspect previously computed embeddings.
+
+Both commands provide a `--help` argument for further details.
 
 ## Authors and Contributors
 
