@@ -15,10 +15,9 @@ The following instructions have been tested on Linux (Debian 10, Linux Mint 19.3
 Other platforms might require slightly different build steps.
 
 Make sure to checkout all Git submodules:
-Clone via `git clone --recursive ...`
-or do `git submodule update --init --recursive` afterwards.
+Clone via `git clone --recursive ...` or do `git submodule update --init --recursive` afterwards.
 
-**If your plaform is Ubuntu, you can simply run the script** `install_le.sh` **at the toplevel of the repository to install the required dependencies and build the project.**
+**If your platform is Ubuntu, you can simply run the script** `install_le.sh` **at the top level of the repository to install the required dependencies and build the project.**
 
 Otherwise, you first have to make sure that the following dependencies are satisfied:
 * C++17 compiler (GCC >= 8) (`sudo apt install build-essential`)
@@ -37,7 +36,8 @@ make -j4
 
 ## Replication of Results
 
-Source code for experiments and figures in the paper is found in the `apps/eg2021` folder.Run the following executables to replicate the results:
+Source code for experiments and figures in the paper is found in the `apps/eg2021` folder.
+Run the following executables to replicate the results:
 
 * `pig_figure` (Fig. 1)
 * `homotopy_cube_figure` (Fig. 2)
