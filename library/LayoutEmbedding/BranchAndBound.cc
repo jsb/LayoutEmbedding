@@ -105,11 +105,18 @@ BranchAndBoundResult branch_and_bound(Embedding& _em, const BranchAndBoundSettin
         // Time limit
         if (_settings.time_limit > 0.0) {
             if (timer.elapsedSecondsD() >= _settings.time_limit) {
-                std::cout << "Reached time limit of " << _settings.time_limit << " s. Terminating." << std::endl;
-                if (std::isinf(global_upper_bound)) {
-                    std::cout << "Warning: No valid solution was found within that time." << std::endl;
+                bool should_terminate = true;
+                if (_settings.extend_time_limit_to_ensure_solution && std::isinf(global_upper_bound)) {
+                    should_terminate = false;
                 }
-                break;
+
+                if (should_terminate) {
+                    std::cout << "Reached time limit of " << _settings.time_limit << " s. Terminating." << std::endl;
+                    if (std::isinf(global_upper_bound)) {
+                        std::cout << "Warning: No valid solution was found within that time." << std::endl;
+                    }
+                    break;
+                }
             }
         }
 

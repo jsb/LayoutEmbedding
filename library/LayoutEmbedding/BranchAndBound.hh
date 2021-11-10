@@ -9,6 +9,7 @@ struct BranchAndBoundSettings
 {
     double optimality_gap = 0.01;
     double time_limit = 1 * 60 * 60; // Seconds. Set to <= 0 to disable.
+    bool extend_time_limit_to_ensure_solution = true;
 
     bool record_upper_bound_events = true;
     bool record_lower_bound_events = false;
