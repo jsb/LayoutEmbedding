@@ -124,6 +124,14 @@ HalfedgeParam parametrize_patches(
     LE_ASSERT(_em.is_complete());
     auto param = _em.target_mesh().halfedges().make_attribute<tg::dpos2>();
 
+    // Ensure that _l_subdivisions are loop-wise consistent
+    for (auto l_h : _em.layout_mesh().halfedges())
+    {
+        auto l_e = l_h.edge();
+        auto l_e_opp = l_h.next().next().edge();
+        LE_ASSERT_EQ(_l_subdivisions[l_e], _l_subdivisions[l_e_opp]);
+    }
+
     for (auto l_f : _em.layout_mesh().faces())
     {
         LE_ASSERT_EQ(l_f.vertices().size(), 4);
@@ -417,6 +425,9 @@ pm::vertex_attribute<tg::pos3> extract_quad_mesh(
                     const auto l_h_opp = l_h.opposite();
                     if (hv_cache[l_h_opp].empty())
                         hv_cache[l_h_opp] = std::vector<pm::vertex_handle>(n);
+
+                    LE_ASSERT_EQ(hv_cache[l_h].size(), n);
+                    LE_ASSERT_EQ(hv_cache[l_h_opp].size(), n);
 
                     // Cache lookup
                     LE_ASSERT(hv_cache[l_h][idx] == hv_cache[l_h_opp][n - 1 - idx]);
