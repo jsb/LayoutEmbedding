@@ -14,7 +14,7 @@
 
 #define LE_ERROR_THROW(str) \
     {LE_ERROR(str); \
-    print_stack_trace(); \
+    LayoutEmbedding::print_stack_trace(); \
     throw std::runtime_error("ERROR");}
 
 #define LE_ASSERT(exp) \
