@@ -12,31 +12,29 @@ This repository contains:
 ## Build Instructions
 
 The following instructions have been tested on Linux (Debian 10, Linux Mint 19.3 and Ubuntu LTS 20.04).
-Other platforms might require slightly different build steps.
+Other platforms might require different build steps.
 
 Make sure to checkout all Git submodules:
 Clone via `git clone --recursive ...` or do `git submodule update --init --recursive` afterwards.
 
-**If your platform is Ubuntu, you can simply run the script** `install_le.sh` **at the top level of the repository to install the required dependencies and build the project.**
-
-Otherwise, you first have to make sure that the following dependencies are satisfied:
+Please install the required dependencies (using the following commands on Debian-based systems):
 * C++17 compiler (GCC >= 8) (`sudo apt install build-essential`)
 * CMake (`sudo apt install cmake`)
 * OpenGL (`sudo apt install libgl1-mesa-dev mesa-utils`)
 * GLFW build dependencies (`sudo apt install libglfw3 libglfw3-dev`)
 * libxi dependencies (`sudo apt install libxinerama-dev libxcursor-dev libxi-dev`)
 
-Then, run the following commands in the cloned repository:
+Then, navigate to the cloned repository and build:
 ```
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake ..
 make -j4
 ```
 
-## Replication of Results
+## Figures and Experiments
 
-Source code for experiments and figures in the paper is found in the `apps/eg2021` folder.
+Source code for figures and experiments in the paper is found in the `apps/eg2021` folder.
 Run the following executables to replicate the results:
 
 * `pig_figure` (Fig. 1)
