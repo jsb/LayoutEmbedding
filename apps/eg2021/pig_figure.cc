@@ -59,6 +59,8 @@ int main(int argc, char** argv)
         "greedy",
     };
 
+    std::cout << "Saving input screenshots ..." << std::endl;
+
     // Layout screenshot
     {
         auto cfg_style = default_style();
@@ -79,6 +81,8 @@ int main(int argc, char** argv)
 
     for (const auto& algorithm : algorithms)
     {
+        std::cout << "Computing " << algorithm << " embedding ..." << std::endl;
+
         // Compute embedding
         Embedding em(input);
         if (algorithm == "greedy")
@@ -97,6 +101,7 @@ int main(int argc, char** argv)
 
         // Save embedding
         {
+            std::cout << "Saving embedding data ..." << std::endl;
             const auto dir = output_dir / "embeddings";
             fs::create_directories(dir);
             em.save(dir / ("teaser_pig_" + algorithm));
@@ -104,6 +109,7 @@ int main(int argc, char** argv)
 
         // Embedding screenshot
         {
+            std::cout << "Saving embedding screenshot ..." << std::endl;
             auto cfg_style = default_style();
             auto cfg_view = gv::config(cam_pos);
             const auto screenshot_path = output_dir / (algorithm + ".png");
